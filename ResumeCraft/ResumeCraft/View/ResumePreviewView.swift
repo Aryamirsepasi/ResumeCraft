@@ -6,165 +6,62 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ResumePreviewView: View {
     let resume: Resume
 
     var body: some View {
-        ScrollView([.vertical, .horizontal]) {
-            A4PaperView {
-                VStack(alignment: .leading, spacing: 16) {
-                    headerSection
-                    Divider()
-                    contactSection
-                    if !resume.experiences.isEmpty {
-                        sectionTitle("Work Experience")
-                        ForEach(resume.experiences) { exp in
-                            experienceSection(exp)
-                        }
+        GeometryReader { geometry in
+            ScrollView([.vertical, .horizontal]) {
+                // Center the scaled paper in the scroll view
+                HStack {
+                    Spacer(minLength: 0)
+                    A4PaperView {
+                        ResumeA4PreviewView(resume: resume)
+                            .frame(width: 595, height: 842)
                     }
-                    if !resume.projects.isEmpty {
-                        sectionTitle("Projects")
-                        ForEach(resume.projects) { proj in
-                            projectSection(proj)
-                        }
-                    }
-                    if !resume.extracurriculars.isEmpty {
-                        sectionTitle("Extracurricular Activities")
-                        ForEach(resume.extracurriculars) { ext in
-                            extracurricularSection(ext)
-                        }
-                    }
-                    if !resume.languages.isEmpty {
-                        sectionTitle("Languages")
-                        HStack {
-                            ForEach(resume.languages) { lang in
-                                Text("\(lang.name) (\(lang.proficiency))")
-                                    .font(.callout)
-                            }
-                        }
-                    }
+                    .scaleEffect(0.85)
+                    .frame(
+                        width: 595 * 0.85,
+                        height: 842 * 0.85,
+                        alignment: .center
+                    )
+                    Spacer(minLength: 0)
                 }
-                .font(.system(size: 12, weight: .regular, design: .default))
-                .foregroundStyle(.black)
+                .frame(
+                    minWidth: geometry.size.width,
+                    minHeight: geometry.size.height,
+                    alignment: .center
+                )
             }
+            .background(Color(.systemGray6))
         }
         .navigationTitle("Resume Preview")
-        .background(Color(.systemGray6))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Resume Preview Paper")
+    }
+}
+
+struct ResumeA4PreviewView: UIViewRepresentable {
+    let resume: Resume
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.isScrollEnabled = true
+        textView.backgroundColor = .clear
+        textView.textContainerInset = UIEdgeInsets(top: 32, left: 32, bottom: 32, right: 32) // Add padding
+        textView.textContainer.lineFragmentPadding = 0
+        textView.setContentCompressionResistancePriority(.required, for: .vertical)
+        textView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        textView.accessibilityLabel = "Resume Preview"
+        textView.adjustsFontForContentSizeCategory = true
+        return textView
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "")")
-                .font(.system(size: 28, weight: .bold, design: .default))
-                .padding(.bottom, 2)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Name: \(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "")")
-    }
-
-    private var contactSection: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            if let personal = resume.personal {
-                if !personal.email.isEmpty { Text(personal.email) }
-                if !personal.phone.isEmpty { Text(personal.phone) }
-                if !personal.address.isEmpty { Text(personal.address) }
-                if let linkedIn = personal.linkedIn, !linkedIn.isEmpty { Text(linkedIn) }
-                if let website = personal.website, !website.isEmpty { Text(website) }
-            }
-        }
-        .font(.system(size: 11))
-        .foregroundStyle(.gray)
-    }
-
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 16, weight: .semibold))
-            .padding(.top, 8)
-            .accessibilityAddTraits(.isHeader)
-    }
-
-    private func experienceSection(_ exp: WorkExperience) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(exp.title)
-                    .font(.system(size: 13, weight: .bold))
-                Spacer()
-                Text(exp.company)
-                    .font(.system(size: 13))
-            }
-            HStack(spacing: 12) {
-                Text(exp.location)
-                    .font(.system(size: 12, weight: .regular))
-                Text("\(dateRange(exp.startDate, exp.endDate, exp.isCurrent))")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.gray)
-            }
-            if !exp.details.isEmpty {
-                Text(exp.details)
-                    .font(.system(size: 12))
-                    .padding(.top, 2)
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(exp.title), \(exp.company), \(exp.location), \(dateRange(exp.startDate, exp.endDate, exp.isCurrent)), \(exp.details)")
-    }
-
-    private func projectSection(_ proj: Project) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(proj.name)
-                    .font(.system(size: 13, weight: .bold))
-                if let link = proj.link, !link.isEmpty {
-                    Spacer()
-                    Text(link)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.blue)
-                }
-            }
-            if !proj.technologies.isEmpty {
-                Text(proj.technologies)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.gray)
-            }
-            if !proj.dscription.isEmpty {
-                Text(proj.dscription)
-                    .font(.system(size: 12))
-                    .padding(.top, 1)
-            }
-        }
-        .padding(.vertical, 3)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(proj.name), \(proj.technologies), \(proj.dscription), \(proj.link ?? "")")
-    }
-
-    private func extracurricularSection(_ ext: Extracurricular) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(ext.title)
-                .font(.system(size: 13, weight: .semibold))
-            Text(ext.organization)
-                .font(.system(size: 12))
-                .foregroundStyle(.gray)
-            if !ext.dscription.isEmpty {
-                Text(ext.dscription)
-                    .font(.system(size: 12))
-            }
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(ext.title) at \(ext.organization), \(ext.dscription)")
-    }
-
-    private func dateRange(_ start: Date, _ end: Date?, _ isCurrent: Bool) -> String {
-        let df = DateFormatter()
-        df.dateFormat = "MMM yyyy"
-        if isCurrent {
-            return "\(df.string(from: start)) – Present"
-        } else if let end = end {
-            return "\(df.string(from: start)) – \(df.string(from: end))"
-        } else {
-            return "\(df.string(from: start))"
-        }
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        let pageWidth: CGFloat = 595
+        uiView.attributedText = ResumePDFFormatter.attributedString(for: resume, pageWidth: pageWidth)
     }
 }

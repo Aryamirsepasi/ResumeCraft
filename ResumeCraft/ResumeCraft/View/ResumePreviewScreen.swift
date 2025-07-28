@@ -14,6 +14,7 @@ struct ResumePreviewScreen: View {
     @State private var pdfURL: URL?
     @State private var showShareSheet = false
     @State private var isExporting = false
+    @State private var showTooLongAlert = false
 
     var body: some View {
         NavigationStack {
@@ -45,6 +46,11 @@ struct ResumePreviewScreen: View {
                         ShareSheet(item: pdfURL)
                     }
                 }
+                .alert("Resume Too Long", isPresented: $showTooLongAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text("Resumes should not be more than two pages.")
+                }
         }
     }
 
@@ -60,8 +66,12 @@ struct ResumePreviewScreen: View {
                     showShareSheet = true
                     isExporting = false
                 }
+            } catch PDFExportError.resumeTooLong {
+                DispatchQueue.main.async {
+                    showTooLongAlert = true
+                    isExporting = false
+                }
             } catch {
-                // Handle error
                 DispatchQueue.main.async {
                     isExporting = false
                 }

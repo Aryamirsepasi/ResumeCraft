@@ -5,8 +5,10 @@ import Foundation
 final class Resume {
     @Attribute(.unique) var id: UUID
     var personal: PersonalInfo?
+    @Relationship(deleteRule: .cascade, inverse: \Skill.resume) var skills: [Skill]
     @Relationship(deleteRule: .cascade, inverse: \WorkExperience.resume) var experiences: [WorkExperience]
     @Relationship(deleteRule: .cascade, inverse: \Project.resume) var projects: [Project]
+    @Relationship(deleteRule: .cascade, inverse: \Education.resume) var educations: [Education]
     @Relationship(deleteRule: .cascade, inverse: \Extracurricular.resume) var extracurriculars: [Extracurricular]
     @Relationship(deleteRule: .cascade, inverse: \Language.resume) var languages: [Language]
     var created: Date
@@ -16,8 +18,10 @@ final class Resume {
         self.id = id
         self.created = created
         self.updated = updated
+        self.skills = []
         self.experiences = []
         self.projects = []
+        self.educations = []
         self.extracurriculars = []
         self.languages = []
     }
@@ -48,6 +52,18 @@ final class PersonalInfo {
 }
 
 @Model
+final class Skill {
+    var name: String
+    var category: String
+    var resume: Resume?
+
+    init(name: String = "", category: String = "") {
+        self.name = name
+        self.category = category
+    }
+}
+
+@Model
 final class WorkExperience {
     var title: String
     var company: String
@@ -72,30 +88,61 @@ final class WorkExperience {
 @Model
 final class Project {
     var name: String
-    var dscription: String
+    var details: String
     var technologies: String
     var link: String?
     var resume: Resume?
 
-    init(name: String = "", description: String = "", technologies: String = "", link: String? = nil) {
+    init(name: String = "", details: String = "", technologies: String = "", link: String? = nil) {
         self.name = name
-        self.dscription = description
+        self.details = details
         self.technologies = technologies
         self.link = link
     }
 }
 
 @Model
+final class Education {
+    var school: String
+    var degree: String
+    var field: String
+    var startDate: Date
+    var endDate: Date?
+    var grade: String
+    var details: String
+    var resume: Resume?
+
+    init(
+        school: String = "",
+        degree: String = "",
+        field: String = "",
+        startDate: Date = .now,
+        endDate: Date? = nil,
+        grade: String = "",
+        details: String = ""
+    ) {
+        self.school = school
+        self.degree = degree
+        self.field = field
+        self.startDate = startDate
+        self.endDate = endDate
+        self.grade = grade
+        self.details = details
+    }
+}
+
+
+@Model
 final class Extracurricular {
     var title: String
     var organization: String
-    var dscription: String
+    var details: String
     var resume: Resume?
 
-    init(title: String = "", organization: String = "", description: String = "") {
+    init(title: String = "", organization: String = "", details: String = "") {
         self.title = title
         self.organization = organization
-        self.dscription = description
+        self.details = details
     }
 }
 
@@ -109,4 +156,60 @@ final class Language {
         self.name = name
         self.proficiency = proficiency
     }
+}
+
+
+// DTOs for Decoding
+struct PersonalInfoDTO: Decodable {
+    let firstName: String
+    let lastName: String
+    let email: String
+    let phone: String
+    let address: String
+    let linkedIn: String?
+    let website: String?
+    let github: String?
+}
+
+struct SkillDTO: Decodable {
+    let name: String
+    let category: String
+}
+
+struct WorkExperienceDTO: Decodable {
+    let title: String
+    let company: String
+    let location: String
+    let startDate: Date
+    let endDate: Date?
+    let isCurrent: Bool
+    let details: String
+}
+
+struct ProjectDTO: Decodable {
+    let name: String
+    let details: String
+    let technologies: String
+    let link: String?
+}
+
+struct ExtracurricularDTO: Decodable {
+    let title: String
+    let organization: String
+    let details: String
+}
+
+struct LanguageDTO: Decodable {
+    let name: String
+    let proficiency: String
+}
+
+struct EducationDTO: Decodable {
+    let school: String
+    let degree: String
+    let field: String
+    let startDate: Date
+    let endDate: Date?
+    let grade: String
+    let details: String
 }

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ProjectEditorView: View {
     @State private var name: String
-    @State private var description: String
+    @State private var details: String
     @State private var technologies: String
     @State private var link: String
 
@@ -22,7 +22,7 @@ struct ProjectEditorView: View {
         onCancel: @escaping () -> Void
     ) {
         _name = State(initialValue: project?.name ?? "")
-        _description = State(initialValue: project?.dscription ?? "")
+        _details = State(initialValue: project?.details ?? "")
         _technologies = State(initialValue: project?.technologies ?? "")
         _link = State(initialValue: project?.link ?? "")
         self.onSave = onSave
@@ -37,7 +37,7 @@ struct ProjectEditorView: View {
                     TextField("Technologies", text: $technologies)
                 }
                 Section("Description") {
-                    TextEditor(text: $description)
+                    TextEditor(text: $details)
                         .frame(height: 100)
                         .accessibilityLabel("Project Description")
                 }
@@ -56,7 +56,7 @@ struct ProjectEditorView: View {
                     Button("Save") {
                         let proj = Project(
                             name: name,
-                            description: description,
+                            details: details,
                             technologies: technologies,
                             link: link.isEmpty ? nil : link
                         )

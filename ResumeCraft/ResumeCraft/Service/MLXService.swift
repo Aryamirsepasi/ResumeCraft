@@ -214,11 +214,11 @@ class MLXService: ObservableObject {
             
             let cancellationToken = self.cancellationToken
             
-            let result = try await modelContainer.perform { [weak self] context in
-                let input = try await context.processor.prepare(input: .init(messages: messages))
+            let result = try await modelContainer.perform { [weak self, messages] context in
+                let input = try await context.processor.prepare(input: .init(messages: messages, additionalContext: ["enable_thinking": false]))
                 return try MLXLMCommon.generate(
                     input: input,
-                    parameters: generateParameters,
+                    parameters: self?.generateParameters ?? GenerateParameters(temperature: 0.7),
                     context: context
                 ) { tokens in
                     guard let self = self else { return .stop }
@@ -236,7 +236,7 @@ class MLXService: ObservableObject {
                     if cancellationToken.isCancelled {
                         return .stop
                     }
-                    return tokens.count >= maxTokens ? .stop : .more
+                    return tokens.count >= self.maxTokens ? .stop : .more
                 }
             }
             

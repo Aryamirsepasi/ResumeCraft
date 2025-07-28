@@ -16,6 +16,8 @@ struct ModelManagementView: View {
     @State private var modelToDownload: AIModel?
     @State private var showCellularWarning = false
     @State private var cellularDownloadModel: AIModel?
+    @Environment(\.dismiss) private var dismiss
+    
     
     private let registry = AIModelsRegistry.shared
     
@@ -145,6 +147,15 @@ struct ModelManagementView: View {
         .background(Color(UIColor.systemGroupedBackground))
         .navigationTitle("Model Management")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .imageScale(.large)
+                        .accessibilityLabel("Close")
+                }
+            }
+        }
         .onAppear {
             selectedModel = modelManager.activeModel
         }
@@ -235,7 +246,7 @@ struct DeviceCompatibilityWarning: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
+            
             VStack(alignment: .leading, spacing: 8) {
                 Label("iPhone 11 or later", systemImage: "iphone")
                     .font(.caption)
@@ -401,7 +412,7 @@ struct ModelCard: View {
             }
             .buttonStyle(PlainButtonStyle())
             .geometryGroup()
-
+            
             if isDownloading && downloadProgress > 0 {
                 VStack(spacing: 8) {
                     ProgressView(value: downloadProgress)

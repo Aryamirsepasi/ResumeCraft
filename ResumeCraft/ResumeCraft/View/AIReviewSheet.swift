@@ -12,12 +12,11 @@ struct AIReviewSheet: View {
     @Bindable var viewModel: AIReviewViewModel
     var sectionOptions: [String]
     var sectionTextProvider: (String) -> String
-
     @State private var selectedSection: String = ""
     @State private var showJobDescriptionField = false
-
+    
     @Environment(\.dismiss) private var dismiss
-
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -32,14 +31,14 @@ struct AIReviewSheet: View {
                     Text(sectionTextProvider(selectedSection))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .frame(maxHeight: 80, alignment: .topLeading)
+                        .frame(maxHeight: 100, alignment: .topLeading)
                         .lineLimit(4)
                         .padding(4)
                 }
                 Section("Job Description") {
                     ScrollView {
                         TextEditor(text: $viewModel.jobDescription)
-                            .frame(height: 100)
+                            .frame(height: 120)
                             .accessibilityLabel("Paste job description here")
                     }
                 }
@@ -54,7 +53,7 @@ struct AIReviewSheet: View {
                                 .textSelection(.enabled)
                                 .padding(4)
                         }
-                        .frame(minHeight: 80)
+                        .frame(minHeight: 120)
                     }
                 } else if let error = viewModel.errorMessage {
                     Text("Error: \(error)").foregroundColor(.red)
@@ -70,10 +69,11 @@ struct AIReviewSheet: View {
                     .disabled(selectedSection.isEmpty || viewModel.jobDescription.isEmpty)
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark")
+                            .imageScale(.large)
+                            .accessibilityLabel("Close")
                     }
-                    .accessibilityLabel("Close Sheet")
                 }
             }
             .onAppear {

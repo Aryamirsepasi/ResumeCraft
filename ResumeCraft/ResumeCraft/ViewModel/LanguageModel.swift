@@ -18,6 +18,7 @@ final class LanguageModel {
         self.items = resume.languages
     }
     func add(_ language: Language) {
+        language.resume = resume
         items.append(language)
     }
     func remove(at offsets: IndexSet) {
@@ -25,6 +26,7 @@ final class LanguageModel {
     }
     func update(_ language: Language, at index: Int) {
         guard items.indices.contains(index) else { return }
+        language.resume = resume
         items[index] = language
     }
 }

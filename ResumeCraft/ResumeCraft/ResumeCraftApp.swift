@@ -13,7 +13,7 @@ struct ResumeCraftApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Resume.self, PersonalInfo.self, WorkExperience.self,
-                        Project.self, Extracurricular.self, Language.self
+            Project.self, Skill.self, Education.self, Extracurricular.self, Language.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

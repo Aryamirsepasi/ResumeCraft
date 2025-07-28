@@ -91,23 +91,12 @@ class AIModelsRegistry {
     private let models: [AIModel] = [
         // General Purpose Models
         AIModel(
-            id: "llama3_2_1B",
-            configuration: LLMRegistry.llama3_2_1B_4bit,
-            category: .general,
-            displayName: "Llama 3.2 1B",
-            description: "Meta's efficient model, great for everyday conversations",
-            estimatedRAMUsage: 800,
-            minimumChipRequired: .a13,
-            parameterCount: "1B",
-            quantization: "4-bit"
-        ),
-        AIModel(
             id: "llama3_2_3B",
             configuration: LLMRegistry.llama3_2_3B_4bit,
             category: .general,
             displayName: "Llama 3.2 3B",
             description: "Larger Llama model with enhanced capabilities",
-            estimatedRAMUsage: 2400,
+            estimatedRAMUsage: 2100,
             minimumChipRequired: .a14,
             parameterCount: "3B",
             quantization: "4-bit"
@@ -117,7 +106,7 @@ class AIModelsRegistry {
             configuration: LLMRegistry.qwen3_4b_4bit,
             category: .general,
             displayName: "Qwen 3.0 4B",
-            description: "Advanced multilingual capabilities",
+            description: "Advanced multilingual capabilities (Only Use for AI Feedback)",
             estimatedRAMUsage: 2400,
             minimumChipRequired: .a15,
             parameterCount: "4B",
@@ -129,20 +118,31 @@ class AIModelsRegistry {
             category: .general,
             displayName: "Gemma 3n 2B",
             description: "Google's lightweight model with strong performance",
-            estimatedRAMUsage: 1600,
+            estimatedRAMUsage: 2400,
             minimumChipRequired: .a14,
             parameterCount: "2B",
             quantization: "4-bit"
         ),
         AIModel(
-            id: "gemma3n_E2B",
-            configuration: LLMRegistry.gemma3n_E4B_it_lm_4bit,
+            id: "qwen2_5_3B",
+            configuration: ModelConfiguration(id: "mlx-community/Qwen2.5-3B-4bit"),
             category: .general,
-            displayName: "Gemma 3n 4B",
-            description: "Google's more intelligent lightweight model with strong performance",
-            estimatedRAMUsage: 2800,
+            displayName: "Qwen 2.5 3B",
+            description: "Highly efficient model for general tasks",
+            estimatedRAMUsage: 2100,
+            minimumChipRequired: .a14,
+            parameterCount: "2.5B",
+            quantization: "4-bit"
+        ),
+        AIModel(
+            id: "smollm3_3B",
+            configuration: LLMRegistry.smollm3_3b_4bit,
+            category: .general,
+            displayName: "SmolLM 3 3B",
+            description: "Great for small devices with efficient performance",
+            estimatedRAMUsage: 2100,
             minimumChipRequired: .a15,
-            parameterCount: "4B",
+            parameterCount: "3B",
             quantization: "4-bit"
         ),
         

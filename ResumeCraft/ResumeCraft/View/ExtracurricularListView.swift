@@ -67,7 +67,7 @@ struct ExtracurricularListView: View {
         } label: {
             ExtracurricularRowView(activity: activity)
         }
-        .accessibilityLabel("\(activity.title) at \(activity.organization), \(activity.dscription)")
+        .accessibilityLabel("\(activity.title) at \(activity.organization), \(activity.details)")
         .accessibilityHint("Tap to edit this activity")
     }
 }
@@ -83,7 +83,7 @@ struct ExtracurricularRowView: View {
             Text(activity.organization)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(activity.dscription)
+            Text(activity.details)
                 .font(.body)
                 .lineLimit(2)
         }

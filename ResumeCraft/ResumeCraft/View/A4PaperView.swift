@@ -15,8 +15,7 @@ struct A4PaperView<Content: View>: View {
     var body: some View {
         ZStack {
             Color.white
-            content
-                .padding(32)
+            content // No extra padding here
         }
         .frame(width: 595, height: 842)
         .cornerRadius(8)

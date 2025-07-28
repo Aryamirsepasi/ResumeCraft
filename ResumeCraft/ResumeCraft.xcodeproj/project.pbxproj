@@ -12,6 +12,7 @@
 		420B4C7D2E359EF2006DD68B /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C7C2E359EF2006DD68B /* MLXLMCommon */; };
 		420B4C7F2E359EF2006DD68B /* MLXMNIST in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C7E2E359EF2006DD68B /* MLXMNIST */; };
 		420B4C812E359EF2006DD68B /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C802E359EF2006DD68B /* MLXVLM */; };
+		42273DBD2E36291F008B39AE /* TPPDF in Frameworks */ = {isa = PBXBuildFile; productRef = 42273DBC2E36291F008B39AE /* TPPDF */; };
 		4249BA0A2E35C5FE003B1CB5 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4249BA092E35C5FE003B1CB5 /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
@@ -49,6 +50,7 @@
 				420B4C7F2E359EF2006DD68B /* MLXMNIST in Frameworks */,
 				420B4C7B2E359EF2006DD68B /* MLXLLM in Frameworks */,
 				4249BA0A2E35C5FE003B1CB5 /* MarkdownUI in Frameworks */,
+				42273DBD2E36291F008B39AE /* TPPDF in Frameworks */,
 				420B4C7D2E359EF2006DD68B /* MLXLMCommon in Frameworks */,
 				420B4C792E359EF2006DD68B /* MLXEmbedders in Frameworks */,
 			);
@@ -99,6 +101,7 @@
 				420B4C7E2E359EF2006DD68B /* MLXMNIST */,
 				420B4C802E359EF2006DD68B /* MLXVLM */,
 				4249BA092E35C5FE003B1CB5 /* MarkdownUI */,
+				42273DBC2E36291F008B39AE /* TPPDF */,
 			);
 			productName = ResumeCraft;
 			productReference = 420B4BC92E359240006DD68B /* ResumeCraft.app */;
@@ -131,6 +134,7 @@
 			packageReferences = (
 				420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */,
 				4249BA082E35C5FE003B1CB5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 420B4BCA2E359240006DD68B /* Products */;
@@ -198,6 +202,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
@@ -240,6 +245,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
@@ -395,6 +401,14 @@
 				kind = branch;
 			};
 		};
+		42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/techprimate/tppdf.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		4249BA082E35C5FE003B1CB5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
@@ -430,6 +444,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */;
 			productName = MLXVLM;
+		};
+		42273DBC2E36291F008B39AE /* TPPDF */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */;
+			productName = TPPDF;
 		};
 		4249BA092E35C5FE003B1CB5 /* MarkdownUI */ = {
 			isa = XCSwiftPackageProductDependency;

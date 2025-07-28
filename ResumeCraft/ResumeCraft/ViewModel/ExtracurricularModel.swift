@@ -18,6 +18,7 @@ final class ExtracurricularModel {
         self.items = resume.extracurriculars
     }
     func add(_ activity: Extracurricular) {
+        activity.resume = resume
         items.append(activity)
     }
     func remove(at offsets: IndexSet) {
@@ -25,6 +26,7 @@ final class ExtracurricularModel {
     }
     func update(_ activity: Extracurricular, at index: Int) {
         guard items.indices.contains(index) else { return }
+        activity.resume = resume
         items[index] = activity
     }
 }

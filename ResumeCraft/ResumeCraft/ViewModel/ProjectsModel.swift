@@ -18,6 +18,7 @@ final class ProjectsModel {
         self.items = resume.projects
     }
     func add(_ project: Project) {
+        project.resume = resume
         items.append(project)
     }
     func remove(at offsets: IndexSet) {
@@ -25,6 +26,7 @@ final class ProjectsModel {
     }
     func update(_ project: Project, at index: Int) {
         guard items.indices.contains(index) else { return }
+        project.resume = resume
         items[index] = project
     }
 }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "22d8401bcc409451803d87e69a4a08548b688da7e0b1d5e0595dbfbb62e35c71",
+  "originHash" : "16c2f549900839b1a173a16cc46bee0e1b5f83d36efdbbf68ed4d41e5eca4920",
   "pins" : [
     {
       "identity" : "gzipswift",
@@ -98,6 +98,15 @@
       "state" : {
         "revision" : "e5bf0627bd134cf8ddc407cda403ae84207af959",
         "version" : "0.1.22"
+      }
+    },
+    {
+      "identity" : "tppdf",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/techprimate/tppdf.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b05afde10a6c975830a23b1d601129e2a6c64c75"
       }
     }
   ],

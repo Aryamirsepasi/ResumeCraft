@@ -10,7 +10,7 @@ import SwiftUI
 struct ExtracurricularEditorView: View {
     @State private var title: String
     @State private var organization: String
-    @State private var description: String
+    @State private var details: String
 
     var onSave: (Extracurricular) -> Void
     var onCancel: () -> Void
@@ -22,7 +22,7 @@ struct ExtracurricularEditorView: View {
     ) {
         _title = State(initialValue: activity?.title ?? "")
         _organization = State(initialValue: activity?.organization ?? "")
-        _description = State(initialValue: activity?.dscription ?? "")
+        _details = State(initialValue: activity?.details ?? "")
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -35,7 +35,7 @@ struct ExtracurricularEditorView: View {
                     TextField("Organization", text: $organization)
                 }
                 Section("Description") {
-                    TextEditor(text: $description)
+                    TextEditor(text: $details)
                         .frame(height: 100)
                         .accessibilityLabel("Activity Description")
                 }
@@ -50,7 +50,7 @@ struct ExtracurricularEditorView: View {
                         let activity = Extracurricular(
                             title: title,
                             organization: organization,
-                            description: description
+                            details: details
                         )
                         onSave(activity)
                     }

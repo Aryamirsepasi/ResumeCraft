@@ -7,11 +7,13 @@
 
 import UIKit
 
+import UIKit
+
 struct ResumePDFFormatter {
     static func attributedString(for resume: Resume, pageWidth: CGFloat) -> NSAttributedString {
         let result = NSMutableAttributedString()
         let headerFont = UIFont.boldSystemFont(ofSize: 22)
-        let sectionFont = UIFont.boldSystemFont(ofSize: 12)
+        let sectionFont = UIFont.boldSystemFont(ofSize: 14)
         let bodyFont = UIFont.systemFont(ofSize: 10)
         let subFont = UIFont.systemFont(ofSize: 9)
         let gray = UIColor.gray
@@ -19,16 +21,43 @@ struct ResumePDFFormatter {
         // Name Header
         if let personal = resume.personal {
             let name = "\(personal.firstName) \(personal.lastName)\n"
-            result.append(NSAttributedString(string: name, attributes: [.font: headerFont]))
+            result.append(NSAttributedString(string: name, attributes: [
+                .font: headerFont,
+                .accessibilitySpeechLanguage: "en"
+            ]))
         }
 
         // Contact Info
         if let personal = resume.personal {
-            let contact = [personal.email, personal.phone, personal.address, personal.linkedIn, personal.website]
-                .compactMap { $0 }
-                .filter { !$0.isEmpty }
-                .joined(separator: " · ") + "\n\n"
-            result.append(NSAttributedString(string: contact, attributes: [.font: subFont, .foregroundColor: gray]))
+            let contactItems: [String?] = [
+                personal.email,
+                personal.phone,
+                personal.address,
+                personal.linkedIn,
+                personal.website,
+                personal.github
+            ]
+            let contact = contactItems.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+            if !contact.isEmpty {
+                result.append(NSAttributedString(string: contact + "\n\n", attributes: [
+                    .font: subFont,
+                    .foregroundColor: gray
+                ]))
+            }
+        }
+
+        // Skills
+        if !resume.skills.isEmpty {
+            result.append(NSAttributedString(string: "Skills\n", attributes: [.font: sectionFont]))
+            let grouped = Dictionary(grouping: resume.skills, by: { $0.category })
+            for (category, skills) in grouped.sorted(by: { $0.key < $1.key }) {
+                if !category.isEmpty {
+                    result.append(NSAttributedString(string: "\(category): ", attributes: [.font: bodyFont]))
+                }
+                let names = skills.map { $0.name }.joined(separator: ", ")
+                result.append(NSAttributedString(string: names + "\n", attributes: [.font: bodyFont]))
+            }
+            result.append(NSAttributedString(string: "\n"))
         }
 
         // Work Experience
@@ -36,7 +65,7 @@ struct ResumePDFFormatter {
             result.append(NSAttributedString(string: "Work Experience\n", attributes: [.font: sectionFont]))
             for exp in resume.experiences {
                 let titleLine = "\(exp.title) at \(exp.company)\n"
-                result.append(NSAttributedString(string: titleLine, attributes: [.font: bodyFont, .font: UIFont.boldSystemFont(ofSize: 13)]))
+                result.append(NSAttributedString(string: titleLine, attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]))
                 let dateLoc = "\(exp.location) · \(dateRange(exp.startDate, exp.endDate, exp.isCurrent))\n"
                 result.append(NSAttributedString(string: dateLoc, attributes: [.font: subFont, .foregroundColor: gray]))
                 if !exp.details.isEmpty {
@@ -55,12 +84,30 @@ struct ResumePDFFormatter {
                     projectLine += " (\(link))"
                 }
                 projectLine += "\n"
-                result.append(NSAttributedString(string: projectLine, attributes: [.font: bodyFont, .font: UIFont.boldSystemFont(ofSize: 13)]))
+                result.append(NSAttributedString(string: projectLine, attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]))
                 if !proj.technologies.isEmpty {
                     result.append(NSAttributedString(string: proj.technologies + "\n", attributes: [.font: subFont, .foregroundColor: gray]))
                 }
-                if !proj.dscription.isEmpty {
-                    result.append(NSAttributedString(string: proj.dscription + "\n", attributes: [.font: bodyFont]))
+                if !proj.details.isEmpty {
+                    result.append(NSAttributedString(string: proj.details + "\n", attributes: [.font: bodyFont]))
+                }
+                result.append(NSAttributedString(string: "\n"))
+            }
+        }
+
+        // Education
+        if !resume.educations.isEmpty {
+            result.append(NSAttributedString(string: "Education\n", attributes: [.font: sectionFont]))
+            for edu in resume.educations {
+                let titleLine = "\(edu.degree) in \(edu.field)\n"
+                result.append(NSAttributedString(string: titleLine, attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]))
+                let schoolLine = "\(edu.school) · \(dateRange(edu.startDate, edu.endDate, false))\n"
+                result.append(NSAttributedString(string: schoolLine, attributes: [.font: subFont, .foregroundColor: gray]))
+                if !edu.grade.isEmpty {
+                    result.append(NSAttributedString(string: "Grade: \(edu.grade)\n", attributes: [.font: subFont, .foregroundColor: gray]))
+                }
+                if !edu.details.isEmpty {
+                    result.append(NSAttributedString(string: edu.details + "\n", attributes: [.font: bodyFont]))
                 }
                 result.append(NSAttributedString(string: "\n"))
             }
@@ -71,9 +118,9 @@ struct ResumePDFFormatter {
             result.append(NSAttributedString(string: "Extracurricular Activities\n", attributes: [.font: sectionFont]))
             for ext in resume.extracurriculars {
                 let titleLine = "\(ext.title) at \(ext.organization)\n"
-                result.append(NSAttributedString(string: titleLine, attributes: [.font: bodyFont, .font: UIFont.boldSystemFont(ofSize: 13)]))
-                if !ext.dscription.isEmpty {
-                    result.append(NSAttributedString(string: ext.dscription + "\n", attributes: [.font: bodyFont]))
+                result.append(NSAttributedString(string: titleLine, attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]))
+                if !ext.details.isEmpty {
+                    result.append(NSAttributedString(string: ext.details + "\n", attributes: [.font: bodyFont]))
                 }
                 result.append(NSAttributedString(string: "\n"))
             }
