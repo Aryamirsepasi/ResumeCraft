@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct ResumeCraftApp: App {
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Resume.self, PersonalInfo.self, WorkExperience.self,
@@ -26,7 +28,12 @@ struct ResumeCraftApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ResumeTabView()
+            if hasSeenOnboarding {
+                ResumeTabView()
+                
+            } else {
+                OnboardingFlow(hasSeenOnboarding: $hasSeenOnboarding)
+            }
         }
         .modelContainer(sharedModelContainer)
     }

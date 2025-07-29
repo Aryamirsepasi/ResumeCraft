@@ -1,5 +1,3 @@
-
-
 import Foundation
 import MLXLMCommon
 import SwiftUI
@@ -159,7 +157,7 @@ class AIModelsRegistry {
     }
     
     var defaultModel: AIModel {
-        models.first { $0.id == "llama3_2_1B" } ?? models[0]
+        models.first { $0.id == "smollm3_3B" } ?? models[0]
     }
     
     func modelByConfiguration(_ configuration: ModelConfiguration) -> AIModel? {

@@ -26,15 +26,17 @@ struct ModelManagementView: View {
             VStack(spacing: 20) {
                 // Header
                 VStack(spacing: 20) {
-                    Image(systemName: "cpu")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.primary)
-                    
-                    VStack(spacing: 8) {
+                    HStack(){
+                        Image(systemName: "cpu")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.primary)
                         Text("AI Models")
                             .font(.title)
                             .fontWeight(.bold)
-                        
+                    }
+
+                    VStack(spacing: 8) {
+            
                         Text("Download and manage AI models for offline use")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
