@@ -5,7 +5,6 @@
 //  Created by Arya Mirsepasi on 27.07.25.
 //
 
-
 import SwiftUI
 
 struct SkillsListView: View {
@@ -20,20 +19,28 @@ struct SkillsListView: View {
                 ForEach(model.items) { skill in
                     HStack {
                         Button {
-                            editingSkill = skill
+                            // Re-fetch fresh instance by id before opening editor
+                            let id = skill.id
+                            if let fresh = model.items.first(where: { $0.id == id }) {
+                                editingSkill = fresh
+                            } else {
+                                editingSkill = skill
+                            }
                             showEditor = true
                         } label: {
                             Text(skill.name)
                                 .font(.headline)
                         }
                         Spacer()
-                        Toggle(isOn: Binding(
-                            get: { skill.isVisible },
-                            set: { newValue in
-                                skill.isVisible = newValue
-                                try? resumeModel.save()
-                            }
-                        )) {
+                        Toggle(
+                            isOn: Binding(
+                                get: { skill.isVisible },
+                                set: { newValue in
+                                    skill.isVisible = newValue
+                                    try? resumeModel.save()
+                                }
+                            )
+                        ) {
                             Image(systemName: skill.isVisible ? "eye" : "eye.slash")
                                 .accessibilityLabel(skill.isVisible ? "Visible" : "Hidden")
                         }
@@ -67,12 +74,11 @@ struct SkillsListView: View {
                     skill: editingSkill,
                     onSave: { newSkill in
                         if let existing = editingSkill {
-                        existing.name = newSkill.name
-                        existing.category = newSkill.category
-                        existing.isVisible = true
-                        // resume link remains intact on existing
+                            existing.name = newSkill.name
+                            existing.category = newSkill.category
+                            existing.isVisible = true
                         } else {
-                        model.add(newSkill) // model.add sets resume and appends
+                            model.add(newSkill)
                         }
                         showEditor = false
                         try? resumeModel.save()

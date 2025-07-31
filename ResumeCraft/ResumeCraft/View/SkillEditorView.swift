@@ -1,22 +1,23 @@
-
 import SwiftUI
 
 struct SkillEditorView: View {
-    @State private var name: String
-    @State private var category: String
+    @State private var name: String = ""
+    @State private var category: String = ""
 
     var onSave: (Skill) -> Void
     var onCancel: () -> Void
+
+    private let initialSkill: Skill?
 
     init(
         skill: Skill?,
         onSave: @escaping (Skill) -> Void,
         onCancel: @escaping () -> Void
     ) {
-        _name = State(initialValue: skill?.name ?? "")
-        _category = State(initialValue: skill?.category ?? "")
+        self.initialSkill = skill
         self.onSave = onSave
         self.onCancel = onCancel
+        // Defer population to onAppear
     }
 
     var body: some View {
@@ -42,6 +43,12 @@ struct SkillEditorView: View {
                         onSave(skill)
                     }
                     .disabled(name.isEmpty)
+                }
+            }
+            .onAppear {
+                if let s = initialSkill {
+                    name = s.name
+                    category = s.category
                 }
             }
         }

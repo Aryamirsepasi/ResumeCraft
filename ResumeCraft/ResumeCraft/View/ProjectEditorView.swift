@@ -8,25 +8,25 @@
 import SwiftUI
 
 struct ProjectEditorView: View {
-    @State private var name: String
-    @State private var details: String
-    @State private var technologies: String
-    @State private var link: String
+    @State private var name: String = ""
+    @State private var details: String = ""
+    @State private var technologies: String = ""
+    @State private var link: String = ""
 
     var onSave: (Project) -> Void
     var onCancel: () -> Void
+
+    private let initialProject: Project?
 
     init(
         project: Project?,
         onSave: @escaping (Project) -> Void,
         onCancel: @escaping () -> Void
     ) {
-        _name = State(initialValue: project?.name ?? "")
-        _details = State(initialValue: project?.details ?? "")
-        _technologies = State(initialValue: project?.technologies ?? "")
-        _link = State(initialValue: project?.link ?? "")
+        self.initialProject = project
         self.onSave = onSave
         self.onCancel = onCancel
+        // Do not assign @State here; we'll copy in onAppear for freshness
     }
 
     var body: some View {
@@ -63,6 +63,15 @@ struct ProjectEditorView: View {
                         onSave(proj)
                     }
                     .disabled(name.isEmpty)
+                }
+            }
+            .onAppear {
+                // Populate from the freshest instance
+                if let p = initialProject {
+                    name = p.name
+                    details = p.details
+                    technologies = p.technologies
+                    link = p.link ?? ""
                 }
             }
         }

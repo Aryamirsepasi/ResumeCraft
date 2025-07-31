@@ -8,31 +8,28 @@
 import SwiftUI
 
 struct EducationEditorView: View {
-    @State private var school: String
-    @State private var degree: String
-    @State private var field: String
-    @State private var startDate: Date
-    @State private var endDate: Date
-    @State private var grade: String
-    @State private var details: String
+    @State private var school: String = ""
+    @State private var degree: String = ""
+    @State private var field: String = ""
+    @State private var startDate: Date = Date()
+    @State private var endDate: Date = Date()
+    @State private var grade: String = ""
+    @State private var details: String = ""
 
     var onSave: (Education) -> Void
     var onCancel: () -> Void
+
+    private let initialEducation: Education?
 
     init(
         education: Education?,
         onSave: @escaping (Education) -> Void,
         onCancel: @escaping () -> Void
     ) {
-        _school = State(initialValue: education?.school ?? "")
-        _degree = State(initialValue: education?.degree ?? "")
-        _field = State(initialValue: education?.field ?? "")
-        _startDate = State(initialValue: education?.startDate ?? Date())
-        _endDate = State(initialValue: education?.endDate ?? Date())
-        _grade = State(initialValue: education?.grade ?? "")
-        _details = State(initialValue: education?.details ?? "")
+        self.initialEducation = education
         self.onSave = onSave
         self.onCancel = onCancel
+        // Defer state population to .onAppear to avoid stale snapshots
     }
 
     var body: some View {
@@ -45,8 +42,17 @@ struct EducationEditorView: View {
                     TextField("Field of Study", text: $field)
                 }
                 Section("Dates") {
-                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    DatePicker(
+                        "Start Date",
+                        selection: $startDate,
+                        displayedComponents: .date
+                    )
+                    DatePicker(
+                        "End Date",
+                        selection: $endDate,
+                        in: startDate...,
+                        displayedComponents: .date
+                    )
                 }
                 Section("Details") {
                     TextField("Grade", text: $grade)
@@ -75,6 +81,16 @@ struct EducationEditorView: View {
                     }
                     .disabled(school.isEmpty || degree.isEmpty)
                 }
+            }
+            .onAppear {
+                guard let e = initialEducation else { return }
+                school = e.school
+                degree = e.degree
+                field = e.field
+                startDate = e.startDate
+                endDate = e.endDate ?? e.startDate
+                grade = e.grade
+                details = e.details
             }
         }
     }

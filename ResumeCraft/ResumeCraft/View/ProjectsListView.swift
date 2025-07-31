@@ -19,7 +19,13 @@ struct ProjectsListView: View {
                 ForEach(model.items) { project in
                     HStack {
                         ProjectRowView(project: project) {
-                            editingProject = project
+                            // Re-fetch fresh instance by id before opening editor
+                            let id = project.id
+                            if let fresh = model.items.first(where: { $0.id == id }) {
+                                editingProject = fresh
+                            } else {
+                                editingProject = project
+                            }
                             showEditor = true
                         }
                         Spacer()

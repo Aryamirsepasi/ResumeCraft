@@ -8,29 +8,25 @@
 import SwiftUI
 
 struct ExperienceEditorView: View {
-    @State private var title: String
-    @State private var company: String
-    @State private var location: String
-    @State private var startDate: Date
-    @State private var endDate: Date
-    @State private var isCurrent: Bool
-    @State private var details: String
+    @State private var title: String = ""
+    @State private var company: String = ""
+    @State private var location: String = ""
+    @State private var startDate: Date = Date()
+    @State private var endDate: Date = Date()
+    @State private var isCurrent: Bool = false
+    @State private var details: String = ""
 
     var onSave: (WorkExperience) -> Void
     var onCancel: () -> Void
+
+    private let initialExperience: WorkExperience?
 
     init(
         experience: WorkExperience?,
         onSave: @escaping (WorkExperience) -> Void,
         onCancel: @escaping () -> Void
     ) {
-        _title = State(initialValue: experience?.title ?? "")
-        _company = State(initialValue: experience?.company ?? "")
-        _location = State(initialValue: experience?.location ?? "")
-        _startDate = State(initialValue: experience?.startDate ?? Date())
-        _endDate = State(initialValue: experience?.endDate ?? Date())
-        _isCurrent = State(initialValue: experience?.isCurrent ?? false)
-        _details = State(initialValue: experience?.details ?? "")
+        self.initialExperience = experience
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -76,6 +72,17 @@ struct ExperienceEditorView: View {
                         onSave(exp)
                     }
                     .disabled(title.isEmpty || company.isEmpty)
+                }
+            }
+            .onAppear {
+                if let e = initialExperience {
+                    title = e.title
+                    company = e.company
+                    location = e.location
+                    startDate = e.startDate
+                    endDate = e.endDate ?? e.startDate
+                    isCurrent = e.isCurrent
+                    details = e.details
                 }
             }
         }
