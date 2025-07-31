@@ -8,21 +8,49 @@
 import SwiftUI
 
 struct ExtracurricularListView: View {
-    let model: ExtracurricularModel
-    var resumeModel: ResumeEditorModel
+    @Environment(ResumeEditorModel.self) private var resumeModel
+    @Bindable var model: ExtracurricularModel
     @State private var editingActivity: Extracurricular?
     @State private var showEditor = false
 
     var body: some View {
         NavigationStack {
             List {
-                LazyVStack {
-                    ForEach(model.items, id: \.id) { activity in
-                        activityButton(for: activity)
+                ForEach(model.items) { activity in
+                    HStack {
+                        ExtracurricularRowView(activity: activity) {
+                            // Re-fetch fresh instance by id before opening editor
+                            let id = activity.id
+                            if let fresh = model.items.first(where: { $0.id == id }) {
+                                editingActivity = fresh
+                            } else {
+                                editingActivity = activity
+                            }
+                            showEditor = true
+                        }
+                        Spacer()
+                        Toggle(
+                            isOn: Binding(
+                                get: { activity.isVisible },
+                                set: { newValue in
+                                    activity.isVisible = newValue
+                                    try? resumeModel.save()
+                                }
+                            )
+                        ) {
+                            Image(systemName: activity.isVisible ? "eye" : "eye.slash")
+                                .accessibilityLabel(activity.isVisible ? "Visible" : "Hidden")
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.button)
                     }
-                    .onDelete { indices in
-                        model.remove(at: indices)
-                        try? resumeModel.save()
+                }
+                .onDelete { indices in
+                    model.remove(at: indices)
+                    do {
+                        try resumeModel.save()
+                    } catch {
+                        print("Error saving: \(error.localizedDescription)")
                     }
                 }
             }
@@ -42,51 +70,46 @@ struct ExtracurricularListView: View {
                 ExtracurricularEditorView(
                     activity: editingActivity,
                     onSave: { newActivity in
-                        if let existing = editingActivity,
-                           let idx = model.items.firstIndex(where: { $0.id == existing.id }) {
-                            model.update(newActivity, at: idx)
+                        if let existing = editingActivity {
+                            existing.title = newActivity.title
+                            existing.organization = newActivity.organization
+                            existing.details = newActivity.details
+                            existing.isVisible = true
                         } else {
                             model.add(newActivity)
                         }
                         showEditor = false
                         try? resumeModel.save()
                     },
-                    onCancel: {
-                        showEditor = false
-                    }
+                    onCancel: { showEditor = false }
                 )
             }
         }
-    }
-
-    @ViewBuilder
-    private func activityButton(for activity: Extracurricular) -> some View {
-        Button {
-            editingActivity = activity
-            showEditor = true
-        } label: {
-            ExtracurricularRowView(activity: activity)
-        }
-        .accessibilityLabel("\(activity.title) at \(activity.organization), \(activity.details)")
-        .accessibilityHint("Tap to edit this activity")
     }
 }
 
 struct ExtracurricularRowView: View {
     let activity: Extracurricular
+    let onTap: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(activity.title)
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            Text(activity.organization)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(activity.details)
-                .font(.body)
-                .lineLimit(2)
+        Button(action: onTap) {
+            VStack(alignment: .leading) {
+                Text(activity.title)
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Text(activity.organization)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(activity.details)
+                    .font(.body)
+                    .lineLimit(2)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "\(activity.title) at \(activity.organization), \(activity.details)"
+            )
+            .accessibilityHint("Tap to edit this activity")
         }
-        .accessibilityElement(children: .combine)
     }
 }

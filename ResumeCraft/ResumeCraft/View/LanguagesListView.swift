@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct LanguagesListView: View {
+    @Environment(ResumeEditorModel.self) private var resumeModel
     @Bindable var model: LanguageModel
-    var resumeModel: ResumeEditorModel
     @State private var editingLanguage: Language?
     @State private var showEditor = false
 
@@ -17,25 +17,41 @@ struct LanguagesListView: View {
         NavigationStack {
             List {
                 ForEach(model.items) { lang in
-                    Button {
-                        editingLanguage = lang
-                        showEditor = true
-                    } label: {
-                        HStack {
-                            Text(lang.name)
-                                .font(.headline)
-                            Spacer()
-                            Text(lang.proficiency)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                    HStack {
+                        LanguageRowView(language: lang) {
+                            // Re-fetch fresh instance by id before opening editor
+                            let id = lang.id
+                            if let fresh = model.items.first(where: { $0.id == id }) {
+                                editingLanguage = fresh
+                            } else {
+                                editingLanguage = lang
+                            }
+                            showEditor = true
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(lang.name), \(lang.proficiency)")
+                        Spacer()
+                        Toggle(
+                            isOn: Binding(
+                                get: { lang.isVisible },
+                                set: { newValue in
+                                    lang.isVisible = newValue
+                                    try? resumeModel.save()
+                                }
+                            )
+                        ) {
+                            Image(systemName: lang.isVisible ? "eye" : "eye.slash")
+                                .accessibilityLabel(lang.isVisible ? "Visible" : "Hidden")
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.button)
                     }
                 }
                 .onDelete { indices in
                     model.remove(at: indices)
-                    try? resumeModel.save()
+                    do {
+                        try resumeModel.save()
+                    } catch {
+                        print("Error saving: \(error.localizedDescription)")
+                    }
                 }
             }
             .navigationTitle("Languages")
@@ -54,19 +70,39 @@ struct LanguagesListView: View {
                 LanguageEditorView(
                     language: editingLanguage,
                     onSave: { newLang in
-                        if let existing = editingLanguage, let idx = model.items.firstIndex(where: { $0.id == existing.id }) {
-                            model.items[idx] = newLang
+                        if let existing = editingLanguage {
+                            existing.name = newLang.name
+                            existing.proficiency = newLang.proficiency
+                            existing.isVisible = true
                         } else {
                             model.add(newLang)
                         }
                         showEditor = false
                         try? resumeModel.save()
                     },
-                    onCancel: {
-                        showEditor = false
-                    }
+                    onCancel: { showEditor = false }
                 )
             }
+        }
+    }
+}
+
+struct LanguageRowView: View {
+    let language: Language
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                Text(language.name)
+                    .font(.headline)
+                Spacer()
+                Text(language.proficiency)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(language.name), \(language.proficiency)")
         }
     }
 }

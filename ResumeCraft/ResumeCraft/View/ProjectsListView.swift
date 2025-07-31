@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ProjectsListView: View {
+    @Environment(ResumeEditorModel.self) private var resumeModel
     @Bindable var model: ProjectsModel
-    var resumeModel: ResumeEditorModel
     @State private var editingProject: Project?
     @State private var showEditor = false
 
@@ -17,31 +17,35 @@ struct ProjectsListView: View {
         NavigationStack {
             List {
                 ForEach(model.items) { project in
-                    Button {
-                        editingProject = project
-                        showEditor = true
-                    } label: {
-                        VStack(alignment: .leading) {
-                            Text(project.name)
-                                .font(.headline)
-                            if !project.technologies.isEmpty {
-                                    Text(project.technologies)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let link = project.link, !link.isEmpty {
-                                    Text(link)
-                                        .font(.caption2)
-                                        .foregroundStyle(.blue)
-                                }
+                    HStack {
+                        ProjectRowView(project: project) {
+                            editingProject = project
+                            showEditor = true
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(project.name), \(project.technologies), \(project.link ?? "")")
+                        Spacer()
+                        Toggle(
+                            isOn: Binding(
+                                get: { project.isVisible },
+                                set: { newValue in
+                                    project.isVisible = newValue
+                                    try? resumeModel.save()
+                                }
+                            )
+                        ) {
+                            Image(systemName: project.isVisible ? "eye" : "eye.slash")
+                                .accessibilityLabel(project.isVisible ? "Visible" : "Hidden")
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.button)
                     }
                 }
                 .onDelete { indices in
                     model.remove(at: indices)
-                    try? resumeModel.save()
+                    do {
+                        try resumeModel.save()
+                    } catch {
+                        print("Error saving: \(error.localizedDescription)")
+                    }
                 }
             }
             .navigationTitle("Projects")
@@ -60,19 +64,49 @@ struct ProjectsListView: View {
                 ProjectEditorView(
                     project: editingProject,
                     onSave: { newProj in
-                        if let existing = editingProject, let idx = model.items.firstIndex(where: { $0.id == existing.id }) {
-                            model.items[idx] = newProj
+                        if let existing = editingProject {
+                            existing.name = newProj.name
+                            existing.details = newProj.details
+                            existing.technologies = newProj.technologies
+                            existing.link = newProj.link
+                            existing.isVisible = true
                         } else {
                             model.add(newProj)
                         }
                         showEditor = false
                         try? resumeModel.save()
                     },
-                    onCancel: {
-                        showEditor = false
-                    }
+                    onCancel: { showEditor = false }
                 )
             }
+        }
+    }
+}
+
+struct ProjectRowView: View {
+    let project: Project
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading) {
+                Text(project.name)
+                    .font(.headline)
+                if !project.technologies.isEmpty {
+                    Text(project.technologies)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let link = project.link, !link.isEmpty {
+                    Text(link)
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "\(project.name), \(project.technologies), \(project.link ?? "")"
+            )
         }
     }
 }

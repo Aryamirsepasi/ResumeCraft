@@ -9,19 +9,25 @@ import SwiftUI
 
 @Observable
 final class ExperienceModel {
-    var items: [WorkExperience]
-    private weak var resume: Resume?
+  private weak var resume: Resume?
 
-    init(resume: Resume) {
-        self.resume = resume
-        self.items = resume.experiences
-    }
-    func add(_ exp: WorkExperience) {
-        exp.resume = resume
-        items.append(exp)
-    }
-    func remove(at offsets: IndexSet) {
-        items.remove(atOffsets: offsets)
-    }
+  init(resume: Resume) {
+    self.resume = resume
+  }
+
+  var items: [WorkExperience] {
+    get { resume?.experiences ?? [] }
+    set { resume?.experiences = newValue }
+  }
+
+  func add(_ exp: WorkExperience) {
+    exp.resume = resume
+    items.append(exp)
+  }
+
+  func remove(at offsets: IndexSet) {
+    var copy = items
+    copy.remove(atOffsets: offsets)
+    items = copy
+  }
 }
-

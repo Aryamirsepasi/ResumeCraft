@@ -10,7 +10,7 @@ import SwiftUI
 
 struct SkillsListView: View {
     @Bindable var model: SkillsModel
-    var resumeModel: ResumeEditorModel
+    @Environment(ResumeEditorModel.self) private var resumeModel
     @State private var editingSkill: Skill?
     @State private var showEditor = false
 
@@ -18,26 +18,36 @@ struct SkillsListView: View {
         NavigationStack {
             List {
                 ForEach(model.items) { skill in
-                    Button {
-                        editingSkill = skill
-                        showEditor = true
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Button {
+                            editingSkill = skill
+                            showEditor = true
+                        } label: {
                             Text(skill.name)
                                 .font(.headline)
-                            if !skill.category.isEmpty {
-                                Text(skill.category)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(skill.name), \(skill.category)")
+                        Spacer()
+                        Toggle(isOn: Binding(
+                            get: { skill.isVisible },
+                            set: { newValue in
+                                skill.isVisible = newValue
+                                try? resumeModel.save()
+                            }
+                        )) {
+                            Image(systemName: skill.isVisible ? "eye" : "eye.slash")
+                                .accessibilityLabel(skill.isVisible ? "Visible" : "Hidden")
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.button)
                     }
                 }
                 .onDelete { indices in
                     model.remove(at: indices)
-                    try? resumeModel.save()
+                    do {
+                        try resumeModel.save()
+                    } catch {
+                        print("Error saving: \(error.localizedDescription)")
+                    }
                 }
             }
             .navigationTitle("Skills")
@@ -56,10 +66,13 @@ struct SkillsListView: View {
                 SkillEditorView(
                     skill: editingSkill,
                     onSave: { newSkill in
-                        if let existing = editingSkill, let idx = model.items.firstIndex(where: { $0.id == existing.id }) {
-                            model.items[idx] = newSkill
+                        if let existing = editingSkill {
+                        existing.name = newSkill.name
+                        existing.category = newSkill.category
+                        existing.isVisible = true
+                        // resume link remains intact on existing
                         } else {
-                            model.add(newSkill)
+                        model.add(newSkill) // model.add sets resume and appends
                         }
                         showEditor = false
                         try? resumeModel.save()

@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ExperienceListView: View {
+    @Environment(ResumeEditorModel.self) private var resumeModel
     @Bindable var model: ExperienceModel
-    var resumeModel: ResumeEditorModel
     @State private var editingExperience: WorkExperience?
     @State private var showEditor = false
 
@@ -17,30 +17,41 @@ struct ExperienceListView: View {
         NavigationStack {
             List {
                 ForEach(model.items) { exp in
-                    Button {
-                        editingExperience = exp
-                        showEditor = true
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("\(exp.title), \(exp.company)")
-                                .font(.headline)
-                            HStack {
-                                Text(exp.location)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text("\(formattedDate(exp.startDate)) - \(exp.isCurrent ? "Present" : formattedDate(exp.endDate))")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                    HStack {
+                        ExperienceRowView(experience: exp) {
+                            // Re-fetch fresh instance by id before opening editor
+                            let id = exp.id
+                            if let fresh = model.items.first(where: { $0.id == id }) {
+                                editingExperience = fresh
+                            } else {
+                                editingExperience = exp
                             }
+                            showEditor = true
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(exp.title) at \(exp.company), \(exp.location), \(formattedDate(exp.startDate)) to \(exp.isCurrent ? "present" : formattedDate(exp.endDate))")
+                        Spacer()
+                        Toggle(
+                            isOn: Binding(
+                                get: { exp.isVisible },
+                                set: { newValue in
+                                    exp.isVisible = newValue
+                                    try? resumeModel.save()
+                                }
+                            )
+                        ) {
+                            Image(systemName: exp.isVisible ? "eye" : "eye.slash")
+                                .accessibilityLabel(exp.isVisible ? "Visible" : "Hidden")
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.button)
                     }
                 }
                 .onDelete { indices in
                     model.remove(at: indices)
-                    try? resumeModel.save()
+                    do {
+                        try resumeModel.save()
+                    } catch {
+                        print("Error saving: \(error.localizedDescription)")
+                    }
                 }
             }
             .navigationTitle("Experience")
@@ -59,26 +70,58 @@ struct ExperienceListView: View {
                 ExperienceEditorView(
                     experience: editingExperience,
                     onSave: { newExp in
-                        if let existing = editingExperience, let idx = model.items.firstIndex(where: { $0.id == existing.id }) {
-                            model.items[idx] = newExp
+                        if let existing = editingExperience {
+                            existing.title = newExp.title
+                            existing.company = newExp.company
+                            existing.location = newExp.location
+                            existing.startDate = newExp.startDate
+                            existing.endDate = newExp.endDate
+                            existing.isCurrent = newExp.isCurrent
+                            existing.details = newExp.details
+                            existing.isVisible = true
                         } else {
                             model.add(newExp)
                         }
                         showEditor = false
                         try? resumeModel.save()
                     },
-                    onCancel: {
-                        showEditor = false
-                    }
+                    onCancel: { showEditor = false }
                 )
             }
+        }
+    }
+}
+
+struct ExperienceRowView: View {
+    let experience: WorkExperience
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(experience.title), \(experience.company)")
+                    .font(.headline)
+                HStack {
+                    Text(experience.location)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(
+                        "\(formattedDate(experience.startDate)) - \(experience.isCurrent ? "Present" : formattedDate(experience.endDate))"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "\(experience.title) at \(experience.company), \(experience.location), \(formattedDate(experience.startDate)) to \(experience.isCurrent ? "present" : formattedDate(experience.endDate))"
+            )
         }
     }
 
     private func formattedDate(_ date: Date?) -> String {
         guard let date else { return "-" }
-        let fmt = DateFormatter()
-        fmt.dateStyle = .short
-        return fmt.string(from: date)
+        return DateFormatter.resumeMonthYear.string(from: date)
     }
 }

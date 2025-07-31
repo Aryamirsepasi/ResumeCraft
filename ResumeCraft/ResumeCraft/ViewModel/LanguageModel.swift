@@ -10,23 +10,33 @@ import Observation
 
 @Observable
 final class LanguageModel {
-    var items: [Language]
-    private weak var resume: Resume?
+  private weak var resume: Resume?
 
-    init(resume: Resume) {
-        self.resume = resume
-        self.items = resume.languages
-    }
-    func add(_ language: Language) {
-        language.resume = resume
-        items.append(language)
-    }
-    func remove(at offsets: IndexSet) {
-        items.remove(atOffsets: offsets)
-    }
-    func update(_ language: Language, at index: Int) {
-        guard items.indices.contains(index) else { return }
-        language.resume = resume
-        items[index] = language
-    }
+  init(resume: Resume) {
+    self.resume = resume
+  }
+
+  var items: [Language] {
+    get { resume?.languages ?? [] }
+    set { resume?.languages = newValue }
+  }
+
+  func add(_ language: Language) {
+    language.resume = resume
+    items.append(language)
+  }
+
+  func remove(at offsets: IndexSet) {
+    var copy = items
+    copy.remove(atOffsets: offsets)
+    items = copy
+  }
+
+  func update(_ language: Language, at index: Int) {
+    guard items.indices.contains(index) else { return }
+    language.resume = resume
+    var copy = items
+    copy[index] = language
+    items = copy
+  }
 }

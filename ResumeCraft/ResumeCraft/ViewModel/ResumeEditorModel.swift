@@ -11,10 +11,8 @@ import SwiftData
 
 @Observable
 final class ResumeEditorModel {
-    // Holds the main resume entity
     private(set) var resume: Resume
-    
-    // Section editor viewmodels
+
     let personalModel: PersonalInfoModel
     let skillsModel: SkillsModel
     let experienceModel: ExperienceModel
@@ -22,13 +20,23 @@ final class ResumeEditorModel {
     let educationModel: EducationModel
     let extracurricularModel: ExtracurricularModel
     let languageModel: LanguageModel
-    
+
     let context: ModelContext
-    
+
     init(resume: Resume, context: ModelContext) {
         self.resume = resume
         self.context = context
-        self.personalModel = PersonalInfoModel(personal: resume.personal ?? PersonalInfo())
+
+        // Eagerly attach personal if missing to avoid detached instance
+        if let existing = resume.personal {
+            self.personalModel = PersonalInfoModel(personal: existing)
+        } else {
+            let p = PersonalInfo()
+            p.resume = resume
+            self.personalModel = PersonalInfoModel(personal: p)
+            resume.personal = p
+        }
+
         self.skillsModel = SkillsModel(resume: resume)
         self.experienceModel = ExperienceModel(resume: resume)
         self.projectsModel = ProjectsModel(resume: resume)
@@ -36,79 +44,58 @@ final class ResumeEditorModel {
         self.extracurricularModel = ExtracurricularModel(resume: resume)
         self.languageModel = LanguageModel(resume: resume)
     }
-    
+
     func save() throws {
-        // Insert new objects into context and update relationships
-        for skill in skillsModel.items {
-            if skill.resume == nil {
-                skill.resume = resume
-            }
-            context.insert(skill)
-        }
-        
-        for experience in experienceModel.items {
-            if experience.resume == nil {
-                experience.resume = resume
-            }
-            context.insert(experience)
-        }
-        
-        for project in projectsModel.items {
-            if project.resume == nil {
-                project.resume = resume
-            }
-            context.insert(project)
-        }
-        
-        for education in educationModel.items {
-            if education.resume == nil {
-                education.resume = resume
-            }
-            context.insert(education)
-        }
-        
-        for extracurricular in extracurricularModel.items {
-            if extracurricular.resume == nil {
-                extracurricular.resume = resume
-            }
-            context.insert(extracurricular)
-        }
-        
-        for language in languageModel.items {
-            if language.resume == nil {
-                language.resume = resume
-            }
-            context.insert(language)
-        }
-        
-        // Update the personal info relationship
+        // Ensure personal
         personalModel.personal.resume = resume
         context.insert(personalModel.personal)
-        
-        // Update relationships
         resume.personal = personalModel.personal
-        resume.skills = skillsModel.items
-        resume.experiences = experienceModel.items
-        resume.projects = projectsModel.items
-        resume.educations = educationModel.items
-        resume.extracurriculars = extracurricularModel.items
-        resume.languages = languageModel.items
+
+        // Ensure resume set on each child, insert if needed
+        for skill in resume.skills {
+            if skill.resume == nil { skill.resume = resume }
+            context.insert(skill)
+        }
+        for exp in resume.experiences {
+            if exp.resume == nil { exp.resume = resume }
+            context.insert(exp)
+        }
+        for proj in resume.projects {
+            if proj.resume == nil { proj.resume = resume }
+            context.insert(proj)
+        }
+        for edu in resume.educations {
+            if edu.resume == nil { edu.resume = resume }
+            context.insert(edu)
+        }
+        for ext in resume.extracurriculars {
+            if ext.resume == nil { ext.resume = resume }
+            context.insert(ext)
+        }
+        for lang in resume.languages {
+            if lang.resume == nil { lang.resume = resume }
+            context.insert(lang)
+        }
+
         resume.updated = .now
-        
         try context.save()
     }
-    
-    // Add this method to your ResumeEditorModel class
+
     func refreshAllModels() {
         do {
             let id = self.resume.id
-            let descriptor = FetchDescriptor<Resume>(predicate: #Predicate { $0.id == id })
+            let descriptor = FetchDescriptor<Resume>(
+                predicate: #Predicate { $0.id == id }
+            )
             if let updatedResume = try context.fetch(descriptor).first {
                 self.resume = updatedResume
                 if let personal = updatedResume.personal {
                     personalModel.personal = personal
                 } else {
-                    personalModel.personal = PersonalInfo()
+                    let p = PersonalInfo()
+                    p.resume = updatedResume
+                    personalModel.personal = p
+                    updatedResume.personal = p
                 }
                 skillsModel.items = Array(updatedResume.skills)
                 experienceModel.items = Array(updatedResume.experiences)

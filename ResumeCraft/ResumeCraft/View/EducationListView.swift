@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct EducationListView: View {
+    @Environment(ResumeEditorModel.self) private var resumeModel
     @Bindable var model: EducationModel
-    var resumeModel: ResumeEditorModel
     @State private var editingEducation: Education?
     @State private var showEditor = false
 
@@ -17,34 +17,41 @@ struct EducationListView: View {
         NavigationStack {
             List {
                 ForEach(model.items) { edu in
-                    Button {
-                        editingEducation = edu
-                        showEditor = true
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("\(edu.degree) in \(edu.field)")
-                                .font(.headline)
-                            Text(edu.school)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            HStack {
-                                Text("\(formattedDate(edu.startDate)) - \(formattedDate(edu.endDate))")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                                if !edu.grade.isEmpty {
-                                    Text("Grade: \(edu.grade)")
-                                        .font(.caption2)
-                                        .foregroundStyle(.gray)
-                                }
+                    HStack {
+                        EducationRowView(education: edu) {
+                            // Re-fetch fresh instance by id before opening editor
+                            let id = edu.id
+                            if let fresh = model.items.first(where: { $0.id == id }) {
+                                editingEducation = fresh
+                            } else {
+                                editingEducation = edu
                             }
+                            showEditor = true
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(edu.degree) in \(edu.field) at \(edu.school), \(formattedDate(edu.startDate)) to \(formattedDate(edu.endDate)), Grade: \(edu.grade)")
+                        Spacer()
+                        Toggle(
+                            isOn: Binding(
+                                get: { edu.isVisible },
+                                set: { newValue in
+                                    edu.isVisible = newValue
+                                    try? resumeModel.save()
+                                }
+                            )
+                        ) {
+                            Image(systemName: edu.isVisible ? "eye" : "eye.slash")
+                                .accessibilityLabel(edu.isVisible ? "Visible" : "Hidden")
+                        }
+                        .labelsHidden()
+                        .toggleStyle(.button)
                     }
                 }
                 .onDelete { indices in
                     model.remove(at: indices)
-                    try? resumeModel.save()
+                    do {
+                        try resumeModel.save()
+                    } catch {
+                        print("Error saving: \(error.localizedDescription)")
+                    }
                 }
             }
             .navigationTitle("Education")
@@ -63,26 +70,62 @@ struct EducationListView: View {
                 EducationEditorView(
                     education: editingEducation,
                     onSave: { newEdu in
-                        if let existing = editingEducation, let idx = model.items.firstIndex(where: { $0.id == existing.id }) {
-                            model.items[idx] = newEdu
+                        if let existing = editingEducation {
+                            existing.school = newEdu.school
+                            existing.degree = newEdu.degree
+                            existing.field = newEdu.field
+                            existing.startDate = newEdu.startDate
+                            existing.endDate = newEdu.endDate
+                            existing.grade = newEdu.grade
+                            existing.details = newEdu.details
+                            existing.isVisible = true
                         } else {
                             model.add(newEdu)
                         }
                         showEditor = false
                         try? resumeModel.save()
                     },
-                    onCancel: {
-                        showEditor = false
-                    }
+                    onCancel: { showEditor = false }
                 )
             }
+        }
+    }
+}
+
+struct EducationRowView: View {
+    let education: Education
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(education.degree) in \(education.field)")
+                    .font(.headline)
+                Text(education.school)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Text(
+                        "\(formattedDate(education.startDate)) - \(formattedDate(education.endDate))"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    if !education.grade.isEmpty {
+                        Text("Grade: \(education.grade)")
+                            .font(.caption2)
+                            .foregroundStyle(.gray)
+                    }
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "\(education.degree) in \(education.field) at \(education.school), \(formattedDate(education.startDate)) to \(formattedDate(education.endDate)), Grade: \(education.grade)"
+            )
         }
     }
 
     private func formattedDate(_ date: Date?) -> String {
         guard let date else { return "-" }
-        let fmt = DateFormatter()
-        fmt.dateStyle = .short
-        return fmt.string(from: date)
+        return DateFormatter.resumeMonthYear.string(from: date)
     }
 }

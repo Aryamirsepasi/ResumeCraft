@@ -10,23 +10,33 @@ import Observation
 
 @Observable
 final class ProjectsModel {
-    var items: [Project]
-    private weak var resume: Resume?
+  private weak var resume: Resume?
 
-    init(resume: Resume) {
-        self.resume = resume
-        self.items = resume.projects
-    }
-    func add(_ project: Project) {
-        project.resume = resume
-        items.append(project)
-    }
-    func remove(at offsets: IndexSet) {
-        items.remove(atOffsets: offsets)
-    }
-    func update(_ project: Project, at index: Int) {
-        guard items.indices.contains(index) else { return }
-        project.resume = resume
-        items[index] = project
-    }
+  init(resume: Resume) {
+    self.resume = resume
+  }
+
+  var items: [Project] {
+    get { resume?.projects ?? [] }
+    set { resume?.projects = newValue }
+  }
+
+  func add(_ project: Project) {
+    project.resume = resume
+    items.append(project)
+  }
+
+  func remove(at offsets: IndexSet) {
+    var copy = items
+    copy.remove(atOffsets: offsets)
+    items = copy
+  }
+
+  func update(_ project: Project, at index: Int) {
+    guard items.indices.contains(index) else { return }
+    project.resume = resume
+    var copy = items
+    copy[index] = project
+    items = copy
+  }
 }

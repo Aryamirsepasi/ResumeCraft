@@ -16,6 +16,8 @@ struct ContactInfo {
     var phone: String?
     var location: String?
     var linkedIn: String?
+    var website: String?
+    var github: String?
 }
 
 struct JobExperience {
@@ -95,12 +97,19 @@ final class ResumeParsingService {
         var fullText = ""
         for pageIndex in 0 ..< pdf.pageCount {
             if let page = pdf.page(at: pageIndex),
-               let pageImage = page.thumbnail(of: CGSize(width: 2000, height: 2800), for: .mediaBox).cgImage {
+               let pageImage = page
+                   .thumbnail(of: CGSize(width: 2000, height: 2800), for: .mediaBox)
+                   .cgImage
+            {
                 dispatchGroup.enter()
                 let request = VNRecognizeTextRequest { req, _ in
                     defer { dispatchGroup.leave() }
-                    guard let results = req.results as? [VNRecognizedTextObservation] else { return }
-                    let pageText = results.compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+                    guard let results = req.results as? [VNRecognizedTextObservation] else {
+                        return
+                    }
+                    let pageText = results
+                        .compactMap { $0.topCandidates(1).first?.string }
+                        .joined(separator: "\n")
                     fullText.append(pageText)
                     fullText.append("\n")
                 }
@@ -136,7 +145,8 @@ final class ResumeParsingService {
         // Handle text before first section (if any)
         let firstMatch = matches[0]
         if firstMatch.range.location > 0 {
-            let beforeFirstSection = nsText.substring(to: firstMatch.range.location)
+            let beforeFirstSection = nsText
+                .substring(to: firstMatch.range.location)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             if !beforeFirstSection.isEmpty {
                 result["contact"] = beforeFirstSection
@@ -149,7 +159,7 @@ final class ResumeParsingService {
 
             let header = text[headerRange].lowercased()
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-                .replacingOccurrences(of: " ", with: " ") // Normalize spaces
+                .replacingOccurrences(of: " ", with: " ")
 
             let nextSectionStart = (i + 1 < matches.count) ?
                 matches[i + 1].range.lowerBound : nsText.length
@@ -174,19 +184,22 @@ final class ResumeParsingService {
 
     private func mapSectionHeader(_ header: String) -> String {
         let normalizedHeader = header.lowercased().trimmingCharacters(in: .whitespaces)
-        
+
         if normalizedHeader.contains("contact") || normalizedHeader.contains("personal") {
             return "contact"
         } else if normalizedHeader.contains("skill") {
             return "skills"
-        } else if normalizedHeader.contains("experience") || normalizedHeader.contains("employment") ||
-                  normalizedHeader.contains("work") {
+        } else if normalizedHeader.contains("experience")
+            || normalizedHeader.contains("employment")
+            || normalizedHeader.contains("work")
+        {
             return "work experience"
         } else if normalizedHeader.contains("education") || normalizedHeader.contains("academic") {
             return "education"
         } else if normalizedHeader.contains("project") {
             return "projects"
-        } else if normalizedHeader.contains("extracurricular") || normalizedHeader.contains("activit") {
+        } else if normalizedHeader.contains("extracurricular") || normalizedHeader.contains("activit")
+        {
             return "extracurricular"
         } else if normalizedHeader.contains("language") {
             return "languages"
@@ -196,111 +209,224 @@ final class ResumeParsingService {
 
     func extractContactInfo(from section: String) -> ContactInfo {
         var result = ContactInfo()
-        
+
         // Split section into lines for better processing
-        let lines = section.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
-        
-        // Email detection with improved regex
+        let lines = section.split(separator: "\n").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+
+        // Email detection
         let emailPattern = #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#
         if let emailMatch = section.range(of: emailPattern, options: .regularExpression) {
             result.email = String(section[emailMatch])
         }
-        
-        // Phone detection with improved regex
-        let phonePattern = #"(\+\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}"#
+
+        // Phone detection (slightly more lenient)
+        let phonePattern =
+            #"(\+\d{1,3}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}"#
         if let phoneMatch = section.range(of: phonePattern, options: .regularExpression) {
             result.phone = String(section[phoneMatch])
         }
-        
+
         // LinkedIn detection
         let linkedInPatterns = [
-            #"linkedin\.com/in/[A-Za-z0-9_-]+"#,
-            #"linkedin\.com/[A-Za-z0-9_-]+"#
+            #"(?i)(https?://)?(www\.)?linkedin\.com/in/[A-Za-z0-9_-]+"#,
+            #"(?i)(https?://)?(www\.)?linkedin\.com/[A-Za-z0-9_-]+"#,
         ]
-        
         for pattern in linkedInPatterns {
-            if let linkedInMatch = section.range(of: pattern, options: .regularExpression) {
-                result.linkedIn = "https://www." + String(section[linkedInMatch])
+            if let m = section.range(of: pattern, options: .regularExpression) {
+                var url = String(section[m])
+                if !url.lowercased().hasPrefix("http") { url = "https://" + url }
+                result.linkedIn = url
                 break
             }
         }
-        
+
+        // GitHub detection
+        let githubPattern = #"(?i)(https?://)?(www\.)?github\.com/[A-Za-z0-9._-]+"#
+        if let m = section.range(of: githubPattern, options: .regularExpression) {
+            var url = String(section[m])
+            if !url.lowercased().hasPrefix("http") { url = "https://" + url }
+            result.github = url
+        }
+
+        // Website (generic URL; avoid linkedin/github)
+        let urlPattern = #"(?i)\bhttps?://[^\s]+"#
+        if let m = section.range(of: urlPattern, options: .regularExpression) {
+            let url = String(section[m])
+            if result.linkedIn == nil && !url.lowercased().contains("linkedin.com")
+                && result.github == nil && !url.lowercased().contains("github.com")
+            {
+                result.website = url
+            }
+        }
+
         // Location detection (city names or addresses)
         if result.location == nil {
-            // Try to find a line that looks like a location
             for line in lines {
-                if line.contains(",") && !line.contains("@") && !line.contains("linkedin") {
+                let low = line.lowercased()
+                if line.contains(",")
+                    && !low.contains("@")
+                    && !low.contains("linkedin")
+                    && !low.contains("github")
+                    && !low.contains("http")
+                {
                     result.location = line
                     break
                 }
             }
         }
-        
-        // Name extraction (usually the first line or two)
-        if let firstLine = lines.first, !firstLine.isEmpty &&
-           !firstLine.contains("@") && !firstLine.contains("linkedin") &&
-           !firstLine.contains("github") && !firstLine.contains("http") {
-            result.name = firstLine
-        } else if lines.count > 1 {
-            result.name = lines[1]
+
+        // Name extraction (first non-link/email/http line)
+        if let firstNameLine = lines.first(where: { l in
+            let low = l.lowercased()
+            return !l.isEmpty && !low.contains("@") && !low.contains("linkedin")
+                && !low.contains("github") && !low.contains("http")
+        }) {
+            result.name = firstNameLine
         }
-        
+
         return result
     }
 
+    // More tolerant experience extractor
     func extractExperience(from section: String) -> [JobExperience] {
         var jobs: [JobExperience] = []
-        let lines = section.split(separator: "\n").map { String($0).trimmingCharacters(in: .whitespaces) }
-        let datePattern = #"(?i)([A-Za-z]{3,}\s?\d{4}|[0-9]{1,2}\/\d{4})\s?[-–—]\s?([A-Za-z]{3,}\s?\d{4}|Present|[0-9]{1,2}\/\d{4})"#
-        let dateRegex = try! NSRegularExpression(pattern: datePattern)
+        let lines = section
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
 
-        var currentJob: JobExperience?
+        // Date tokens and ranges
+        let monthShort =
+            #"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?"#
+        let monthLong =
+            #"(January|February|March|April|May|June|July|August|September|October|November|December)"#
+        let year = #"(?:\d{4}|\d{2})"#
+        let mmyyyy = #"(?:\d{1,2}\/\d{2,4})"#
+        let dateToken = "(?:\(monthShort)\\s*\\d{2,4}|\(monthLong)\\s*\\d{2,4}|\(mmyyyy)|(?:19|20)\\d{2})"
+        let rangeRegex =
+            try! NSRegularExpression(pattern: "(?i)\(dateToken)\\s*[–—-]\\s*(Present|Current|\(dateToken))")
 
-        for line in lines {
-            let nsLine = line as NSString
-            let range = NSRange(location: 0, length: nsLine.length)
-            let dateMatch = dateRegex.firstMatch(in: line, range: range)
+        func hasRange(_ s: String) -> NSTextCheckingResult? {
+            let ns = s as NSString
+            let r = NSRange(location: 0, length: ns.length)
+            return rangeRegex.firstMatch(in: s, range: r)
+        }
 
-            if let dateMatch = dateMatch {
-                // This line contains a date range, likely indicating a new job entry.
-                // First, save the previous job if it exists.
-                if var job = currentJob, !job.title.isEmpty, !job.company.isEmpty {
-                    job.details = job.details.trimmingCharacters(in: .whitespacesAndNewlines)
-                    jobs.append(job)
+        func parseHeader(_ s: String) -> (String, String) {
+            // Prefer "Title at Company"
+            if let r = s.range(of: #"(?i)^(.*?)\s+at\s+(.*)$"#,
+                                options: .regularExpression)
+            {
+                let parts = String(s[r]).components(separatedBy: " at ")
+                if parts.count == 2 {
+                    return (parts[0].trimmingCharacters(in: .whitespaces),
+                            parts[1].trimmingCharacters(in: .whitespaces))
+                }
+            }
+            // Try "Company — Title" or "Company - Title"
+            if let r = s.range(of: #"(?i)^(.*?)\s*[–—-]\s*(.*)$"#,
+                                options: .regularExpression)
+            {
+                let prefix = String(s[s.startIndex..<r.lowerBound])
+                    .trimmingCharacters(in: .whitespaces)
+                let suffix = String(s[r.upperBound...])
+                    .trimmingCharacters(in: .whitespaces)
+                // Assume suffix is title
+                return (suffix, prefix)
+            }
+            // Fallback: comma/pipe split
+            let parts = s.components(separatedBy: CharacterSet(charactersIn: ",|"))
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+            if parts.count >= 2 { return (parts[0], parts[1]) }
+            return (s, "")
+        }
+
+        var current: JobExperience?
+        var headerBuffer: String?
+
+        func flush() {
+            if var j = current, !j.title.isEmpty, !j.company.isEmpty {
+                j.details = j.details.trimmingCharacters(in: .whitespacesAndNewlines)
+                jobs.append(j)
+            }
+            current = nil
+            headerBuffer = nil
+        }
+
+        for raw in lines {
+            let line = raw
+            if line.isEmpty { continue }
+
+            if let m = hasRange(line) {
+                // New job entry
+                // Header is text before the first date token
+                let nsLine = line as NSString
+                let header = nsLine.substring(to: m.range.location)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                var start: String?
+                var end: String?
+                // Extract the matched range string and split on dash
+                let matched = nsLine.substring(with: m.range)
+                // Try to split around the dash variants
+                let split = matched.components(separatedBy: CharacterSet(charactersIn: "–—-"))
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                if split.count == 2 {
+                    start = split[0]
+                    end = split[1]
                 }
 
-                // Start a new job entry
-                let companyAndTitle = nsLine.substring(to: dateMatch.range.location).trimmingCharacters(in: .whitespacesAndNewlines)
-                let parts = companyAndTitle.components(separatedBy: CharacterSet(charactersIn: ",-–—|")).map { $0.trimmingCharacters(in: .whitespaces) }
+                // Commit previous
+                flush()
 
-                currentJob = JobExperience(
-                    title: parts.first ?? "",
-                    company: parts.count > 1 ? parts[1] : "",
-                    startDate: nsLine.substring(with: dateMatch.range(at: 1)),
-                    endDate: nsLine.substring(with: dateMatch.range(at: 2)),
+                let (title, company) = parseHeader(header.isEmpty ? (headerBuffer ?? "") : header)
+                current = JobExperience(
+                    title: title,
+                    company: company,
+                    startDate: start,
+                    endDate: end,
                     details: ""
                 )
-            } else if currentJob != nil {
-                // This is a detail line for the current job.
+                headerBuffer = nil
+            } else if current == nil {
+                // Accumulate header before date line appears (common two-line headers)
+                if headerBuffer == nil {
+                    headerBuffer = line
+                } else {
+                    // Merge with a separator
+                    headerBuffer = (headerBuffer ?? "") + " " + line
+                }
+            } else {
+                // Details for current job
                 if !line.isEmpty {
-                    currentJob?.details.append(line + "\n")
+                    let normalized = line.replacingOccurrences(
+                        of: #"^\s*[-*]\s+"#,
+                        with: "• ",
+                        options: .regularExpression
+                    )
+                    if current!.details.isEmpty {
+                        current!.details = normalized
+                    } else {
+                        current!.details.append("\n" + normalized)
+                    }
                 }
             }
         }
 
         // Append the last job entry
-        if var job = currentJob, !job.title.isEmpty, !job.company.isEmpty {
-            job.details = job.details.trimmingCharacters(in: .whitespacesAndNewlines)
-            jobs.append(job)
-        }
+        flush()
 
         return jobs
     }
 
     func extractEducation(from section: String) -> [EducationEntry] {
         var entries: [EducationEntry] = []
-        let lines = section.split(separator: "\n").map { String($0).trimmingCharacters(in: .whitespaces) }
-        let datePattern = #"(?i)([A-Za-z]{3,}\s?\d{4}|[0-9]{1,2}\/\d{4})\s?[-–—]\s?([A-Za-z]{3,}\s?\d{4}|Present|[0-9]{1,2}\/\d{4})"#
+        let lines = section
+            .split(separator: "\n")
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+        let datePattern =
+            #"(?i)([A-Za-z]{3,}\.?\s?\d{2,4}|[0-9]{1,2}\/\d{2,4}|(19|20)\d{2})\s?[-–—]\s?([A-Za-z]{3,}\.?\s?\d{2,4}|Present|Current|[0-9]{1,2}\/\d{2,4}|(19|20)\d{2})"#
         let dateRegex = try! NSRegularExpression(pattern: datePattern)
 
         var currentEntry: EducationEntry?
@@ -313,24 +439,33 @@ final class ResumeParsingService {
             if let dateMatch = dateMatch {
                 if let entry = currentEntry { entries.append(entry) }
 
-                let institutionAndDegree = nsLine.substring(to: dateMatch.range.location).trimmingCharacters(in: .whitespacesAndNewlines)
-                let parts = institutionAndDegree.components(separatedBy: CharacterSet(charactersIn: ",-–—|")).map { $0.trimmingCharacters(in: .whitespaces) }
+                let institutionAndDegree = nsLine
+                    .substring(to: dateMatch.range.location)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let parts = institutionAndDegree
+                    .components(separatedBy: CharacterSet(charactersIn: ",-–—|"))
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
 
                 currentEntry = EducationEntry(
                     degree: parts.count > 1 ? parts[1] : "",
                     institution: parts.first ?? "",
                     startDate: nsLine.substring(with: dateMatch.range(at: 1)),
-                    endDate: nsLine.substring(with: dateMatch.range(at: 2))
+                    endDate: nsLine.substring(with: dateMatch.range(at: 3))
                 )
             } else if currentEntry != nil {
-                // Assume the line after the institution is the degree if it wasn't on the same line
                 if currentEntry?.degree.isEmpty ?? false {
                     currentEntry?.degree = line
                 }
             } else if !line.isEmpty {
-                // This might be the first line (institution) before a date line
-                let parts = line.components(separatedBy: CharacterSet(charactersIn: ",-–—|")).map { $0.trimmingCharacters(in: .whitespaces) }
-                currentEntry = EducationEntry(degree: parts.count > 1 ? parts[1] : "", institution: parts.first ?? "", startDate: nil, endDate: nil)
+                let parts = line
+                    .components(separatedBy: CharacterSet(charactersIn: ",-–—|"))
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                currentEntry = EducationEntry(
+                    degree: parts.count > 1 ? parts[1] : "",
+                    institution: parts.first ?? "",
+                    startDate: nil,
+                    endDate: nil
+                )
             }
         }
 
@@ -340,13 +475,10 @@ final class ResumeParsingService {
     }
 
     func extractSkills(from section: String) -> [String] {
-        // Look for lines separated by commas, bullets, or newlines
         let lines = section
             .split(whereSeparator: \.isNewline)
             .flatMap { line -> [String] in
-                // Split on bullets or commas
                 let str = String(line)
-                // Handle "Category: Skill, Skill, Skill" format
                 if let colonIndex = str.firstIndex(of: ":") {
                     return str[str.index(after: colonIndex)...]
                         .components(separatedBy: ",")
@@ -366,74 +498,93 @@ final class ResumeParsingService {
 
     func extractProjects(from section: String) -> [ProjectEntry] {
         var projects: [ProjectEntry] = []
-        let lines = section.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+        let lines = section.components(separatedBy: .newlines).map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
         var buffer: [String] = []
+
+        func flush() {
+            guard !buffer.isEmpty else { return }
+            let name = buffer.first ?? ""
+            let details = buffer.dropFirst().joined(separator: "\n")
+            projects.append(
+                ProjectEntry(name: name, details: details, technologies: "", link: nil)
+            )
+            buffer.removeAll()
+        }
 
         for line in lines {
             if line.isEmpty, !buffer.isEmpty {
-                // End of a project block
-                let name = buffer.first ?? ""
-                let details = buffer.dropFirst().joined(separator: "\n")
-                projects.append(ProjectEntry(name: name, details: details, technologies: "", link: nil))
-                buffer.removeAll()
+                flush()
             } else if !line.isEmpty {
                 buffer.append(line)
             }
         }
-
-        if !buffer.isEmpty {
-            // Add the last project
-            let name = buffer.first ?? ""
-            let details = buffer.dropFirst().joined(separator: "\n")
-            projects.append(ProjectEntry(name: name, details: details, technologies: "", link: nil))
-        }
+        flush()
 
         return projects
     }
 
     func extractExtracurriculars(from section: String) -> [ExtracurricularEntry] {
         var entries: [ExtracurricularEntry] = []
-        let lines = section.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+        let lines = section.components(separatedBy: .newlines).map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
         var buffer: [String] = []
+
+        func flush() {
+            guard !buffer.isEmpty else { return }
+            let title = buffer[safe: 0] ?? ""
+            let org = buffer[safe: 1] ?? ""
+            let desc = buffer.dropFirst(2).joined(separator: " ")
+            entries.append(
+                ExtracurricularEntry(title: title, organization: org, details: desc)
+            )
+            buffer.removeAll()
+        }
 
         for line in lines {
             if line.isEmpty, !buffer.isEmpty {
-                let title = buffer[safe: 0] ?? ""
-                let org = buffer[safe: 1] ?? ""
-                let desc = buffer.dropFirst(2).joined(separator: " ")
-                entries.append(ExtracurricularEntry(title: title, organization: org, details: desc))
-                buffer.removeAll()
+                flush()
             } else if !line.isEmpty {
                 buffer.append(line)
             }
         }
-
-        if !buffer.isEmpty {
-            let title = buffer[safe: 0] ?? ""
-            let org = buffer[safe: 1] ?? ""
-            let desc = buffer.dropFirst(2).joined(separator: " ")
-            entries.append(ExtracurricularEntry(title: title, organization: org, details: desc))
-        }
+        flush()
 
         return entries
     }
 
     func extractLanguages(from section: String) -> [LanguageEntry] {
-        // Expected: "English (Native)", "French (C1)", or just "English, French"
+        // Support "(Proficiency)" or "- Proficiency"
         let pattern = #"(.+?)\s*\((.+?)\)"#
         let regex = try? NSRegularExpression(pattern: pattern)
 
-        let languageTokens = section.components(separatedBy: CharacterSet(charactersIn: ",\n")).map { $0.trimmingCharacters(in: .whitespaces) }
+        let tokens = section
+            .components(separatedBy: CharacterSet(charactersIn: ",\n"))
+            .map { $0.trimmingCharacters(in: .whitespaces) }
 
         var entries: [LanguageEntry] = []
-        for token in languageTokens where !token.isEmpty {
+        for token in tokens where !token.isEmpty {
             if let regex = regex,
-               let match = regex.firstMatch(in: token, range: NSRange(location: 0, length: token.utf16.count)),
+               let match = regex.firstMatch(
+                   in: token,
+                   range: NSRange(location: 0, length: token.utf16.count)
+               ),
                let nameRange = Range(match.range(at: 1), in: token),
-               let profRange = Range(match.range(at: 2), in: token) {
+               let profRange = Range(match.range(at: 2), in: token)
+            {
                 let name = String(token[nameRange]).trimmingCharacters(in: .whitespaces)
                 let prof = String(token[profRange]).trimmingCharacters(in: .whitespaces)
                 entries.append(LanguageEntry(name: name, proficiency: prof))
+            } else if token.contains("-") || token.contains("–") || token.contains("—") {
+                let parts = token.split(whereSeparator: { "–—-".contains($0) })
+                    .map { String($0).trimmingCharacters(in: .whitespaces) }
+                if parts.count == 2 {
+                    entries.append(LanguageEntry(name: parts[0], proficiency: parts[1]))
+                } else {
+                    entries.append(LanguageEntry(name: token, proficiency: ""))
+                }
             } else {
                 entries.append(LanguageEntry(name: token, proficiency: ""))
             }
@@ -502,7 +653,7 @@ final class ResumeParsingService {
             9. Use bullet points (•) for lists and job responsibilities
             """
 
-            let userPrompt = """
+        let userPrompt = """
             Reorganize this résumé text using the exact format:
 
             \(text)
@@ -525,39 +676,54 @@ final class ResumeParsingService {
 
         // Remove bold markdown formatting
         cleaned = cleaned.replacingOccurrences(of: "**", with: "")
-        
+
         // Remove placeholder text patterns
-        cleaned = cleaned.replacingOccurrences(of: #"\[insert [^\]]+\]"#, with: "", options: .regularExpression)
-        cleaned = cleaned.replacingOccurrences(of: #"\[[^\]]+\]"#, with: "", options: .regularExpression)
-        
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\[insert [^\]]+\]"#,
+            with: "",
+            options: .regularExpression
+        )
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\[[^\]]+\]"#,
+            with: "",
+            options: .regularExpression
+        )
+
         // Remove explanatory notes that start with "Note:" or "Important:"
-        cleaned = cleaned.replacingOccurrences(of: #"(?m)^\s*(Note|Important|Skills are categorized).*$"#, with: "", options: .regularExpression)
-        
+        cleaned = cleaned.replacingOccurrences(
+            of: #"(?m)^\s*(Note|Important|Skills are categorized).*$"#,
+            with: "",
+            options: .regularExpression
+        )
+
         // Ensure section headers are properly formatted
-        let headers = ["CONTACT", "SKILLS", "WORK EXPERIENCE", "EDUCATION", "PROJECTS", "EXTRACURRICULAR", "LANGUAGES"]
+        let headers = [
+            "CONTACT", "SKILLS", "WORK EXPERIENCE", "EDUCATION", "PROJECTS",
+            "EXTRACURRICULAR", "LANGUAGES",
+        ]
         for header in headers {
-            // Convert any case variation to uppercase with colon
-            let pattern = "(?i)^\\s*\(header)\\s*:?" + "\\s*$"
+            let pattern = "(?im)^\\s*\(header)\\s*:?.*$"
             cleaned = cleaned.replacingOccurrences(
                 of: pattern,
                 with: "\(header):",
                 options: .regularExpression
             )
         }
-        
-        // Fix section headers that might be missing the colon
-        for header in headers {
-            let pattern = "(?m)^\\s*\(header)\\s*$"
-            cleaned = cleaned.replacingOccurrences(
-                of: pattern,
-                with: "\(header):",
-                options: .regularExpression
-            )
-        }
-        
+
+        // Normalize bullets to "• "
+        cleaned = cleaned.replacingOccurrences(
+            of: #"(?m)^\s*[-*]\s+"#,
+            with: "• ",
+            options: .regularExpression
+        )
+
         // Clean up multiple consecutive newlines
-        cleaned = cleaned.replacingOccurrences(of: #"\n{3,}"#, with: "\n\n", options: .regularExpression)
-        
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\n{3,}"#,
+            with: "\n\n",
+            options: .regularExpression
+        )
+
         // Fix email extraction (remove 'coderary@' if it appears)
         cleaned = cleaned.replacingOccurrences(of: "coderary@", with: "")
 
