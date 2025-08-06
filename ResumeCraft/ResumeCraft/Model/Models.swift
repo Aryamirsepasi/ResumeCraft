@@ -45,6 +45,7 @@ final class PersonalInfo {
     var github: String? = nil
     
     // Back-reference to Resume
+    
     var resume: Resume?
     
     init(firstName: String = "", lastName: String = "", email: String = "",

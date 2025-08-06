@@ -5,20 +5,20 @@ import MLXLLM
 
 // MARK: - Model Category
 enum ModelCategory: String, CaseIterable {
-    case general = "General Purpose"
-    case code = "Code"
+    case best = "Best Performance"
+    case normal = "Better Compatibility"
     
     var icon: String {
         switch self {
-        case .general: return "cpu"
-        case .code: return "chevron.left.forwardslash.chevron.right"
+        case .best: return "bolt"
+        case .normal: return "smallcircle.filled.circle"
         }
     }
     
     var description: String {
         switch self {
-        case .general: return "Versatile models for everyday conversations"
-        case .code: return "Specialized models for programming tasks"
+        case .best: return "Best performance for analyzing and extracting data from resumes"
+        case .normal: return "Not as performance-oriented, but still effective for resume analysis"
         }
     }
 }
@@ -91,7 +91,7 @@ class AIModelsRegistry {
         AIModel(
             id: "llama3_2_3B",
             configuration: LLMRegistry.llama3_2_3B_4bit,
-            category: .general,
+            category: .normal,
             displayName: "Llama 3.2 3B",
             description: "Larger Llama model with enhanced capabilities",
             estimatedRAMUsage: 2100,
@@ -102,7 +102,7 @@ class AIModelsRegistry {
         AIModel(
             id: "qwen3_4B",
             configuration: LLMRegistry.qwen3_4b_4bit,
-            category: .general,
+            category: .best,
             displayName: "Qwen 3.0 4B",
             description: "Advanced multilingual capabilities (Only Use for AI Feedback)",
             estimatedRAMUsage: 2400,
@@ -110,40 +110,6 @@ class AIModelsRegistry {
             parameterCount: "4B",
             quantization: "4-bit"
         ),
-        AIModel(
-            id: "gemma3n_E2B",
-            configuration: LLMRegistry.gemma3n_E2B_it_lm_4bit,
-            category: .general,
-            displayName: "Gemma 3n 2B",
-            description: "Google's lightweight model with strong performance",
-            estimatedRAMUsage: 2400,
-            minimumChipRequired: .a14,
-            parameterCount: "2B",
-            quantization: "4-bit"
-        ),
-        AIModel(
-            id: "qwen2_5_3B",
-            configuration: ModelConfiguration(id: "mlx-community/Qwen2.5-3B-4bit"),
-            category: .general,
-            displayName: "Qwen 2.5 3B",
-            description: "Highly efficient model for general tasks",
-            estimatedRAMUsage: 2100,
-            minimumChipRequired: .a14,
-            parameterCount: "2.5B",
-            quantization: "4-bit"
-        ),
-        AIModel(
-            id: "smollm3_3B",
-            configuration: LLMRegistry.smollm3_3b_4bit,
-            category: .general,
-            displayName: "SmolLM 3 3B",
-            description: "Great for small devices with efficient performance",
-            estimatedRAMUsage: 2100,
-            minimumChipRequired: .a15,
-            parameterCount: "3B",
-            quantization: "4-bit"
-        ),
-        
         
     ]
     
@@ -157,7 +123,7 @@ class AIModelsRegistry {
     }
     
     var defaultModel: AIModel {
-        models.first { $0.id == "smollm3_3B" } ?? models[0]
+        models.first { $0.id == "llama3_2_3B" } ?? models[0]
     }
     
     func modelByConfiguration(_ configuration: ModelConfiguration) -> AIModel? {

@@ -64,7 +64,7 @@ struct ResumePDFFormatter {
             let visibleSkills = resume.skills.filter(\.isVisible)
             result.append(
                 NSAttributedString(
-                    string: "Skills\n",
+                    string: NSLocalizedString("Skills", comment: "") + "\n",
                     attributes: [.font: sectionFont]
                 )
             )
@@ -94,7 +94,7 @@ struct ResumePDFFormatter {
             let visibleExperiences = resume.experiences.filter(\.isVisible)
             result.append(
                 NSAttributedString(
-                    string: "Work Experience\n",
+                    string: NSLocalizedString("Work Experience", comment: "") + "\n",
                     attributes: [.font: sectionFont]
                 )
             )
@@ -136,7 +136,7 @@ struct ResumePDFFormatter {
             let visibleProjects = resume.projects.filter(\.isVisible)
             result.append(
                 NSAttributedString(
-                    string: "Projects\n",
+                    string: NSLocalizedString("Projects", comment: "") + "\n",
                     attributes: [.font: sectionFont]
                 )
             )
@@ -182,7 +182,7 @@ struct ResumePDFFormatter {
             let visibleEducations = resume.educations.filter(\.isVisible)
             result.append(
                 NSAttributedString(
-                    string: "Education\n",
+                    string: NSLocalizedString("Education", comment: "") + "\n",
                     attributes: [.font: sectionFont]
                 )
             )
@@ -210,7 +210,7 @@ struct ResumePDFFormatter {
                 if !edu.grade.isEmpty {
                     result.append(
                         NSAttributedString(
-                            string: "Grade: \(edu.grade)\n",
+                            string: NSLocalizedString("Grade", comment: "") + ": \(edu.grade)\n",
                             attributes: [
                                 .font: subFont,
                                 .foregroundColor: gray,
@@ -236,7 +236,7 @@ struct ResumePDFFormatter {
                 resume.extracurriculars.filter(\.isVisible)
             result.append(
                 NSAttributedString(
-                    string: "Extracurricular Activities\n",
+                    string: NSLocalizedString("Extracurricular Activities", comment: "") + "\n",
                     attributes: [.font: sectionFont]
                 )
             )
@@ -267,7 +267,7 @@ struct ResumePDFFormatter {
             let visibleLanguages = resume.languages.filter(\.isVisible)
             result.append(
                 NSAttributedString(
-                    string: "Languages\n",
+                    string: NSLocalizedString("Languages", comment: "") + "\n",
                     attributes: [.font: sectionFont]
                 )
             )

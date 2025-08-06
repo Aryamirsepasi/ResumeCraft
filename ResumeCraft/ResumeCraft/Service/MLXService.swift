@@ -3,13 +3,14 @@
 //  Eris.
 //
 //  Created by Ignacio Palacio on 19/6/25.
-//
+//  Changed by Arya Mirsepasi on 27.07.25.
 
 import MLX
 import MLXLLM
 import MLXLMCommon
 import MLXRandom
 import SwiftUI
+import Observation
 
 // Helper class to manage cancellation state across actor boundaries
 class CancellationToken {
@@ -35,14 +36,16 @@ class CancellationToken {
     }
 }
 
+
 @MainActor
-class MLXService: ObservableObject {
-    @Published var running = false
-    @Published var isLoadingModel = false
-    @Published var output = ""
-    @Published var modelInfo = ""
-    @Published var progress = 0.0
-    @Published var tokensGenerated = 0
+@Observable
+final class MLXService {
+  var running = false
+  var isLoadingModel = false
+  var output = ""
+  var modelInfo = ""
+  var progress = 0.0
+  var tokensGenerated = 0
     
     private var modelConfiguration: ModelConfiguration?
     private let generateParameters = GenerateParameters(temperature: 0.7)
@@ -260,4 +263,6 @@ class MLXService: ObservableObject {
         running = false
         return output
     }
+    
+    
 }

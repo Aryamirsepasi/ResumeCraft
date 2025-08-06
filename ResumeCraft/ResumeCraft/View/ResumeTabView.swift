@@ -4,7 +4,7 @@
 //
 //  Created by Arya Mirsepasi on 27.07.25.
 //
-
+/*
 import PDFKit
 import SwiftData
 import SwiftUI
@@ -231,7 +231,7 @@ struct ResumeTabView: View {
                     )
                 }
                 .sheet(isPresented: $showSettings) {
-                    NavigationStack { ModelManagementView() }
+                    SettingsView()
                 }
                 .sheet(isPresented: $showPDFPicker) {
                     PDFImportPicker { url in
@@ -897,3 +897,4 @@ extension Education {
         )
     }
 }
+*/

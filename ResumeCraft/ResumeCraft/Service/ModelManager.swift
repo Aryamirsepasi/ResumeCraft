@@ -3,7 +3,7 @@
 //  Eris.
 //
 //  Created by Ignacio Palacio on 19/6/25.
-//
+//  Changed by Arya Mirsepasi on 27.07.25.
 
 import Foundation
 import MLX
@@ -240,18 +240,35 @@ class ModelManager: ObservableObject {
     }
     
     func deleteModel(_ model: ModelConfiguration) {
-        // Remove from downloaded models
-        downloadedModels.remove(model.name)
-        saveDownloadedModels()
-        
-        // If this was the active model, clear it
+        // If this is the active model, clear it first
         if activeModel?.name == model.name {
             activeModel = nil
+            activeAIModel = nil
             userDefaults.removeObject(forKey: activeModelKey)
         }
-        
-        // Try to delete model files from disk
+
+        // Remove from downloaded set and persist
+        downloadedModels.remove(model.name)
+        saveDownloadedModels()
+
+        // Delete files
         deleteModelFiles(for: model)
+
+        // Pick a different active model if available
+        if activeModel == nil {
+            if let next = AIModelsRegistry.shared.allModels.first(where: {
+                downloadedModels.contains($0.configuration.name)
+            }) {
+                setActiveModel(next.configuration)
+            }
+        }
+
+        // Ask MLXService to unload model if it’s loaded
+        Task { @MainActor in
+            if let service = MLXServiceIfPresent() {
+                await service.unloadIfMatches(model)
+            }
+        }
     }
     
     func deleteAllModels() {
@@ -269,24 +286,148 @@ class ModelManager: ObservableObject {
         }
     }
     
-    private func deleteModelFiles(for model: ModelConfiguration) {
-        let fileManager = FileManager.default
-        
-        // Try to find and delete model files in Documents/huggingface
-        if let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let modelPath = documentsPath
-                .appendingPathComponent("huggingface")
-                .appendingPathComponent("models")
-                .appendingPathComponent(model.name)
-            
+    private func huggingFaceRootCandidates() -> [URL] {
+            var roots: [URL] = []
+            let fm = FileManager.default
+
+            if let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first {
+                // Typical MLXLLM location
+                roots.append(docs.appendingPathComponent("huggingface", isDirectory: true))
+                roots.append(docs.appendingPathComponent("HuggingFace", isDirectory: true))
+            }
+
+            if let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                // Some builds use Application Support
+                roots.append(appSupport.appendingPathComponent("huggingface", isDirectory: true))
+                roots.append(appSupport.appendingPathComponent("HuggingFace", isDirectory: true))
+            }
+
+            if let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask).first {
+                // Partial downloads / caches
+                roots.append(caches.appendingPathComponent("huggingface", isDirectory: true))
+                roots.append(caches.appendingPathComponent("HuggingFace", isDirectory: true))
+            }
+
+            return roots
+        }
+
+        private func removeIfExists(_ url: URL) {
+            let fm = FileManager.default
             do {
-                if fileManager.fileExists(atPath: modelPath.path) {
-                    try fileManager.removeItem(at: modelPath)
-                    print("Deleted model files at: \(modelPath)")
+                if fm.fileExists(atPath: url.path) {
+                    try fm.removeItem(at: url)
+                    print("Deleted: \(url.path)")
                 }
             } catch {
-                print("Error deleting model files: \(error)")
+                print("Failed to delete \(url.path): \(error)")
             }
         }
+
+        fileprivate func deleteModelFiles(for model: ModelConfiguration) {
+            let fm = FileManager.default
+
+            // 1) Remove specific model folders under all known roots
+            for root in huggingFaceRootCandidates() {
+                // models/<repo>
+                let modelDir = root
+                    .appendingPathComponent("models", isDirectory: true)
+                    .appendingPathComponent(model.name, isDirectory: true)
+                removeIfExists(modelDir)
+
+                // snapshots/<repo> (HuggingFace cache pattern)
+                let snapshotsDir = root
+                    .appendingPathComponent("snapshots", isDirectory: true)
+                    .appendingPathComponent(model.name, isDirectory: true)
+                removeIfExists(snapshotsDir)
+
+                // downloads/<repo> (partial downloads)
+                let downloadsDir = root
+                    .appendingPathComponent("downloads", isDirectory: true)
+                    .appendingPathComponent(model.name, isDirectory: true)
+                removeIfExists(downloadsDir)
+
+                // hub/<repo> (older cache layout)
+                let hubDir = root
+                    .appendingPathComponent("hub", isDirectory: true)
+                    .appendingPathComponent(model.name, isDirectory: true)
+                removeIfExists(hubDir)
+            }
+
+            // 2) Remove stray partial downloads in tmp (best-effort)
+            if let tmp = URL(string: NSTemporaryDirectory()) {
+                let tmpHF = tmp.appendingPathComponent("huggingface", isDirectory: true)
+                removeIfExists(tmpHF)
+            }
+
+            // 3) Optionally, nuke all HuggingFace cache roots if the user deletes all models
+            if downloadedModels.isEmpty {
+                for root in huggingFaceRootCandidates() {
+                    removeIfExists(root)
+                }
+            }
+
+            // 4) Clear URLCache (network cached responses)
+            URLCache.shared.removeAllCachedResponses()
+
+            // 5) Reset MLX GPU cache to free memory (not disk, but prevents immediate re-growth)
+            MemoryManager.shared.resetGPUCacheLimit()
+
+            // 6) Optional: clear Metal shader caches (can reclaim tens to hundreds of MB).
+            // This is safe; they will be rebuilt as needed.
+            clearMetalShaderCache()
+        }
+
+        private func clearMetalShaderCache() {
+            // Common Metal shader cache locations
+            // Note: iOS sandboxes typically store them in Library/Caches.
+            let fm = FileManager.default
+            if let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask).first {
+                let metalCaches = [
+                    "com.apple.metal",          // general metal cache
+                    "com.apple.metal.shadercache",
+                    "com.apple.mtlcompilerservice",
+                    "Shaders" // some frameworks use a generic folder name
+                ]
+                for name in metalCaches {
+                    let path = caches.appendingPathComponent(name, isDirectory: true)
+                    removeIfExists(path)
+                }
+            }
+        }
+}
+
+
+extension MLXService {
+    // Keep this on MainActor (class is @MainActor)
+    func unloadIfMatches(_ model: ModelConfiguration) {
+        let target = model.name
+
+        switch loadState {
+        case .loaded(let container):
+            // Hop to a detached task to read non-MainActor data
+            Task.detached { [weak self] in
+                let currentName = await container.configuration.name
+                guard currentName == target else { return }
+                // Switch back to MainActor to mutate state
+                await self?.performUnloadAfterMatch()
+            }
+        default:
+            break
+        }
     }
+
+    private func performUnloadAfterMatch() {
+        // MainActor context (class is @MainActor)
+        loadState = .idle
+        isLoadingModel = false
+        output = ""
+        tokensGenerated = 0
+        MLX.GPU.set(cacheLimit: 20 * 1024 * 1024)
+    }
+}
+
+func MLXServiceIfPresent() -> MLXService? {
+    // If you store it in Environment, inject a reference.
+    // Placeholder: return a singleton if you have one, or nil.
+    return nil
 }

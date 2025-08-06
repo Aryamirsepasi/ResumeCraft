@@ -592,83 +592,79 @@ final class ResumeParsingService {
         return entries
     }
 
-    func canonicalize(text: String, mlxService: MLXService) async throws -> String {
-        print("Before canon: \(text)")
+    func canonicalize(text: String, ai: any AIProvider) async throws -> String {
+      let systemPrompt = """
+      You are a résumé parser. Reorganize résumé text into this EXACT format with these EXACT headers:
+      
+      CONTACT:
+      [Full Name]
+      [Email]
+      [Phone]
+      [Address/Location]
+      [LinkedIn URL if available]
+      [Website/GitHub if available]
 
-        let systemPrompt = """
-            You are a résumé parser. Reorganize résumé text into this EXACT format with these EXACT headers:
-            
-            CONTACT:
-            [Full Name]
-            [Email]
-            [Phone]
-            [Address/Location]
-            [LinkedIn URL if available]
-            [Website/GitHub if available]
+      SKILLS:
+      [List skills separated by commas or bullets, group by category if possible]
+      
+      WORK EXPERIENCE:
+      [Job Title] at [Company Name]
+      [Location] | [Start Date] - [End Date or Present]
+      • [Responsibility/achievement]
+      • [Responsibility/achievement]
 
-            SKILLS:
-            [List skills separated by commas or bullets, group by category if possible]
-            
-            WORK EXPERIENCE:
-            [Job Title] at [Company Name]
-            [Location] | [Start Date] - [End Date or Present]
-            • [Responsibility/achievement]
-            • [Responsibility/achievement]
+      [Repeat for each job]
 
-            [Repeat for each job]
+      EDUCATION:
+      [Degree] in [Field] from [School Name]
+      [Start Date] - [End Date]
+      [Additional details if any]
 
-            EDUCATION:
-            [Degree] in [Field] from [School Name]
-            [Start Date] - [End Date]
-            [Additional details if any]
+      [Repeat for each education entry]
 
-            [Repeat for each education entry]
+      PROJECTS:
+      [Project Name]
+      [Description and details]
+      Technologies: [Tech stack]
+      Link: [URL if available]
 
-            PROJECTS:
-            [Project Name]
-            [Description and details]
-            Technologies: [Tech stack]
-            Link: [URL if available]
+      [Repeat for each project]
 
-            [Repeat for each project]
+      EXTRACURRICULAR:
+      [Title/Role] at [Organization]
+      [Description and details]
 
-            EXTRACURRICULAR:
-            [Title/Role] at [Organization]
-            [Description and details]
+      [Repeat for each activity]
 
-            [Repeat for each activity]
+      LANGUAGES:
+      [Language] ([Proficiency level]), [Language] ([Proficiency level])
 
-            LANGUAGES:
-            [Language] ([Proficiency level]), [Language] ([Proficiency level])
+      Rules:
+      1. Use ONLY the exact headers above followed by a colon
+      2. Do NOT add bold formatting, asterisks, or extra punctuation
+      3. Do NOT add placeholder text like "[insert URL]" or explanatory notes
+      4. Do NOT invent information not in the original text
+      5. If a section is empty, include the header but leave the content blank
+      6. Remove redundant or duplicate information
+      7. Keep all factual content from the original résumé
+      8. Format dates as "MMM YYYY" (e.g., "Oct 2022")
+      9. Use bullet points (•) for lists and job responsibilities
+      """
 
-            Rules:
-            1. Use ONLY the exact headers above followed by a colon
-            2. Do NOT add bold formatting, asterisks, or extra punctuation
-            3. Do NOT add placeholder text like "[insert URL]" or explanatory notes
-            4. Do NOT invent information not in the original text
-            5. If a section is empty, include the header but leave the content blank
-            6. Remove redundant or duplicate information
-            7. Keep all factual content from the original résumé
-            8. Format dates as "MMM YYYY" (e.g., "Oct 2022")
-            9. Use bullet points (•) for lists and job responsibilities
-            """
+      let userPrompt = """
+      Reorganize this résumé text using the exact format:
 
-        let userPrompt = """
-            Reorganize this résumé text using the exact format:
+      \(text)
+      """
 
-            \(text)
-            """
+      let response = try await ai.processText(
+        systemPrompt: systemPrompt,
+        userPrompt: userPrompt,
+        images: [],
+        streaming: false
+      )
 
-        let thread = Thread(title: "Resume Canonicalization")
-        thread.addMessage(Message(content: userPrompt, role: .user))
-        let result = await mlxService.generate(thread: thread, systemPrompt: systemPrompt)
-
-        // Clean up the result to remove common AI artifacts
-        let cleanedResult = cleanCanonicalizedText(result)
-
-        print("After canon: \(cleanedResult)")
-
-        return cleanedResult
+      return cleanCanonicalizedText(response)
     }
 
     private func cleanCanonicalizedText(_ text: String) -> String {

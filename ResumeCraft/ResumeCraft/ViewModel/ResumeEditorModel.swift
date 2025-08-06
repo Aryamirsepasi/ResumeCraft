@@ -12,7 +12,7 @@ import SwiftData
 @Observable
 final class ResumeEditorModel {
     private(set) var resume: Resume
-
+    
     let personalModel: PersonalInfoModel
     let skillsModel: SkillsModel
     let experienceModel: ExperienceModel
@@ -20,13 +20,13 @@ final class ResumeEditorModel {
     let educationModel: EducationModel
     let extracurricularModel: ExtracurricularModel
     let languageModel: LanguageModel
-
+    
     let context: ModelContext
-
+    
     init(resume: Resume, context: ModelContext) {
         self.resume = resume
         self.context = context
-
+        
         // Eagerly attach personal if missing to avoid detached instance
         if let existing = resume.personal {
             self.personalModel = PersonalInfoModel(personal: existing)
@@ -35,22 +35,23 @@ final class ResumeEditorModel {
             p.resume = resume
             self.personalModel = PersonalInfoModel(personal: p)
             resume.personal = p
+            context.insert(p)
         }
-
-        self.skillsModel = SkillsModel(resume: resume)
-        self.experienceModel = ExperienceModel(resume: resume)
-        self.projectsModel = ProjectsModel(resume: resume)
-        self.educationModel = EducationModel(resume: resume)
-        self.extracurricularModel = ExtracurricularModel(resume: resume)
-        self.languageModel = LanguageModel(resume: resume)
+        
+        self.skillsModel = SkillsModel(resume: resume, context: context)
+        self.experienceModel = ExperienceModel(resume: resume, context: context)
+        self.projectsModel = ProjectsModel(resume: resume, context: context)
+        self.educationModel = EducationModel(resume: resume, context: context)
+        self.extracurricularModel = ExtracurricularModel(resume: resume, context: context)
+        self.languageModel = LanguageModel(resume: resume, context: context)
     }
-
+    
     func save() throws {
         // Ensure personal
         personalModel.personal.resume = resume
         context.insert(personalModel.personal)
         resume.personal = personalModel.personal
-
+        
         // Ensure resume set on each child, insert if needed
         for skill in resume.skills {
             if skill.resume == nil { skill.resume = resume }
@@ -76,11 +77,11 @@ final class ResumeEditorModel {
             if lang.resume == nil { lang.resume = resume }
             context.insert(lang)
         }
-
+        
         resume.updated = .now
         try context.save()
     }
-
+    
     func refreshAllModels() {
         do {
             let id = self.resume.id
