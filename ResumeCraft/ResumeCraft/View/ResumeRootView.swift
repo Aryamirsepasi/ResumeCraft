@@ -43,7 +43,7 @@ struct ResumeRootView: View {
   private let parsingService = ResumeParsingService()
 
   private let feedbackSections = [
-    "Personal Info", "Skills", "Work Experience", "Projects",
+    "Personal Info", "Summary", "Skills", "Work Experience", "Projects",
     "Education", "Extracurricular", "Languages",
   ]
 
@@ -317,6 +317,21 @@ struct ResumeRootView: View {
       personalInfo.website = contact.website ?? personalInfo.website
       personalInfo.github = contact.github ?? personalInfo.github
     }
+      
+      // Summary
+      let summarySection = sections["summary"] ?? sections["profile"] ?? sections["about"] ?? ""
+      let summaryText = summarySection.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !summaryText.isEmpty {
+        if resume.summary == nil {
+          let s = Summary(text: summaryText, isVisible: true)
+          s.resume = resume
+          context.insert(s)
+          resume.summary = s
+        } else {
+          resume.summary?.text = summaryText
+          resume.summary?.isVisible = true
+        }
+      }
 
     // Skills
     let skillsSection = sections["skills"] ?? sections["technical skills"] ?? ""

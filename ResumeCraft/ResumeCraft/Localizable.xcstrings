@@ -113,6 +113,16 @@
         }
       }
     },
+    "%lld/600" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/600"
+          }
+        }
+      }
+    },
     "%lld%%" : {
       "localizations" : {
         "de" : {
@@ -191,6 +201,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "⚠️ This model may experience issues on your %1$@.\n\nIt requires ~%2$lldMB of RAM. You might encounter crashes or slow performance. For best results, close all other apps before using.\n\nConsider trying a smaller model if you experience problems."
+          }
+        }
+      }
+    },
+    "A concise 2–4 sentence overview highlighting your role, strengths, and goals." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine kurze Übersicht über 2–4 Sätze, die Ihre Rolle, Stärken und Ziele hervorhebt."
           }
         }
       }
@@ -475,6 +495,9 @@
         }
       }
     },
+    "Company (German)" : {
+
+    },
     "Compatibility Warning" : {
       "localizations" : {
         "de" : {
@@ -604,6 +627,9 @@
           }
         }
       }
+    },
+    "Details (German)" : {
+
     },
     "Device Compatibility" : {
       "localizations" : {
@@ -865,6 +891,9 @@
         }
       }
     },
+    "German Translation" : {
+
+    },
     "Get Started" : {
       "localizations" : {
         "de" : {
@@ -1125,6 +1154,9 @@
         }
       }
     },
+    "Location (German)" : {
+
+    },
     "Mac with Apple Silicon" : {
       "localizations" : {
         "de" : {
@@ -1195,6 +1227,9 @@
         }
       }
     },
+    "Name (German)" : {
+
+    },
     "Name, contact, links" : {
       "localizations" : {
         "de" : {
@@ -1221,6 +1256,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keine Modelle heruntergeladen"
+          }
+        }
+      }
+    },
+    "No summary yet." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Zusammenfassung."
           }
         }
       }
@@ -1354,6 +1399,9 @@
           }
         }
       }
+    },
+    "Project Description (German)" : {
+
     },
     "Projects" : {
       "localizations" : {
@@ -1515,6 +1563,26 @@
         }
       }
     },
+    "Short intro below personal info" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurze Einführung unter persönlichen Informationen"
+          }
+        }
+      }
+    },
+    "Show on resume" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Lebenslauf anzeigen"
+          }
+        }
+      }
+    },
     "Simulator Detected" : {
       "localizations" : {
         "de" : {
@@ -1575,6 +1643,16 @@
         }
       }
     },
+    "Summary" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zusammenfassung"
+          }
+        }
+      }
+    },
     "Tap to edit this activity" : {
       "localizations" : {
         "de" : {
@@ -1605,6 +1683,9 @@
         }
       }
     },
+    "Technologies (German)" : {
+
+    },
     "Title" : {
       "localizations" : {
         "de" : {
@@ -1614,6 +1695,9 @@
           }
         }
       }
+    },
+    "Title (German)" : {
+
     },
     "URL" : {
       "localizations" : {

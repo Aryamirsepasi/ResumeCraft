@@ -9,6 +9,9 @@ final class Resume {
     @Relationship(deleteRule: .cascade, inverse: \PersonalInfo.resume)
     var personal: PersonalInfo?
     
+    @Relationship(deleteRule: .cascade, inverse: \Summary.resume)
+    var summary: Summary?
+    
     // One-to-many relationships with proper inverse
     @Relationship(deleteRule: .cascade, inverse: \WorkExperience.resume)
     var experiences: [WorkExperience] = []
@@ -63,7 +66,20 @@ final class PersonalInfo {
 }
 
 @Model
+final class Summary {
+    var text: String = ""
+    var isVisible: Bool = true
+    var resume: Resume?
+
+    init(text: String = "", isVisible: Bool = true) {
+        self.text = text
+        self.isVisible = isVisible
+    }
+}
+
+@Model
 final class WorkExperience {
+    // English fields
     var title: String = ""
     var company: String = ""
     var location: String = ""
@@ -72,13 +88,25 @@ final class WorkExperience {
     var isCurrent: Bool = false
     var details: String = ""
     var isVisible: Bool = true
-    
+
+    // German translations (optional)
+    var title_de: String? = nil
+    var company_de: String? = nil
+    var location_de: String? = nil
+    var details_de: String? = nil
+
     // Back-reference to Resume
     var resume: Resume?
-    
-    init(title: String = "", company: String = "", location: String = "",
-         startDate: Date = Date(), endDate: Date? = nil, isCurrent: Bool = false,
-         details: String = "") {
+
+    init(
+        title: String = "",
+        company: String = "",
+        location: String = "",
+        startDate: Date = Date(),
+        endDate: Date? = nil,
+        isCurrent: Bool = false,
+        details: String = ""
+    ) {
         self.title = title
         self.company = company
         self.location = location
@@ -91,17 +119,27 @@ final class WorkExperience {
 
 @Model
 final class Project {
+    // English fields
     var name: String = ""
     var details: String = ""
     var technologies: String = ""
     var link: String? = nil
     var isVisible: Bool = true
-    
+
+    // German translations (optional)
+    var name_de: String? = nil
+    var details_de: String? = nil
+    var technologies_de: String? = nil
+
     // Back-reference to Resume
     var resume: Resume?
-    
-    init(name: String = "", details: String = "", technologies: String = "",
-         link: String? = nil) {
+
+    init(
+        name: String = "",
+        details: String = "",
+        technologies: String = "",
+        link: String? = nil
+    ) {
         self.name = name
         self.details = details
         self.technologies = technologies

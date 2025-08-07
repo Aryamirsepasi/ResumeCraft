@@ -32,6 +32,12 @@ struct HomeView: View {
             systemImage: "person",
             destination: AnyView(PersonalInfoView(model: resumeModel.personalModel))
           )
+            HomeRow(
+              title: Text("Summary"),
+              subtitle: Text("Short intro below personal info"),
+              systemImage: "text.justify",
+              destination: AnyView(SummaryEditorView())
+            )
           HomeRow(
             title: Text("Skills"),
             subtitle: Text("Technical and soft skills"),

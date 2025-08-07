@@ -18,6 +18,15 @@ struct ResumePDFFormatter {
         let subFont = UIFont.systemFont(ofSize: 9)
         let gray = UIColor.gray
 
+        // MARK: - Language helpers
+        let isGerman = Locale.current.language.languageCode?.identifier == "de"
+        func localized(_ en: String, _ de: String?) -> String {
+            if isGerman, let de, !de.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return de
+            }
+            return en
+        }
+
         // Name Header
         if let personal = resume.personal {
             let name = "\(personal.firstName) \(personal.lastName)\n"
@@ -59,6 +68,21 @@ struct ResumePDFFormatter {
             }
         }
 
+        // Summary
+        if let summary = resume.summary, summary.isVisible {
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = 2
+            paragraphStyle.paragraphSpacing = 6
+            result.append(NSAttributedString(
+                string: NSLocalizedString("Summary", comment: "") + "\n",
+                attributes: [.font: sectionFont]
+            ))
+            result.append(NSAttributedString(
+                string: summary.text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n",
+                attributes: [.font: subFont, .paragraphStyle: paragraphStyle]
+            ))
+        }
+
         // Skills
         if !resume.skills.filter(\.isVisible).isEmpty {
             let visibleSkills = resume.skills.filter(\.isVisible)
@@ -89,7 +113,7 @@ struct ResumePDFFormatter {
             result.append(NSAttributedString(string: "\n"))
         }
 
-        // Work Experience
+        // MARK: - Work Experience (with translations)
         if !resume.experiences.filter(\.isVisible).isEmpty {
             let visibleExperiences = resume.experiences.filter(\.isVisible)
             result.append(
@@ -99,7 +123,7 @@ struct ResumePDFFormatter {
                 )
             )
             for exp in visibleExperiences {
-                let titleLine = "\(exp.title) at \(exp.company)\n"
+                let titleLine = "\(localized(exp.title, exp.title_de)) at \(localized(exp.company, exp.company_de))\n"
                 result.append(
                     NSAttributedString(
                         string: titleLine,
@@ -109,7 +133,7 @@ struct ResumePDFFormatter {
                     )
                 )
                 let dateLoc =
-                    "\(exp.location) · \(dateRange(exp.startDate, exp.endDate, exp.isCurrent))\n"
+                    "\(localized(exp.location, exp.location_de)) · \(dateRange(exp.startDate, exp.endDate, exp.isCurrent))\n"
                 result.append(
                     NSAttributedString(
                         string: dateLoc,
@@ -119,10 +143,11 @@ struct ResumePDFFormatter {
                         ]
                     )
                 )
-                if !exp.details.isEmpty {
+                let detailsText = localized(exp.details, exp.details_de)
+                if !detailsText.isEmpty {
                     result.append(
                         NSAttributedString(
-                            string: exp.details + "\n",
+                            string: detailsText + "\n",
                             attributes: [.font: bodyFont]
                         )
                     )
@@ -131,7 +156,7 @@ struct ResumePDFFormatter {
             }
         }
 
-        // Projects
+        // MARK: - Projects (with translations)
         if !resume.projects.filter(\.isVisible).isEmpty {
             let visibleProjects = resume.projects.filter(\.isVisible)
             result.append(
@@ -141,7 +166,7 @@ struct ResumePDFFormatter {
                 )
             )
             for proj in visibleProjects {
-                var projectLine = proj.name
+                var projectLine = localized(proj.name, proj.name_de)
                 if let link = proj.link, !link.isEmpty {
                     projectLine += " (\(link))"
                 }
@@ -154,10 +179,11 @@ struct ResumePDFFormatter {
                         ]
                     )
                 )
-                if !proj.technologies.isEmpty {
+                let techText = localized(proj.technologies, proj.technologies_de)
+                if !techText.isEmpty {
                     result.append(
                         NSAttributedString(
-                            string: proj.technologies + "\n",
+                            string: techText + "\n",
                             attributes: [
                                 .font: subFont,
                                 .foregroundColor: gray,
@@ -165,10 +191,11 @@ struct ResumePDFFormatter {
                         )
                     )
                 }
-                if !proj.details.isEmpty {
+                let detailsText = localized(proj.details, proj.details_de)
+                if !detailsText.isEmpty {
                     result.append(
                         NSAttributedString(
-                            string: proj.details + "\n",
+                            string: detailsText + "\n",
                             attributes: [.font: bodyFont]
                         )
                     )
@@ -298,7 +325,6 @@ struct ResumePDFFormatter {
         }
     }
 }
-
 
 extension DateFormatter {
     static let resumeMonthYear: DateFormatter = {
