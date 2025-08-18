@@ -129,25 +129,11 @@ struct OnboardingAIChoicePage: View {
   var body: some View {
     VStack(spacing: 24) {
       Spacer()
-      Text("Choose How You Use AI")
+      Text("How AI Works in ResumeCraft")
         .font(.title2).fontWeight(.semibold)
         .multilineTextAlignment(.center)
 
       VStack(alignment: .leading, spacing: 16) {
-        HStack(alignment: .top, spacing: 12) {
-          Image(systemName: "cpu")
-            .foregroundStyle(.primary)
-          VStack(alignment: .leading, spacing: 6) {
-            Text("Local (MLX)")
-              .font(.headline)
-            Text(
-              "Runs on your device using downloaded models. 100% offline once installed."
-            )
-            .font(.caption)
-            .foregroundColor(.secondary)
-          }
-        }
-
         HStack(alignment: .top, spacing: 12) {
           Image(systemName: "cloud")
             .foregroundStyle(.primary)
@@ -165,7 +151,7 @@ struct OnboardingAIChoicePage: View {
         Divider().padding(.vertical, 4)
 
         Text(
-          "You can select your preferred AI backend anytime in Settings. For OpenRouter, add your API key and model name. For Local, download a model in Settings."
+          "You can add or change your OpenRouter API key and model anytime in Settings."
         )
         .font(.footnote)
         .foregroundColor(.secondary)

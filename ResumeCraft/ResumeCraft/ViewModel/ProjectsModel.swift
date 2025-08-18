@@ -11,36 +11,51 @@ import SwiftData
 
 @Observable
 final class ProjectsModel {
-    private weak var resume: Resume?
-    private let context: ModelContext
+  private weak var resume: Resume?
+  private let context: ModelContext
 
-    init(resume: Resume, context: ModelContext) {
-        self.resume = resume
-        self.context = context
-    }
+  init(resume: Resume, context: ModelContext) {
+    self.resume = resume
+    self.context = context
+  }
 
-    var items: [Project] {
-        get { resume?.projects ?? [] }
-        set { resume?.projects = newValue }
+  var items: [Project] {
+    get {
+      (resume?.projects ?? []).sorted { $0.orderIndex < $1.orderIndex }
     }
+    set {
+      for (idx, item) in newValue.enumerated() { item.orderIndex = idx }
+      resume?.projects = newValue
+    }
+  }
 
-    func add(_ project: Project) {
-        project.resume = resume
-        context.insert(project)
-        items.append(project)
-    }
+  func add(_ project: Project) {
+    project.resume = resume
+    project.orderIndex = items.count
+    context.insert(project)
+    items.append(project)
+  }
 
-    func remove(at offsets: IndexSet) {
-        var copy = items
-        copy.remove(atOffsets: offsets)
-        items = copy
-    }
+  func remove(at offsets: IndexSet) {
+    var copy = items
+    copy.remove(atOffsets: offsets)
+    for (idx, item) in copy.enumerated() { item.orderIndex = idx }
+    items = copy
+  }
 
-    func update(_ project: Project, at index: Int) {
-        guard items.indices.contains(index) else { return }
-        project.resume = resume
-        var copy = items
-        copy[index] = project
-        items = copy
-    }
+  func update(_ project: Project, at index: Int) {
+    guard items.indices.contains(index) else { return }
+    project.resume = resume
+    var copy = items
+    copy[index] = project
+    for (idx, item) in copy.enumerated() { item.orderIndex = idx }
+    items = copy
+  }
+
+  func move(from source: IndexSet, to destination: Int) {
+    var copy = items
+    copy.move(fromOffsets: source, toOffset: destination)
+    for (idx, item) in copy.enumerated() { item.orderIndex = idx }
+    items = copy
+  }
 }
