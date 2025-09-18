@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CloudKit
+import FoundationModels
 
 @main
 struct ResumeCraftApp: App {
@@ -17,8 +18,11 @@ struct ResumeCraftApp: App {
   @State private var openRouterSettings = OpenRouterSettings()
   @State private var openRouterProvider =
     OpenRouterProvider(config: OpenRouterSettings().config)
-  @State private var aiReviewViewModel: AIReviewViewModel
 
+    // NEW: local on-device AI provider
+    @State private var fmProvider = FoundationModelProvider()
+    @State private var aiReviewViewModel: AIReviewViewModel
+    
     @MainActor
     static var container: ModelContainer = {
       let schema = Schema([
@@ -46,11 +50,14 @@ struct ResumeCraftApp: App {
     }()
 
   init() {
-    let settings = OpenRouterSettings()
-    let provider = OpenRouterProvider(config: settings.config)
-    _openRouterSettings = State(initialValue: settings)
-    _openRouterProvider = State(initialValue: provider)
-    _aiReviewViewModel = State(initialValue: AIReviewViewModel(ai: provider))
+    //let settings = OpenRouterSettings()
+    //let provider = OpenRouterProvider(config: settings.config)
+    //_openRouterSettings = State(initialValue: settings)
+    //_openRouterProvider = State(initialValue: provider)
+    //_aiReviewViewModel = State(initialValue: AIReviewViewModel(ai: provider))
+      let provider = FoundationModelProvider()
+          _fmProvider = State(initialValue: provider)
+          _aiReviewViewModel = State(initialValue: AIReviewViewModel(ai: provider)) // still conforms to AIProvider
   }
 
   var body: some Scene {
@@ -79,13 +86,15 @@ struct ResumeCraftApp: App {
           }
         }
       }
+      .environment(fmProvider)
+      .environment(aiReviewViewModel)
       .environment(openRouterSettings)
       .environment(openRouterProvider)
-      .environment(aiReviewViewModel)
       .task {
-        openRouterProvider.updateConfig(openRouterSettings.config)
+        //openRouterProvider.updateConfig(openRouterSettings.config)
         await checkICloudAvailability()
       }
+      .overlay(AppleIntelligenceGate())
     }
     .modelContainer(Self.container)
   }
@@ -94,5 +103,32 @@ struct ResumeCraftApp: App {
   private func checkICloudAvailability() async {
     let status = try? await CKContainer.default().accountStatus()
     isICloudAvailable = (status == .available)
+  }
+}
+
+// Small helper: shows a subtle banner if Apple Intelligence is unavailable.
+@MainActor
+private struct AppleIntelligenceGate: View {
+  var body: some View {
+    let availability = SystemLanguageModel.default.availability
+    if case .unavailable(let reason) = availability {
+      VStack {
+        Spacer()
+        HStack(spacing: 12) {
+          Image(systemName: "sparkles")
+          Text("On-device AI is unavailable (\(String(describing: reason))). Enable Apple Intelligence in Settings.")
+          Button("Open Settings") {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+              UIApplication.shared.open(url)
+            }
+          }
+        }
+        .font(.footnote)
+        .padding(12)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding()
+      }
+      .transition(.move(edge: .bottom))
+    }
   }
 }

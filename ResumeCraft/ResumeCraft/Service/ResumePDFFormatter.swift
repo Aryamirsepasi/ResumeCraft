@@ -375,12 +375,3 @@ struct ResumePDFFormatter {
   }
 }
 
-extension DateFormatter {
-  static let resumeMonthYear: DateFormatter = {
-    let df = DateFormatter()
-    df.dateFormat = "MMM yyyy"
-    df.locale = Locale(identifier: "en_US_POSIX")
-    df.timeZone = TimeZone(secondsFromGMT: 0)
-    return df
-  }()
-}

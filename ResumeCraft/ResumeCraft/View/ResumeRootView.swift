@@ -11,6 +11,8 @@ import UniformTypeIdentifiers
 import PDFKit
 import Vision
 import CoreGraphics
+import FoundationModels
+
 
 private struct PreviewResume: Identifiable {
   let id = UUID()
@@ -21,8 +23,7 @@ struct ResumeRootView: View {
   @Environment(\.modelContext) private var context
 
   // Shared AI dependencies from App environment
-  @Environment(OpenRouterSettings.self) private var openRouterSettings
-  @Environment(OpenRouterProvider.self) private var openRouterProvider
+  @Environment(FoundationModelProvider.self) private var fmProvider
 
   @State private var previewResume: PreviewResume?
   @State private var resumeModel: ResumeEditorModel?
@@ -38,17 +39,6 @@ struct ResumeRootView: View {
   @State private var aiReviewModel: AIReviewViewModel?
 
   private let parsingService = ResumeParsingService()
-
-  private let feedbackSections = [
-    "Personal Info",
-    "Summary",
-    "Skills",
-    "Work Experience",
-    "Projects",
-    "Education",
-    "Extracurricular",
-    "Languages",
-  ]
 
   var body: some View { content }
 
@@ -67,8 +57,6 @@ struct ResumeRootView: View {
               showError: $showError,
               errorMessage: $errorMessage,
               isImporting: $isImporting,
-              openRouterSettings: openRouterSettings,
-              openRouterProvider: openRouterProvider,
               importPDF: { url in
                 showPDFPicker = false
                 if let url { importPDF(url: url) }
@@ -80,8 +68,6 @@ struct ResumeRootView: View {
           .task { await loadOrCreateResume() }
       }
     }
-    // Keep provider synced with settings
-    .task { openRouterProvider.updateConfig(openRouterSettings.config) }
     .onAppear(perform: setupAIIfNeeded)
   }
 
@@ -108,12 +94,9 @@ struct ResumeRootView: View {
   private func aiReviewTab(_ model: ResumeEditorModel) -> some View {
     Group {
       if let vm = aiReviewModel {
-        AIReviewTabView(
-          sectionOptions: feedbackSections,
-          sectionTextProvider: sectionText
-        )
-        .environment(model)
-        .environment(vm)
+        AIReviewTabView()
+          .environment(model)
+          .environment(vm)
       } else {
         ProgressView()
       }
@@ -124,7 +107,7 @@ struct ResumeRootView: View {
 
   private func setupAIIfNeeded() {
     if aiReviewModel == nil {
-      aiReviewModel = AIReviewViewModel(ai: openRouterProvider)
+      aiReviewModel = AIReviewViewModel(ai: fmProvider)
     }
   }
 
@@ -150,55 +133,6 @@ struct ResumeRootView: View {
       resumeModel = ResumeEditorModel(resume: newResume, context: context)
     }
   }
-
-  // MARK: - Section text provider
-
-  private func sectionText(for name: String) -> String {
-    guard let model = resumeModel else { return "" }
-    switch name {
-    case "Personal Info":
-      let p = model.resume.personal
-      return "\(p?.firstName ?? "") \(p?.lastName ?? ""), \(p?.email ?? ""), \(p?.phone ?? ""), \(p?.address ?? "")"
-    case "Skills":
-        let skills = (model.resume.skills ?? [])
-            .sorted(by: { $0.orderIndex < $1.orderIndex })
-        .map { skill in
-          skill.category.isEmpty
-            ? skill.name
-            : "\(skill.name) (\(skill.category))"
-        }
-      return skills.joined(separator: "\n")
-    case "Work Experience":
-      let experiences = (model.resume.experiences ?? [])
-        .sorted(by: { $0.orderIndex < $1.orderIndex })
-        .map { "\($0.title), \($0.company): \($0.details)" }
-      return experiences.joined(separator: "\n")
-    case "Projects":
-      let projects = (model.resume.projects ?? [])
-        .sorted(by: { $0.orderIndex < $1.orderIndex })
-        .map { "\($0.name): \($0.details)" }
-      return projects.joined(separator: "\n")
-    case "Education":
-      let educations = (model.resume.educations ?? [])
-        .sorted(by: { $0.orderIndex < $1.orderIndex })
-        .map { "\($0.degree) in \($0.field), \($0.school): \($0.details)" }
-      return educations.joined(separator: "\n")
-    case "Extracurricular":
-      let extracurriculars = (model.resume.extracurriculars ?? [])
-        .sorted(by: { $0.orderIndex < $1.orderIndex })
-        .map { "\($0.title): \($0.details)" }
-      return extracurriculars.joined(separator: "\n")
-    case "Languages":
-      let languages = (model.resume.languages ?? [])
-        .sorted(by: { $0.orderIndex < $1.orderIndex })
-        .map { "\($0.name) (\($0.proficiency))" }
-      return languages.joined(separator: ", ")
-    default:
-      return ""
-    }
-  }
-
-  private var sectionText: (String) -> String { sectionText(for:) }
 
   // MARK: - Import
 
@@ -230,10 +164,9 @@ struct ResumeRootView: View {
           )
         }
 
-        // IMPORTANT: Route canonicalization via AI router (no direct MLX call)
         let structuredText = try await parsingService.canonicalize(
           text: rawText,
-          ai: openRouterProvider
+          ai: fmProvider
         )
 
         if structuredText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -346,99 +279,99 @@ struct ResumeRootView: View {
       }
     }
 
-      // Skills
-      let skillsSection = sections["skills"] ?? sections["technical skills"] ?? ""
-      let skillsArray = parsingService.extractSkills(from: skillsSection)
-      for skillName in skillsArray where !skillName.isEmpty {
-          let skill = Skill(name: skillName, category: "")
-          skill.isVisible = true
-          context.insert(skill)
-          skill.resume = resume
-          resume.skills = (resume.skills ?? []) + [skill]
-      }
+    // Skills
+    let skillsSection = sections["skills"] ?? sections["technical skills"] ?? ""
+    let skillsArray = parsingService.extractSkills(from: skillsSection)
+    for skillName in skillsArray where !skillName.isEmpty {
+      let skill = Skill(name: skillName, category: "")
+      skill.isVisible = true
+      context.insert(skill)
+      skill.resume = resume
+      resume.skills = (resume.skills ?? []) + [skill]
+    }
 
-      // Experience
-      let expSection = sections["experience"] ?? sections["work experience"] ?? sections["employment"] ?? ""
-      let jobs = parsingService.extractExperience(from: expSection)
-      for job in jobs where !job.title.isEmpty && !job.company.isEmpty {
-          let experience = WorkExperience(
-              title: job.title,
-              company: job.company,
-              location: "",
-              startDate: parseDate(job.startDate),
-              endDate: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current" ? nil : parseDate(job.endDate),
-              isCurrent: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current",
-              details: job.details
-          )
-          experience.isVisible = true
-          context.insert(experience)
-          experience.resume = resume
-          resume.experiences = (resume.experiences ?? []) + [experience]
-      }
+    // Experience
+    let expSection = sections["experience"] ?? sections["work experience"] ?? sections["employment"] ?? ""
+    let jobs = parsingService.extractExperience(from: expSection)
+    for job in jobs where !job.title.isEmpty && !job.company.isEmpty {
+      let experience = WorkExperience(
+        title: job.title,
+        company: job.company,
+        location: "",
+        startDate: parseDate(job.startDate),
+        endDate: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current" ? nil : parseDate(job.endDate),
+        isCurrent: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current",
+        details: job.details
+      )
+      experience.isVisible = true
+      context.insert(experience)
+      experience.resume = resume
+      resume.experiences = (resume.experiences ?? []) + [experience]
+    }
 
-      // Education
-      let eduSection = sections["education"] ?? sections["academic background"] ?? ""
-      let educations = parsingService.extractEducation(from: eduSection)
-      for educ in educations where !educ.institution.isEmpty && !educ.degree.isEmpty {
-          let education = Education(
-              school: educ.institution,
-              degree: educ.degree,
-              field: "",
-              startDate: parseDate(educ.startDate),
-              endDate: parseDate(educ.endDate),
-              grade: "",
-              details: ""
-          )
-          education.isVisible = true
-          context.insert(education)
-          education.resume = resume
-          resume.educations = (resume.educations ?? []) + [education]
-      }
+    // Education
+    let eduSection = sections["education"] ?? sections["academic background"] ?? ""
+    let educations = parsingService.extractEducation(from: eduSection)
+    for educ in educations where !educ.institution.isEmpty && !educ.degree.isEmpty {
+      let education = Education(
+        school: educ.institution,
+        degree: educ.degree,
+        field: "",
+        startDate: parseDate(educ.startDate),
+        endDate: parseDate(educ.endDate),
+        grade: "",
+        details: ""
+      )
+      education.isVisible = true
+      context.insert(education)
+      education.resume = resume
+      resume.educations = (resume.educations ?? []) + [education]
+    }
 
-      // Projects
-      let projSection = sections["projects"] ?? ""
-      let projects = parsingService.extractProjects(from: projSection)
-      for proj in projects where !proj.name.isEmpty {
-          let project = Project(
-              name: proj.name,
-              details: proj.details,
-              technologies: proj.technologies,
-              link: proj.link
-          )
-          project.isVisible = true
-          context.insert(project)
-          project.resume = resume
-          resume.projects = (resume.projects ?? []) + [project]
-      }
+    // Projects
+    let projSection = sections["projects"] ?? ""
+    let projects = parsingService.extractProjects(from: projSection)
+    for proj in projects where !proj.name.isEmpty {
+      let project = Project(
+        name: proj.name,
+        details: proj.details,
+        technologies: proj.technologies,
+        link: proj.link
+      )
+      project.isVisible = true
+      context.insert(project)
+      project.resume = resume
+      resume.projects = (resume.projects ?? []) + [project]
+    }
 
-      // Extracurriculars
-      let extraSection = sections["extracurricular"] ?? sections["activities"] ?? ""
-      let extras = parsingService.extractExtracurriculars(from: extraSection)
-      for extra in extras where !extra.title.isEmpty {
-          let extracurricular = Extracurricular(
-              title: extra.title,
-              organization: extra.organization,
-              details: extra.details
-          )
-          extracurricular.isVisible = true
-          context.insert(extracurricular)
-          extracurricular.resume = resume
-          resume.extracurriculars = (resume.extracurriculars ?? []) + [extracurricular]
-      }
+    // Extracurriculars
+    let extraSection = sections["extracurricular"] ?? sections["activities"] ?? ""
+    let extras = parsingService.extractExtracurriculars(from: extraSection)
+    for extra in extras where !extra.title.isEmpty {
+      let extracurricular = Extracurricular(
+        title: extra.title,
+        organization: extra.organization,
+        details: extra.details
+      )
+      extracurricular.isVisible = true
+      context.insert(extracurricular)
+      extracurricular.resume = resume
+      resume.extracurriculars = (resume.extracurriculars ?? []) + [extracurricular]
+    }
 
-      // Languages
-      let langSection = sections["languages"] ?? ""
-      let languages = parsingService.extractLanguages(from: langSection)
-      for lang in languages where !lang.name.isEmpty {
-          let language = Language(
-              name: lang.name,
-              proficiency: lang.proficiency.isEmpty ? "Fluent" : lang.proficiency
-          )
-          language.isVisible = true
-          context.insert(language)
-          language.resume = resume
-          resume.languages = (resume.languages ?? []) + [language]
-      }
+    // Languages
+    let langSection = sections["languages"] ?? ""
+    let languages = parsingService.extractLanguages(from: langSection)
+    for lang in languages where !lang.name.isEmpty {
+      let language = Language(
+        name: lang.name,
+        proficiency: lang.proficiency.isEmpty ? "Fluent" : lang.proficiency
+      )
+      language.isVisible = true
+      context.insert(language)
+      language.resume = resume
+      resume.languages = (resume.languages ?? []) + [language]
+    }
 
     // Update timestamp and dedupe
     resume.updated = Date()
@@ -514,34 +447,34 @@ struct ResumeRootView: View {
 
   // MARK: - Deduplication
 
-    private func dedupeAllSections(of resume: Resume) {
-        resume.skills = dedupeSkills(resume.skills ?? [])
-        resume.experiences = dedupeExperiences(resume.experiences ?? [])
-        resume.projects = dedupeProjects(resume.projects ?? [])
-        resume.educations = dedupeEducations(resume.educations ?? [])
-        resume.extracurriculars = dedupeExtracurriculars(resume.extracurriculars ?? [])
-        resume.languages = dedupeLanguages(resume.languages ?? [])
+  private func dedupeAllSections(of resume: Resume) {
+    resume.skills = dedupeSkills(resume.skills ?? [])
+    resume.experiences = dedupeExperiences(resume.experiences ?? [])
+    resume.projects = dedupeProjects(resume.projects ?? [])
+    resume.educations = dedupeEducations(resume.educations ?? [])
+    resume.extracurriculars = dedupeExtracurriculars(resume.extracurriculars ?? [])
+    resume.languages = dedupeLanguages(resume.languages ?? [])
 
-        // Reset continuous orderIndex across all sections after dedupe
-        for (idx, item) in (resume.skills ?? []).enumerated() {
-            item.orderIndex = idx
-        }
-        for (idx, item) in (resume.experiences ?? []).enumerated() {
-            item.orderIndex = idx
-        }
-        for (idx, item) in (resume.projects ?? []).enumerated() {
-            item.orderIndex = idx
-        }
-        for (idx, item) in (resume.educations ?? []).enumerated() {
-            item.orderIndex = idx
-        }
-        for (idx, item) in (resume.extracurriculars ?? []).enumerated() {
-            item.orderIndex = idx
-        }
-        for (idx, item) in (resume.languages ?? []).enumerated() {
-            item.orderIndex = idx
-        }
+    // Reset continuous orderIndex across all sections after dedupe
+    for (idx, item) in (resume.skills ?? []).enumerated() {
+      item.orderIndex = idx
     }
+    for (idx, item) in (resume.experiences ?? []).enumerated() {
+      item.orderIndex = idx
+    }
+    for (idx, item) in (resume.projects ?? []).enumerated() {
+      item.orderIndex = idx
+    }
+    for (idx, item) in (resume.educations ?? []).enumerated() {
+      item.orderIndex = idx
+    }
+    for (idx, item) in (resume.extracurriculars ?? []).enumerated() {
+      item.orderIndex = idx
+    }
+    for (idx, item) in (resume.languages ?? []).enumerated() {
+      item.orderIndex = idx
+    }
+  }
 
   private func norm(_ s: String) -> String {
     s.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -582,8 +515,7 @@ struct ResumeRootView: View {
     return ordered
   }
 
-  private func dedupeExperiences(_ items: [WorkExperience]) -> [WorkExperience]
-  {
+  private func dedupeExperiences(_ items: [WorkExperience]) -> [WorkExperience] {
     var seen: [String: WorkExperience] = [:]
     var ordered: [WorkExperience] = []
     for item in items {
@@ -671,9 +603,7 @@ struct ResumeRootView: View {
     return ordered
   }
 
-  private func dedupeExtracurriculars(_ items: [Extracurricular])
-    -> [Extracurricular]
-  {
+  private func dedupeExtracurriculars(_ items: [Extracurricular]) -> [Extracurricular] {
     var seen: [String: Extracurricular] = [:]
     var ordered: [Extracurricular] = []
     for item in items {
@@ -727,8 +657,7 @@ struct PDFImportPicker: UIViewControllerRepresentable {
     Coordinator(onPick: onPick)
   }
 
-  func makeUIViewController(context: Context) -> UIDocumentPickerViewController
-  {
+  func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
     let picker = UIDocumentPickerViewController(
       forOpeningContentTypes: [UTType.pdf]
     )
@@ -788,6 +717,17 @@ extension CGPDFPage {
     if let cg = img.cgImage { images.append(cg) }
     return images
   }
+}
+
+// MARK: - DateFormatter Extension
+
+extension DateFormatter {
+    static let resumeMonthYear: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yyyy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
 }
 
 // Mapping Extensions
@@ -895,9 +835,6 @@ private struct Modifiers: ViewModifier {
 
   @Binding var isImporting: Bool
 
-  let openRouterSettings: OpenRouterSettings
-  let openRouterProvider: OpenRouterProvider
-
   let importPDF: (URL?) -> Void
 
   func body(content: Content) -> some View {
@@ -906,9 +843,7 @@ private struct Modifiers: ViewModifier {
         ResumePreviewScreen(resume: item.resume)
       }
       .sheet(isPresented: $showSettings) {
-        SettingsView()
-          .environment(openRouterSettings)
-          .environment(openRouterProvider)
+        // SettingsView() if you have one
       }
       .sheet(isPresented: $showPDFPicker) {
         PDFImportPicker { url in importPDF(url) }

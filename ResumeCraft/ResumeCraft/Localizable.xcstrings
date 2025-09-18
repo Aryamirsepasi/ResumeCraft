@@ -71,6 +71,16 @@
         }
       }
     },
+    "%lld characters • ~%lld words" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld characters • ~%2$lld words"
+          }
+        }
+      }
+    },
     "%lld/600" : {
       "localizations" : {
         "de" : {
@@ -91,6 +101,9 @@
           }
         }
       }
+    },
+    "•" : {
+
     },
     "• %@" : {
       "extractionState" : "stale",
@@ -166,6 +179,9 @@
           }
         }
       }
+    },
+    "About AI Review" : {
+
     },
     "Activities" : {
       "localizations" : {
@@ -292,6 +308,7 @@
       }
     },
     "AI Feedback" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -312,6 +329,9 @@
         }
       }
     },
+    "AI Resume Review" : {
+
+    },
     "AI Review" : {
       "localizations" : {
         "de" : {
@@ -322,7 +342,14 @@
         }
       }
     },
+    "AI Suggestions" : {
+
+    },
+    "All processing happens on your device. Your resume data never leaves your iPhone and is not sent to any external servers." : {
+
+    },
     "Analyze" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -332,7 +359,14 @@
         }
       }
     },
+    "Analyzing Resume..." : {
+
+    },
+    "Analyzing your entire resume..." : {
+
+    },
     "Analyzing..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -343,6 +377,7 @@
       }
     },
     "API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -361,6 +396,15 @@
           }
         }
       }
+    },
+    "Apple Intelligence: Enabled" : {
+
+    },
+    "Apple Intelligence: Unavailable" : {
+
+    },
+    "Best Practices" : {
+
     },
     "Build a job-ready résumé with privacy-first AI." : {
       "localizations" : {
@@ -407,6 +451,7 @@
       }
     },
     "Choose Resume Section" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -628,6 +673,9 @@
         }
       }
     },
+    "Done" : {
+
+    },
     "Download and manage AI models for offline use" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -697,7 +745,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ausbildung bearbeiten"
+            "value" : "Studium bearbeiten"
           }
         }
       }
@@ -757,7 +805,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ausbildung"
+            "value" : "Studium"
           }
         }
       }
@@ -793,6 +841,7 @@
       }
     },
     "Error: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -876,7 +925,19 @@
         }
       }
     },
+    "Focus Areas (Optional)" : {
+
+    },
+    "Full Resume Review" : {
+
+    },
+    "Generate AI Review" : {
+
+    },
     "German Translation" : {
+
+    },
+    "Get comprehensive AI feedback on your entire resume" : {
 
     },
     "Get Started" : {
@@ -961,6 +1022,9 @@
       }
     },
     "How AI Works in ResumeCraft" : {
+
+    },
+    "How it Works" : {
 
     },
     "iCloud Not Available" : {
@@ -1203,6 +1267,7 @@
       }
     },
     "Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1290,13 +1355,26 @@
         }
       }
     },
+    "On-device AI" : {
+
+    },
+    "On-device AI is unavailable (%@). Enable Apple Intelligence in Settings." : {
+
+    },
+    "On-device processing • Your data stays private" : {
+
+    },
     "Open iOS Settings" : {
 
     },
     "Open Settings" : {
 
     },
+    "Open Settings to enable Apple Intelligence" : {
+
+    },
     "OpenRouter" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1330,6 +1408,7 @@
 
     },
     "Paste job description here" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1338,6 +1417,12 @@
           }
         }
       }
+    },
+    "Paste job description here..." : {
+
+    },
+    "Paste the job posting for tailored suggestions" : {
+
     },
     "Personal and professional projects" : {
       "localizations" : {
@@ -1391,6 +1476,12 @@
           }
         }
       }
+    },
+    "Privacy & processing" : {
+
+    },
+    "Privacy First" : {
+
     },
     "Proficiency" : {
       "localizations" : {
@@ -1449,7 +1540,14 @@
         }
       }
     },
+    "Reason: %@" : {
+
+    },
+    "Requires iOS 26 or later" : {
+
+    },
     "Resume Feedback" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1458,6 +1556,9 @@
           }
         }
       }
+    },
+    "Resume Overview" : {
+
     },
     "Resume Preview" : {
       "localizations" : {
@@ -1498,6 +1599,9 @@
           }
         }
       }
+    },
+    "ResumeCraft uses the on-device foundation language model to review your résumé. Nothing leaves your device." : {
+
     },
     "Resumes should not be more than two pages." : {
       "localizations" : {
@@ -1555,6 +1659,7 @@
 
     },
     "Section" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1565,6 +1670,7 @@
       }
     },
     "Section Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1573,6 +1679,9 @@
           }
         }
       }
+    },
+    "Select specific areas for deeper analysis" : {
+
     },
     "Set as Active" : {
       "extractionState" : "stale",
@@ -1719,6 +1828,15 @@
     "Technologies (German)" : {
 
     },
+    "The AI provides suggestions, not requirements. Use your judgment to determine which recommendations best fit your unique situation and career goals." : {
+
+    },
+    "This AI-powered review analyzes your complete resume and provides comprehensive feedback tailored to your target job." : {
+
+    },
+    "This comprehensive review may take a moment" : {
+
+    },
     "Title" : {
       "localizations" : {
         "de" : {
@@ -1730,6 +1848,15 @@
       }
     },
     "Title (German)" : {
+
+    },
+    "Try Again" : {
+
+    },
+    "Unable to Generate Review" : {
+
+    },
+    "Understanding the Feedback" : {
 
     },
     "URL" : {
