@@ -133,7 +133,10 @@ final class ResumeParsingService {
         let nsText = text as NSString
 
         // Find section header matches
-        let regex = try! NSRegularExpression(pattern: sectionPattern)
+        guard let regex = try? NSRegularExpression(pattern: sectionPattern) else {
+            result["contact"] = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return result
+        }
         let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
 
         // If no sections found, treat entire text as contact info
@@ -305,9 +308,10 @@ final class ResumeParsingService {
         let mmyyyy = #"(?:\d{1,2}\/\d{2,4})"#
         let dateToken = "(?:\(monthShort)\\s*\\d{2,4}|\(monthLong)\\s*\\d{2,4}|\(mmyyyy)|(?:19|20)\\d{2})"
         let rangeRegex =
-            try! NSRegularExpression(pattern: "(?i)\(dateToken)\\s*[–—-]\\s*(Present|Current|\(dateToken))")
+            try? NSRegularExpression(pattern: "(?i)\(dateToken)\\s*[–—-]\\s*(Present|Current|\(dateToken))")
 
         func hasRange(_ s: String) -> NSTextCheckingResult? {
+            guard let rangeRegex else { return nil }
             let ns = s as NSString
             let r = NSRange(location: 0, length: ns.length)
             return rangeRegex.firstMatch(in: s, range: r)
@@ -427,14 +431,14 @@ final class ResumeParsingService {
             .map { String($0).trimmingCharacters(in: .whitespaces) }
         let datePattern =
             #"(?i)([A-Za-z]{3,}\.?\s?\d{2,4}|[0-9]{1,2}\/\d{2,4}|(19|20)\d{2})\s?[-–—]\s?([A-Za-z]{3,}\.?\s?\d{2,4}|Present|Current|[0-9]{1,2}\/\d{2,4}|(19|20)\d{2})"#
-        let dateRegex = try! NSRegularExpression(pattern: datePattern)
+        let dateRegex = try? NSRegularExpression(pattern: datePattern)
 
         var currentEntry: EducationEntry?
 
         for line in lines {
             let nsLine = line as NSString
             let range = NSRange(location: 0, length: nsLine.length)
-            let dateMatch = dateRegex.firstMatch(in: line, range: range)
+            let dateMatch = dateRegex?.firstMatch(in: line, range: range)
 
             if let dateMatch = dateMatch {
                 if let entry = currentEntry { entries.append(entry) }

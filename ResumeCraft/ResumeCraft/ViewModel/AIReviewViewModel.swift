@@ -16,6 +16,10 @@ final class AIReviewViewModel {
     var feedback: String?
     var isGenerating = false
     var errorMessage: String?
+    
+    // Streaming support
+    var streamingFeedback: String = ""
+    var isStreaming = false
 
     func appendFocus(_ tag: String) {
         if !focusTags.contains(tag) { 
@@ -29,7 +33,9 @@ final class AIReviewViewModel {
     
     func requestFeedback(resumeText: String) async {
         isGenerating = true
+        isStreaming = true
         feedback = nil
+        streamingFeedback = ""
         errorMessage = nil
 
         let focusLine = focusTags.isEmpty ? "" : """
@@ -80,6 +86,7 @@ final class AIReviewViewModel {
         """
 
         do {
+            // Try streaming first (better UX)
             let result = try await ai.processText(
                 systemPrompt: """
                 You are a professional resume coach with expertise in:
@@ -100,7 +107,7 @@ final class AIReviewViewModel {
                 """,
                 userPrompt: prompt,
                 images: [],
-                streaming: false
+                streaming: true  // Enable streaming for better UX
             )
             
             if result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -112,10 +119,29 @@ final class AIReviewViewModel {
             }
             
             feedback = result
+            streamingFeedback = result
         } catch {
             errorMessage = error.localizedDescription
         }
         
         isGenerating = false
+        isStreaming = false
+    }
+    
+    /// Request feedback with true streaming support (if AI provider supports it)
+    func requestFeedbackStreaming(resumeText: String) async {
+        // This would require updating AIProvider protocol to support AsyncSequence
+        // For now, this is a placeholder for future enhancement
+        isGenerating = true
+        isStreaming = true
+        feedback = nil
+        streamingFeedback = ""
+        errorMessage = nil
+        
+        // Implementation would stream tokens as they arrive
+        // streamingFeedback would update in real-time
+        
+        isGenerating = false
+        isStreaming = false
     }
 }

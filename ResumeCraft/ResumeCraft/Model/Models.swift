@@ -48,6 +48,7 @@ final class PersonalInfo {
   var github: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(
@@ -76,6 +77,7 @@ final class Summary {
   var text: String = ""
   var text_de: String? = nil
   var isVisible: Bool = true
+  @Relationship
   var resume: Resume?
 
   init(text: String = "", isVisible: Bool = true) {
@@ -106,6 +108,7 @@ final class WorkExperience {
   var details_de: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(
@@ -145,6 +148,7 @@ final class Project {
   var technologies_de: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(
@@ -174,6 +178,7 @@ final class Skill {
   var category_de: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(name: String = "", category: String = "") {
@@ -203,6 +208,7 @@ final class Education {
   var details_de: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(
@@ -240,6 +246,7 @@ final class Extracurricular {
   var details_de: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(title: String = "", organization: String = "", details: String = "") {
@@ -263,6 +270,7 @@ final class Language {
   var proficiency_de: String? = nil
 
   // Back-reference to Resume
+  @Relationship
   var resume: Resume?
 
   init(name: String = "", proficiency: String = "") {

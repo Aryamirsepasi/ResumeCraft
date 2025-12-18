@@ -1,16 +1,99 @@
 import SwiftUI
 import CloudKit
 import FoundationModels   // iOS 26+
+import UIKit
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(FoundationModelProvider.self) private var fmProvider
+    @Environment(ResumeEditorModel.self) private var resumeModel
+    @Environment(\.openURL) private var openURL
+    @Environment(PersistenceStatus.self) private var persistenceStatus
+    
+    @State private var iCloudAccountStatus: CKAccountStatus? = nil
+    @State private var resumeScore: ResumeScore?
 
-    @State private var isICloudAvailable: Bool? = nil
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
+    }
 
     var body: some View {
         NavigationStack {
             List {
+                // Resume Score Section
+                Section {
+                    if let score = resumeScore {
+                        NavigationLink {
+                            ResumeScoreCardView(score: score)
+                        } label: {
+                            ResumeScoreRowContent(score: score)
+                        }
+                    } else {
+                        HStack {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                            Text("Analyzing resume...")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("Resume Health")
+                        .textCase(.uppercase)
+                        .font(.caption)
+                }
+                
+                // Smart Suggestions Link
+                Section {
+                    NavigationLink {
+                        SmartSuggestionsListView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.purple.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "lightbulb.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.purple)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Smart Suggestions")
+                                    .font(.subheadline.weight(.medium))
+                                Text("AI-powered improvement tips")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    
+                    NavigationLink {
+                        VersionHistoryView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.indigo.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.indigo)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Version History")
+                                    .font(.subheadline.weight(.medium))
+                                Text("Track changes over time")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Tools")
+                        .textCase(.uppercase)
+                        .font(.caption)
+                }
+                
                 // On-device AI (Foundation Models) status
                 Section("On-device AI") {
                     if #available(iOS 26, *) {
@@ -26,9 +109,7 @@ struct SettingsView: View {
                                     .foregroundStyle(.red)
                                 Spacer()
                                 Button("Open Settings") {
-                                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                                        UIApplication.shared.open(url)
-                                    }
+                                    openAppSettings()
                                 }
                                 .font(.caption)
                                 .buttonStyle(.bordered)
@@ -55,20 +136,95 @@ struct SettingsView: View {
                 // iCloud Status
                 Section("iCloud Status") {
                     HStack {
-                        Image(systemName: isICloudAvailable == true ? "checkmark.circle.fill" : "xmark.octagon.fill")
-                            .foregroundColor(isICloudAvailable == true ? .green : .red)
-                        Text(isICloudAvailable == true ? "Connected to iCloud" : "Not Connected to iCloud")
-                        Spacer()
-                        if isICloudAvailable == false {
-                            Button("Open Settings") {
-                                if let url = URL(string: UIApplication.openSettingsURLString) {
-                                    UIApplication.shared.open(url)
-                                }
+                        Image(systemName: persistenceStatus.isCloudKitEnabled ? "icloud.fill" : "externaldrive.fill")
+                            .foregroundStyle(persistenceStatus.isCloudKitEnabled ? .blue : .orange)
+                        let backendLabel: String = {
+                            switch persistenceStatus.backend {
+                            case .cloudKit:
+                                return "Sync enabled"
+                            case .local:
+                                return "Local-only (sync disabled)"
+                            case .inMemory:
+                                return "In-memory (not saved)"
                             }
+                        }()
+                        Text(backendLabel)
+                        Spacer()
+                        Text(persistenceStatus.buildConfiguration)
                             .font(.caption)
-                        }
+                            .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, 4)
+
+                    Text("Container: \(CloudKitConfiguration.containerIdentifier)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    if let error = persistenceStatus.cloudKitInitializationError {
+                        Text("iCloud init error: \(error)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let error = persistenceStatus.localInitializationError {
+                        Text("Local store error: \(error)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let status = iCloudAccountStatus {
+                        HStack {
+                            switch status {
+                            case .available:
+                                Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                Text("Connected to iCloud")
+                            case .noAccount:
+                                Image(systemName: "xmark.octagon.fill")
+                                .foregroundColor(.red)
+                                Text("Not signed in to iCloud (local-only mode)")
+                            case .restricted:
+                                Image(systemName: "xmark.octagon.fill")
+                                .foregroundColor(.red)
+                                Text("iCloud restricted (local-only mode)")
+                            case .couldNotDetermine:
+                                Image(systemName: "questionmark.circle.fill")
+                                .foregroundColor(.orange)
+                                Text("Could not determine iCloud status")
+                            case .temporarilyUnavailable:
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                                Text("iCloud temporarily unavailable")
+                            @unknown default:
+                                Image(systemName: "questionmark.circle.fill")
+                                .foregroundColor(.orange)
+                                Text("Unknown iCloud status")
+                            }
+                            
+                            Spacer()
+                            
+                            if status == .noAccount || status == .restricted {
+                                Button("Open Settings") {
+                                    openAppSettings()
+                                }
+                                .font(.caption)
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    } else {
+                        HStack {
+                            ProgressView()
+                            Text("Checking iCloud…")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+
+                    Text("Tip: CloudKit doesn’t sync between Debug/TestFlight/App Store builds (different environments). Make sure both devices run the same build channel.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
 
                 // App info
@@ -130,14 +286,80 @@ struct SettingsView: View {
                 }
             }
             .task { await checkICloudStatus() }
+            .task { await calculateScore() }
         }
     }
 
     private func checkICloudStatus() async {
-        let container = CKContainer(identifier: "iCloud.com.aryamirsepasi.ResumeCraft")
+        let container = CKContainer(identifier: CloudKitConfiguration.containerIdentifier)
         let status = try? await container.accountStatus()
         await MainActor.run {
-            isICloudAvailable = (status == .available)
+            iCloudAccountStatus = status
+        }
+    }
+    
+    @MainActor
+    private func calculateScore() async {
+        let score = ResumeScoringEngine.calculate(for: resumeModel.resume)
+        withAnimation {
+            resumeScore = score
+        }
+    }
+}
+
+// Resume Score Row Content
+private struct ResumeScoreRowContent: View {
+    let score: ResumeScore
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Circular score indicator
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 4)
+                    .frame(width: 50, height: 50)
+                
+                Circle()
+                    .trim(from: 0, to: CGFloat(score.overallScore) / 100)
+                    .stroke(gradeColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .frame(width: 50, height: 50)
+                    .rotationEffect(.degrees(-90))
+                
+                Text("\(score.overallScore)")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(gradeColor)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Resume Score")
+                        .font(.headline)
+                    
+                    Text(score.grade.rawValue)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(gradeColor)
+                        .clipShape(Capsule())
+                }
+                
+                Text(score.grade.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+    
+    private var gradeColor: Color {
+        switch score.grade {
+        case .a: return .green
+        case .b: return .blue
+        case .c: return .yellow
+        case .d: return .orange
+        case .f: return .red
         }
     }
 }

@@ -13,6 +13,7 @@ struct ResumePreviewScreen: View {
 
     @State private var pdfURL: URL?
     @State private var showShareSheet = false
+    @State private var showExportOptions = false
     @State private var isExporting = false
     @State private var showTooLongAlert = false
 
@@ -29,22 +30,35 @@ struct ResumePreviewScreen: View {
                         .accessibilityLabel("Close Preview")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        if isExporting {
-                            ProgressView()
-                        } else {
+                        Menu {
                             Button {
                                 exportPDF()
                             } label: {
-                                Label("Export PDF", systemImage: "square.and.arrow.up")
+                                Label("Quick Export PDF", systemImage: "doc.fill")
                             }
-                            .accessibilityLabel("Export Resume as PDF")
+                            
+                            Button {
+                                showExportOptions = true
+                            } label: {
+                                Label("Export Options...", systemImage: "square.and.arrow.up")
+                            }
+                        } label: {
+                            if isExporting {
+                                ProgressView()
+                            } else {
+                                Label("Export", systemImage: "square.and.arrow.up")
+                            }
                         }
+                        .accessibilityLabel("Export Resume")
                     }
                 }
                 .sheet(isPresented: $showShareSheet, onDismiss: { pdfURL = nil }) {
                     if let pdfURL {
                         ShareSheet(item: pdfURL)
                     }
+                }
+                .sheet(isPresented: $showExportOptions) {
+                    ExportOptionsView(resume: resume)
                 }
                 .alert("Resume Too Long", isPresented: $showTooLongAlert) {
                     Button("OK", role: .cancel) { }
@@ -56,23 +70,21 @@ struct ResumePreviewScreen: View {
 
     private func exportPDF() {
         isExporting = true
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task.detached(priority: .userInitiated) {
             do {
-                let pdf = try PDFExportService.export(
-                    resume: resume
-                )
-                DispatchQueue.main.async {
+                let pdf = try PDFExportService.export(resume: resume, fileName: "Resume.pdf")
+                await MainActor.run {
                     pdfURL = pdf
                     showShareSheet = true
                     isExporting = false
                 }
             } catch PDFExportError.resumeTooLong {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     showTooLongAlert = true
                     isExporting = false
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     isExporting = false
                 }
             }

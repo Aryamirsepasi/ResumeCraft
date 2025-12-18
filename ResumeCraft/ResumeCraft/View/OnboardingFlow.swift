@@ -87,10 +87,10 @@ struct OnboardingFeaturesPage: View {
         .font(.title).fontWeight(.semibold)
 
       VStack(alignment: .leading, spacing: 18) {
-        FeatureBullet(text: "📄 Parse your existing résumé from PDF")
-        FeatureBullet(text: "🤖 Get AI feedback on your résumé")
-        FeatureBullet(text: "📝 Export ATS-optimized résumés as PDF")
-        FeatureBullet(text: "🔒 Privacy-first design")
+        FeatureBullet(text: "Import and parse your résumé from PDF")
+        FeatureBullet(text: "Get on-device AI feedback (Apple Intelligence)")
+        FeatureBullet(text: "Export ATS-friendly résumés as PDF")
+        FeatureBullet(text: "Sync with iCloud (private database)")
       }
       .padding()
       .background(
@@ -135,13 +135,13 @@ struct OnboardingAIChoicePage: View {
 
       VStack(alignment: .leading, spacing: 16) {
         HStack(alignment: .top, spacing: 12) {
-          Image(systemName: "cloud")
+          Image(systemName: "sparkles")
             .foregroundStyle(.primary)
           VStack(alignment: .leading, spacing: 6) {
-            Text("OpenRouter (Cloud)")
+            Text("On-device AI (Apple Intelligence)")
               .font(.headline)
             Text(
-              "Uses cloud models via your OpenRouter API key. No local model required."
+              "When available, ResumeCraft uses Apple’s on-device foundation language model to review your résumé. Your data stays on your device."
             )
             .font(.caption)
             .foregroundColor(.secondary)
@@ -151,7 +151,7 @@ struct OnboardingAIChoicePage: View {
         Divider().padding(.vertical, 4)
 
         Text(
-          "You can add or change your OpenRouter API key and model anytime in Settings."
+          "If on-device AI is unavailable, you can still edit, import, and export. To enable AI review, turn on Apple Intelligence in Settings."
         )
         .font(.footnote)
         .foregroundColor(.secondary)

@@ -1,12 +1,25 @@
 {
   "sourceLanguage" : "de",
   "strings" : {
+    ".%@" : {
+
+    },
     "%@ - %@" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ - %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
           }
         }
       }
@@ -30,6 +43,9 @@
           }
         }
       }
+    },
+    "%@ Details" : {
+
     },
     "%@ in %@" : {
       "localizations" : {
@@ -71,6 +87,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld characters • ~%lld words" : {
       "localizations" : {
         "de" : {
@@ -80,6 +99,25 @@
           }
         }
       }
+    },
+    "%lld items" : {
+
+    },
+    "%lld words" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld/20" : {
+
     },
     "%lld/600" : {
       "localizations" : {
@@ -286,6 +324,9 @@
         }
       }
     },
+    "Additional" : {
+
+    },
     "Address" : {
       "localizations" : {
         "de" : {
@@ -295,6 +336,9 @@
           }
         }
       }
+    },
+    "Adds author name, title, and creation date to the PDF file properties." : {
+
     },
     "AI Backend" : {
       "extractionState" : "stale",
@@ -345,7 +389,16 @@
     "AI Suggestions" : {
 
     },
+    "AI-powered improvement tips" : {
+
+    },
+    "All Priorities" : {
+
+    },
     "All processing happens on your device. Your resume data never leaves your iPhone and is not sent to any external servers." : {
+
+    },
+    "All Types" : {
 
     },
     "Analyze" : {
@@ -359,10 +412,16 @@
         }
       }
     },
+    "Analyzing resume..." : {
+
+    },
     "Analyzing Resume..." : {
 
     },
     "Analyzing your entire resume..." : {
+
+    },
+    "Analyzing your resume..." : {
 
     },
     "Analyzing..." : {
@@ -403,6 +462,12 @@
     "Apple Intelligence: Unavailable" : {
 
     },
+    "Automatically extract and fill resume sections" : {
+
+    },
+    "Basic Information" : {
+
+    },
     "Best Practices" : {
 
     },
@@ -415,6 +480,12 @@
           }
         }
       }
+    },
+    "Bundle ID: %@" : {
+
+    },
+    "Calculating score..." : {
+
     },
     "Cancel" : {
       "localizations" : {
@@ -439,6 +510,12 @@
     "Category (German)" : {
 
     },
+    "Changes" : {
+
+    },
+    "Checking iCloud…" : {
+
+    },
     "Choose How You Use AI" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -460,6 +537,9 @@
           }
         }
       }
+    },
+    "Clear Filters" : {
+
     },
     "Close" : {
       "localizations" : {
@@ -504,6 +584,9 @@
     "Company (German)" : {
 
     },
+    "Compare with Previous" : {
+
+    },
     "Compatibility Warning" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -525,6 +608,9 @@
           }
         }
       }
+    },
+    "Completion Progress" : {
+
     },
     "Connected to iCloud" : {
 
@@ -550,6 +636,9 @@
         }
       }
     },
+    "Container: %@" : {
+
+    },
     "Continue" : {
       "localizations" : {
         "de" : {
@@ -560,6 +649,12 @@
         }
       }
     },
+    "Could not determine iCloud status" : {
+
+    },
+    "Current" : {
+
+    },
     "Current Position" : {
       "localizations" : {
         "de" : {
@@ -569,6 +664,9 @@
           }
         }
       }
+    },
+    "Current Version" : {
+
     },
     "Dates" : {
       "localizations" : {
@@ -872,7 +970,26 @@
         }
       }
     },
+    "Export" : {
+
+    },
+    "Export %@" : {
+
+    },
+    "Export Complete" : {
+
+    },
+    "Export Failed" : {
+
+    },
+    "Export Format" : {
+
+    },
+    "Export Options..." : {
+
+    },
     "Export PDF" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -882,7 +999,11 @@
         }
       }
     },
+    "Export Resume" : {
+
+    },
     "Export Resume as PDF" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -891,6 +1012,12 @@
           }
         }
       }
+    },
+    "Export Successful!" : {
+
+    },
+    "Exporting..." : {
+
     },
     "Extracurricular Activities" : {
       "localizations" : {
@@ -913,6 +1040,9 @@
       }
     },
     "Field of Study (German)" : {
+
+    },
+    "File Name" : {
 
     },
     "First Name" : {
@@ -1001,6 +1131,9 @@
         }
       }
     },
+    "Great job! Your resume looks well-optimized." : {
+
+    },
     "Hidden" : {
       "localizations" : {
         "de" : {
@@ -1027,10 +1160,19 @@
     "How it Works" : {
 
     },
-    "iCloud Not Available" : {
+    "iCloud init error: %@" : {
+
+    },
+    "iCloud restricted (local-only mode)" : {
 
     },
     "iCloud Status" : {
+
+    },
+    "iCloud temporarily unavailable" : {
+
+    },
+    "If on-device AI is unavailable, you can still edit, import, and export. To enable AI review, turn on Apple Intelligence in Settings." : {
 
     },
     "Import from PDF" : {
@@ -1062,6 +1204,12 @@
           }
         }
       }
+    },
+    "Include PDF Metadata" : {
+
+    },
+    "Insight" : {
+
     },
     "iPad with A12 chip or later" : {
       "extractionState" : "stale",
@@ -1148,6 +1296,9 @@
         }
       }
     },
+    "Last updated %@ ago" : {
+
+    },
     "Link" : {
       "localizations" : {
         "de" : {
@@ -1209,6 +1360,9 @@
         }
       }
     },
+    "Local store error: %@" : {
+
+    },
     "Location" : {
       "localizations" : {
         "de" : {
@@ -1243,6 +1397,12 @@
           }
         }
       }
+    },
+    "Margins" : {
+
+    },
+    "Mark Done" : {
+
     },
     "May run slowly on iPhone" : {
       "extractionState" : "stale",
@@ -1311,6 +1471,9 @@
         }
       }
     },
+    "Narrow" : {
+
+    },
     "Next" : {
       "localizations" : {
         "de" : {
@@ -1332,6 +1495,12 @@
         }
       }
     },
+    "No Suggestions" : {
+
+    },
+    "No suggestions match your current filters." : {
+
+    },
     "No summary yet." : {
       "localizations" : {
         "de" : {
@@ -1342,7 +1511,10 @@
         }
       }
     },
-    "Not Connected to iCloud" : {
+    "No Version History" : {
+
+    },
+    "Not signed in to iCloud (local-only mode)" : {
 
     },
     "OK" : {
@@ -1358,13 +1530,13 @@
     "On-device AI" : {
 
     },
+    "On-device AI (Apple Intelligence)" : {
+
+    },
     "On-device AI is unavailable (%@). Enable Apple Intelligence in Settings." : {
 
     },
     "On-device processing • Your data stays private" : {
-
-    },
-    "Open iOS Settings" : {
 
     },
     "Open Settings" : {
@@ -1385,6 +1557,7 @@
       }
     },
     "OpenRouter (Cloud)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1405,6 +1578,15 @@
       }
     },
     "Organization (German)" : {
+
+    },
+    "Overview" : {
+
+    },
+    "Page Settings" : {
+
+    },
+    "Page Size" : {
 
     },
     "Paste job description here" : {
@@ -1454,9 +1636,6 @@
         }
       }
     },
-    "Please sign in to your iCloud account in Settings to use ResumeCraft with full features." : {
-
-    },
     "Position" : {
       "localizations" : {
         "de" : {
@@ -1477,10 +1656,22 @@
         }
       }
     },
+    "Previous" : {
+
+    },
+    "Previous Versions" : {
+
+    },
+    "Priority" : {
+
+    },
     "Privacy & processing" : {
 
     },
     "Privacy First" : {
+
+    },
+    "Professional" : {
 
     },
     "Proficiency" : {
@@ -1540,10 +1731,22 @@
         }
       }
     },
+    "Quick Actions" : {
+
+    },
+    "Quick Export PDF" : {
+
+    },
     "Reason: %@" : {
 
     },
     "Requires iOS 26 or later" : {
+
+    },
+    "Reset Dismissed" : {
+
+    },
+    "Resume" : {
 
     },
     "Resume Feedback" : {
@@ -1556,6 +1759,9 @@
           }
         }
       }
+    },
+    "Resume Health" : {
+
     },
     "Resume Overview" : {
 
@@ -1579,6 +1785,9 @@
           }
         }
       }
+    },
+    "Resume Score" : {
+
     },
     "Resume Too Long" : {
       "localizations" : {
@@ -1645,6 +1854,15 @@
         }
       }
     },
+    "Save Current Version" : {
+
+    },
+    "Save Snapshot" : {
+
+    },
+    "Save snapshots of your resume to track changes over time." : {
+
+    },
     "School" : {
       "localizations" : {
         "de" : {
@@ -1658,6 +1876,9 @@
     "School (German)" : {
 
     },
+    "Score Breakdown" : {
+
+    },
     "Section" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1668,6 +1889,9 @@
           }
         }
       }
+    },
+    "Section Breakdown" : {
+
     },
     "Section Preview" : {
       "extractionState" : "stale",
@@ -1703,6 +1927,9 @@
           }
         }
       }
+    },
+    "Share" : {
+
     },
     "Short intro below personal info" : {
       "localizations" : {
@@ -1775,6 +2002,15 @@
         }
       }
     },
+    "Smart Suggestions" : {
+
+    },
+    "Snapshot Saved" : {
+
+    },
+    "Standard" : {
+
+    },
     "Start Date" : {
       "localizations" : {
         "de" : {
@@ -1794,6 +2030,9 @@
           }
         }
       }
+    },
+    "Summary Preview" : {
+
     },
     "Tap to edit this activity" : {
       "localizations" : {
@@ -1837,6 +2076,9 @@
     "This comprehensive review may take a moment" : {
 
     },
+    "Tip: CloudKit doesn’t sync between Debug/TestFlight/App Store builds (different environments). Make sure both devices run the same build channel." : {
+
+    },
     "Title" : {
       "localizations" : {
         "de" : {
@@ -1850,13 +2092,31 @@
     "Title (German)" : {
 
     },
+    "Tools" : {
+
+    },
+    "Top Recommendations" : {
+
+    },
+    "Track changes over time" : {
+
+    },
     "Try Again" : {
+
+    },
+    "Type" : {
 
     },
     "Unable to Generate Review" : {
 
     },
     "Understanding the Feedback" : {
+
+    },
+    "Unknown iCloud status" : {
+
+    },
+    "Up to 20 snapshots are stored. Older versions are automatically removed." : {
 
     },
     "URL" : {
@@ -1870,6 +2130,7 @@
       }
     },
     "Uses cloud models via your OpenRouter API key. No local model required." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1888,6 +2149,12 @@
           }
         }
       }
+    },
+    "Version Comparison" : {
+
+    },
+    "Version History" : {
+
     },
     "Visible" : {
       "localizations" : {
@@ -1939,6 +2206,9 @@
         }
       }
     },
+    "When available, ResumeCraft uses Apple’s on-device foundation language model to review your résumé. Your data stays on your device." : {
+
+    },
     "Wi-Fi Required" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1950,6 +2220,9 @@
         }
       }
     },
+    "Wide" : {
+
+    },
     "Work Experience" : {
       "localizations" : {
         "de" : {
@@ -1959,9 +2232,6 @@
           }
         }
       }
-    },
-    "You can add or change your OpenRouter API key and model anytime in Settings." : {
-
     },
     "You can select your preferred AI backend anytime in Settings. For OpenRouter, add your API key and model name. For Local, download a model in Settings." : {
       "extractionState" : "stale",
@@ -1973,6 +2243,9 @@
           }
         }
       }
+    },
+    "Your current resume state has been saved to the version history." : {
+
     }
   },
   "version" : "1.0"

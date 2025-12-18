@@ -221,23 +221,23 @@ struct AIReviewSheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
-            LazyVGrid(columns: [
-                GridItem(.adaptive(minimum: 100), spacing: 8)
-            ], spacing: 8) {
-                ForEach(availableFocusTags, id: \.self) { tag in
-                    FocusTagChip(
-                        title: tag,
-                        isSelected: selectedFocusTags.contains(tag),
-                        action: {
-                            if selectedFocusTags.contains(tag) {
-                                selectedFocusTags.remove(tag)
-                                viewModel.removeFocus(tag)
-                            } else {
-                                selectedFocusTags.insert(tag)
-                                viewModel.appendFocus(tag)
+            GlassEffectContainer(spacing: 4) {
+                TagFlowLayout(hSpacing: 8, vSpacing: 8) {
+                    ForEach(availableFocusTags, id: \.self) { tag in
+                        FocusTagChip(
+                            title: tag,
+                            isSelected: selectedFocusTags.contains(tag),
+                            action: {
+                                if selectedFocusTags.contains(tag) {
+                                    selectedFocusTags.remove(tag)
+                                    viewModel.removeFocus(tag)
+                                } else {
+                                    selectedFocusTags.insert(tag)
+                                    viewModel.appendFocus(tag)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -545,6 +545,61 @@ private struct StatCard: View {
     }
 }
 
+private struct TagFlowLayout: Layout {
+    var hSpacing: CGFloat
+    var vSpacing: CGFloat
+
+    init(hSpacing: CGFloat = 8, vSpacing: CGFloat = 8) {
+        self.hSpacing = hSpacing
+        self.vSpacing = vSpacing
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            // Wrap to next line if needed
+            if x > 0 && x + size.width > maxWidth {
+                x = 0
+                y += rowHeight + vSpacing
+                rowHeight = 0
+            }
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + (x > 0 ? hSpacing : 0)
+        }
+
+        let finalHeight = y + rowHeight
+        let finalWidth = maxWidth.isFinite ? maxWidth : x
+        return CGSize(width: finalWidth, height: finalHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let maxX = bounds.maxX
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX && x + size.width > maxX {
+                x = bounds.minX
+                y += rowHeight + vSpacing
+                rowHeight = 0
+            }
+            subview.place(
+                at: CGPoint(x: x, y: y),
+                proposal: ProposedViewSize(width: size.width, height: size.height)
+            )
+            x += size.width + hSpacing
+            rowHeight = max(rowHeight, size.height)
+        }
+    }
+}
+
 private struct FocusTagChip: View {
     let title: String
     let isSelected: Bool
@@ -552,7 +607,7 @@ private struct FocusTagChip: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.caption2)
@@ -561,25 +616,21 @@ private struct FocusTagChip: View {
                 Text(title)
                     .font(.caption)
                     .fontWeight(.medium)
+                    .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                isSelected
-                    ? AnyShapeStyle(Color.accentColor.opacity(0.15))
-                    : AnyShapeStyle(Color(UIColor.tertiarySystemBackground))
-            )
-            .foregroundColor(isSelected ? .accentColor : .primary)
-            .clipShape(Capsule())
-            .overlay {
-                Capsule()
-                    .strokeBorder(
-                        isSelected ? Color.accentColor : Color(UIColor.separator),
-                        lineWidth: 1
-                    )
-            }
+            .padding(.horizontal, 14)
+            .frame(minWidth: 140)
+            .frame(height: 40)
+            .contentShape(.capsule)
         }
         .buttonStyle(.plain)
+        .glassEffect(
+            isSelected
+                ? .regular.tint(.accentColor).interactive()
+                : .regular.interactive(),
+            in: .capsule
+        )
+        .animation(.snappy, value: isSelected)
         .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
@@ -593,3 +644,4 @@ struct AIReviewTabView: View {
         }
     }
 }
+

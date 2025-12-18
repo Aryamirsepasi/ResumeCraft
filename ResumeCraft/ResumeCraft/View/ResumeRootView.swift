@@ -63,6 +63,8 @@ struct ResumeRootView: View {
               }
             )
           )
+          // Ensure sheets (e.g. Settings) can access the same ResumeEditorModel
+          .environment(resumeModel)
       } else {
         ProgressView("Loading Resume…")
           .task { await loadOrCreateResume() }
@@ -88,14 +90,12 @@ struct ResumeRootView: View {
       importPDF: { showPDFPicker = true },
       openSettings: { showSettings = true }
     )
-    .environment(model)
   }
 
   private func aiReviewTab(_ model: ResumeEditorModel) -> some View {
     Group {
       if let vm = aiReviewModel {
         AIReviewTabView()
-          .environment(model)
           .environment(vm)
       } else {
         ProgressView()
@@ -843,7 +843,7 @@ private struct Modifiers: ViewModifier {
         ResumePreviewScreen(resume: item.resume)
       }
       .sheet(isPresented: $showSettings) {
-        // SettingsView() if you have one
+        SettingsView()
       }
       .sheet(isPresented: $showPDFPicker) {
         PDFImportPicker { url in importPDF(url) }

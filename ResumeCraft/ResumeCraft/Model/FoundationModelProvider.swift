@@ -16,18 +16,29 @@ import FoundationModels   // iOS 26+; add to target’s frameworks
 final class FoundationModelProvider: AIProvider {
   var isProcessing = false
   private var session: LanguageModelSession?
+  private var sessionInstructions: String?
   private var currentTask: Task<String, Error>?
 
   init() {}
 
   private func makeSession(instructions: String?) -> LanguageModelSession {
-    if let s = session { return s }
-    if let instructions, !instructions.isEmpty {
-      session = LanguageModelSession(instructions: instructions)
-    } else {
-      session = LanguageModelSession()
+    let normalizedInstructions = instructions?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+
+    if let existing = session, normalizedInstructions == sessionInstructions {
+      return existing
     }
-    return session!
+
+    let newSession: LanguageModelSession
+    if let normalizedInstructions, !normalizedInstructions.isEmpty {
+      newSession = LanguageModelSession(instructions: normalizedInstructions)
+    } else {
+      newSession = LanguageModelSession()
+    }
+
+    session = newSession
+    sessionInstructions = normalizedInstructions
+    return newSession
   }
 
   func processText(
@@ -56,10 +67,9 @@ final class FoundationModelProvider: AIProvider {
 
     let session = makeSession(instructions: systemPrompt)
 
-    // (Most of the app uses non-streaming today; keep simple & reliable.)
-    // You can later adopt streamResponse(to:) when you want incremental UI.
-    let task = Task.detached { () async throws -> String in
+    let task = Task { () async throws -> String in
       let response = try await session.respond(to: userPrompt)
+      try Task.checkCancellation()
       return response.content
     }
     currentTask = task

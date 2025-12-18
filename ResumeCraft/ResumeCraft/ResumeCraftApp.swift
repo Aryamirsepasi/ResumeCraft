@@ -13,7 +13,6 @@ import FoundationModels
 @main
 struct ResumeCraftApp: App {
   @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-  @State private var isICloudAvailable = false
 
   @State private var openRouterSettings = OpenRouterSettings()
   @State private var openRouterProvider =
@@ -22,32 +21,97 @@ struct ResumeCraftApp: App {
     // NEW: local on-device AI provider
     @State private var fmProvider = FoundationModelProvider()
     @State private var aiReviewViewModel: AIReviewViewModel
+
+    @State private var modelContainer: ModelContainer
+    @State private var persistenceStatus: PersistenceStatus
     
     @MainActor
-    static var container: ModelContainer = {
+    static func makeModelContainer() -> (ModelContainer, PersistenceStatus) {
       let schema = Schema([
-        Resume.self, PersonalInfo.self, WorkExperience.self, Project.self,
-        Skill.self, Education.self, Extracurricular.self, Language.self,
+        Resume.self,
+        PersonalInfo.self,
+        Summary.self,
+        WorkExperience.self,
+        Project.self,
+        Skill.self,
+        Education.self,
+        Extracurricular.self,
+        Language.self,
+        ResumeHistory.self,
       ])
 
-      let cloud = ModelConfiguration(
-        schema: schema,
-        cloudKitDatabase: .private("iCloud.com.aryamirsepasi.ResumeCraft")
-      )
-
       do {
-        let container = try ModelContainer(
-          for: schema,
-          configurations: [cloud]
+        let cloud = ModelConfiguration(
+          schema: schema,
+          cloudKitDatabase: .private(CloudKitConfiguration.containerIdentifier)
         )
-        return container
+        let container = try ModelContainer(for: schema, configurations: [cloud])
+        return (
+          container,
+          PersistenceStatus(
+            backend: .cloudKit(containerIdentifier: CloudKitConfiguration.containerIdentifier)
+          )
+        )
       } catch {
-        // Fail loudly so you actually see misconfigurations
-        fatalError(
-          "CloudKit ModelContainer failed: \(error.localizedDescription)"
+        // Important: falling back keeps the app usable, but disables sync. Surface this in Settings.
+        let status = PersistenceStatus(
+          backend: .local,
+          cloudKitInitializationError: error.localizedDescription
         )
+        do {
+          // Attempt 1: default local store location (may fail if an old incompatible store exists).
+          do {
+            let local = ModelConfiguration(schema: schema)
+            let container = try ModelContainer(for: schema, configurations: [local])
+            return (container, status)
+          } catch {
+            // Attempt 2: a fresh store URL to bypass incompatible/corrupt previous stores.
+            let recoveredStatus = PersistenceStatus(
+              backend: .local,
+              cloudKitInitializationError: status.cloudKitInitializationError,
+              localInitializationError: error.localizedDescription
+            )
+            let recoveredLocal = ModelConfiguration(
+              schema: schema,
+              url: makeLocalStoreURL(filename: "ResumeCraftLocalRecovered.store")
+            )
+            let container = try ModelContainer(for: schema, configurations: [recoveredLocal])
+            return (container, recoveredStatus)
+          }
+        } catch {
+          // Last resort: in-memory store so the app can still launch.
+          let lastResortStatus = PersistenceStatus(
+            backend: .inMemory,
+            cloudKitInitializationError: status.cloudKitInitializationError,
+            localInitializationError: error.localizedDescription
+          )
+          let memory = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+          do {
+            let container = try ModelContainer(for: schema, configurations: [memory])
+            return (container, lastResortStatus)
+          } catch {
+            fatalError("In-memory ModelContainer failed: \(error.localizedDescription)")
+          }
+        }
       }
-    }()
+    }
+
+    private static func makeLocalStoreURL(filename: String) -> URL {
+      let fileManager = FileManager.default
+      let baseDirectory =
+        (try? fileManager.url(
+          for: .applicationSupportDirectory,
+          in: .userDomainMask,
+          appropriateFor: nil,
+          create: true
+        ))
+        ?? fileManager.temporaryDirectory
+
+      let bundleId = Bundle.main.bundleIdentifier ?? "ResumeCraft"
+      let directory = baseDirectory.appending(path: bundleId, directoryHint: .isDirectory)
+      try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+      return directory.appending(path: filename, directoryHint: .notDirectory)
+    }
 
   init() {
     //let settings = OpenRouterSettings()
@@ -58,57 +122,42 @@ struct ResumeCraftApp: App {
       let provider = FoundationModelProvider()
           _fmProvider = State(initialValue: provider)
           _aiReviewViewModel = State(initialValue: AIReviewViewModel(ai: provider)) // still conforms to AIProvider
+
+      let (container, status) = Self.makeModelContainer()
+      _modelContainer = State(initialValue: container)
+      _persistenceStatus = State(initialValue: status)
   }
 
   var body: some Scene {
     WindowGroup {
       Group {
-        if !isICloudAvailable {
-          VStack(spacing: 20) {
-            Text("iCloud Not Available")
-              .font(.title2).bold()
-            Text("Please sign in to your iCloud account in Settings to use ResumeCraft with full features.")
-              .multilineTextAlignment(.center)
-              .padding()
-            Button("Open iOS Settings") {
-              if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-              }
-            }
-            .buttonStyle(.borderedProminent)
-          }
-          .padding()
+        if hasSeenOnboarding {
+          ResumeRootView()
         } else {
-          if hasSeenOnboarding {
-            ResumeRootView()
-          } else {
-            OnboardingFlow(hasSeenOnboarding: $hasSeenOnboarding)
-          }
+          OnboardingFlow(hasSeenOnboarding: $hasSeenOnboarding)
         }
       }
       .environment(fmProvider)
       .environment(aiReviewViewModel)
       .environment(openRouterSettings)
       .environment(openRouterProvider)
-      .task {
-        //openRouterProvider.updateConfig(openRouterSettings.config)
-        await checkICloudAvailability()
-      }
+      .environment(persistenceStatus)
       .overlay(AppleIntelligenceGate())
     }
-    .modelContainer(Self.container)
-  }
-
-  @MainActor
-  private func checkICloudAvailability() async {
-    let status = try? await CKContainer.default().accountStatus()
-    isICloudAvailable = (status == .available)
+    .modelContainer(modelContainer)
   }
 }
 
 // Small helper: shows a subtle banner if Apple Intelligence is unavailable.
 @MainActor
 private struct AppleIntelligenceGate: View {
+  @Environment(\.openURL) private var openURL
+
+  private func openAppSettings() {
+    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+    openURL(url)
+  }
+
   var body: some View {
     let availability = SystemLanguageModel.default.availability
     if case .unavailable(let reason) = availability {
@@ -118,9 +167,7 @@ private struct AppleIntelligenceGate: View {
           Image(systemName: "sparkles")
           Text("On-device AI is unavailable (\(String(describing: reason))). Enable Apple Intelligence in Settings.")
           Button("Open Settings") {
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-              UIApplication.shared.open(url)
-            }
+            openAppSettings()
           }
         }
         .font(.footnote)
