@@ -25,7 +25,7 @@ struct SmartSuggestionsListView: View {
                 suggestionsList
             }
         }
-        .navigationTitle("Smart Suggestions")
+        .navigationTitle("Smarte Vorschläge")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 filterMenu
@@ -44,7 +44,7 @@ struct SmartSuggestionsListView: View {
             ProgressView()
                 .scaleEffect(1.2)
             
-            Text("Analyzing your resume...")
+            Text("Lebenslauf wird analysiert...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -56,16 +56,16 @@ struct SmartSuggestionsListView: View {
     @ViewBuilder
     private var emptyStateView: some View {
         ContentUnavailableView {
-            Label("No Suggestions", systemImage: "checkmark.seal.fill")
+            Label("Keine Vorschläge", systemImage: "checkmark.seal.fill")
         } description: {
             if filterPriority != nil || filterType != nil {
-                Text("No suggestions match your current filters.")
+                Text("Keine Vorschläge passen zu deinen Filtern.")
             } else {
-                Text("Great job! Your resume looks well-optimized.")
+                Text("Stark! Dein Lebenslauf wirkt gut optimiert.")
             }
         } actions: {
             if filterPriority != nil || filterType != nil {
-                Button("Clear Filters") {
+                Button("Filter zurücksetzen") {
                     withAnimation {
                         filterPriority = nil
                         filterType = nil
@@ -133,7 +133,7 @@ struct SmartSuggestionsListView: View {
                 // Progress indicator
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Completion Progress")
+                        Text("Fortschritt")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         
@@ -159,7 +159,7 @@ struct SmartSuggestionsListView: View {
             }
             .padding(.vertical, 8)
         } header: {
-            Text("Overview")
+            Text("Übersicht")
         }
     }
     
@@ -168,11 +168,11 @@ struct SmartSuggestionsListView: View {
     @ViewBuilder
     private var filterMenu: some View {
         Menu {
-            Section("Priority") {
+            Section("Priorität") {
                 Button {
                     filterPriority = filterPriority == nil ? nil : nil
                 } label: {
-                    Label("All Priorities", systemImage: filterPriority == nil ? "checkmark" : "")
+                    Label("Alle Prioritäten", systemImage: filterPriority == nil ? "checkmark" : "")
                 }
                 
                 ForEach([SmartSuggestion.Priority.critical, .high, .medium, .low], id: \.self) { priority in
@@ -184,11 +184,11 @@ struct SmartSuggestionsListView: View {
                 }
             }
             
-            Section("Type") {
+            Section("Typ") {
                 Button {
                     filterType = nil
                 } label: {
-                    Label("All Types", systemImage: filterType == nil ? "checkmark" : "")
+                    Label("Alle Typen", systemImage: filterType == nil ? "checkmark" : "")
                 }
                 
                 ForEach(SmartSuggestion.SuggestionType.allCases, id: \.self) { type in
@@ -207,7 +207,7 @@ struct SmartSuggestionsListView: View {
                             dismissedSuggestions.removeAll()
                         }
                     } label: {
-                        Label("Reset Dismissed", systemImage: "arrow.counterclockwise")
+                        Label("Erledigte zurücksetzen", systemImage: "arrow.counterclockwise")
                     }
                 }
             }
@@ -238,7 +238,7 @@ struct SmartSuggestionsListView: View {
     
     private var groupedSuggestions: [String: [SmartSuggestion]] {
         Dictionary(grouping: filteredSuggestions) { suggestion in
-            suggestion.section ?? "General"
+            suggestion.section ?? "Allgemein"
         }
     }
     
@@ -322,7 +322,7 @@ private struct SuggestionRow: View {
                     Button {
                         onDismiss()
                     } label: {
-                        Label("Mark Done", systemImage: "checkmark.circle")
+                        Label("Als erledigt markieren", systemImage: "checkmark.circle")
                             .font(.caption.weight(.medium))
                     }
                     .buttonStyle(.bordered)
@@ -423,19 +423,19 @@ private struct PriorityLabel: View {
 extension SmartSuggestion.Priority {
     var displayName: String {
         switch self {
-        case .critical: return "Critical"
-        case .high: return "High"
-        case .medium: return "Medium"
-        case .low: return "Low"
+        case .critical: return "Kritisch"
+        case .high: return "Hoch"
+        case .medium: return "Mittel"
+        case .low: return "Niedrig"
         }
     }
     
     var shortName: String {
         switch self {
-        case .critical: return "Critical"
-        case .high: return "High"
-        case .medium: return "Med"
-        case .low: return "Low"
+        case .critical: return "Kritisch"
+        case .high: return "Hoch"
+        case .medium: return "Mittel"
+        case .low: return "Niedrig"
         }
     }
 }

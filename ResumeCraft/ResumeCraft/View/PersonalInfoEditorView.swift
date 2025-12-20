@@ -37,15 +37,15 @@ struct PersonalInfoEditorView: View {
         NavigationStack {
             Form {
                 Section("Name") {
-                    TextField("First Name", text: $firstName)
-                    TextField("Last Name", text: $lastName)
+                    TextField("Vorname", text: $firstName)
+                    TextField("Nachname", text: $lastName)
                 }
-                Section("Contact") {
-                    TextField("Email", text: $email)
+                Section("Kontakt") {
+                    TextField("E-Mail", text: $email)
                         .keyboardType(.emailAddress)
-                    TextField("Phone", text: $phone)
+                    TextField("Telefon", text: $phone)
                         .keyboardType(.phonePad)
-                    TextField("Address", text: $address)
+                    TextField("Adresse", text: $address)
                 }
                 Section("Links") {
                     TextField("LinkedIn (optional)", text: $linkedIn)
@@ -53,13 +53,13 @@ struct PersonalInfoEditorView: View {
                     TextField("GitHub (optional)", text: $github)
                 }
             }
-            .navigationTitle("Edit Personal Info")
+            .navigationTitle("Persönliche Daten bearbeiten")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                    Button("Abbrechen", action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("Speichern") {
                         let updated = PersonalInfo(
                             firstName: firstName,
                             lastName: lastName,

@@ -31,15 +31,15 @@ struct ExportOptionsView: View {
                         )
                     }
                 } header: {
-                    Text("Export Format")
+                    Text("Exportformat")
                 } footer: {
                     Text(options.format.description)
                 }
                 
                 // File Name
-                Section("File Name") {
+                Section("Dateiname") {
                     HStack {
-                        TextField("Resume", text: $options.fileName)
+                        TextField("Lebenslauf", text: $options.fileName)
                             .textInputAutocapitalization(.words)
                         
                         Text(".\(options.format.fileExtension)")
@@ -49,27 +49,27 @@ struct ExportOptionsView: View {
                 
                 // PDF Options (only show for PDF format)
                 if options.format == .pdf {
-                    Section("Page Settings") {
-                        Picker("Page Size", selection: $options.pageSize) {
+                    Section("Seiteneinstellungen") {
+                        Picker("Seitengröße", selection: $options.pageSize) {
                             ForEach(ExportOptions.PageSize.allCases) { size in
                                 Text(size.rawValue).tag(size)
                             }
                         }
                         
-                        Picker("Margins", selection: Binding(
+                        Picker("Ränder", selection: Binding(
                             get: { marginsSelection },
                             set: { setMargins($0) }
                         )) {
                             Text("Standard").tag("standard")
-                            Text("Narrow").tag("narrow")
-                            Text("Wide").tag("wide")
+                            Text("Schmal").tag("narrow")
+                            Text("Breit").tag("wide")
                         }
                     }
                     
                     Section {
-                        Toggle("Include PDF Metadata", isOn: $options.includeMetadata)
+                        Toggle("PDF-Metadaten einschließen", isOn: $options.includeMetadata)
                     } footer: {
-                        Text("Adds author name, title, and creation date to the PDF file properties.")
+                        Text("Fügt Autor, Titel und Erstellungsdatum zu den PDF-Dateieigenschaften hinzu.")
                     }
                 }
                 
@@ -77,7 +77,7 @@ struct ExportOptionsView: View {
                 Section {
                     ExportPreviewCard(resume: resume, format: options.format)
                 } header: {
-                    Text("Preview")
+                    Text("Vorschau")
                 }
                 
                 // Export Button
@@ -90,10 +90,10 @@ struct ExportOptionsView: View {
                             if isExporting {
                                 ProgressView()
                                     .padding(.trailing, 8)
-                                Text("Exporting...")
+                                Text("Export läuft...")
                             } else {
                                 Image(systemName: "square.and.arrow.up")
-                                Text("Export \(options.format.rawValue)")
+                                Text("Exportieren \(options.format.rawValue)")
                             }
                             Spacer()
                         }
@@ -103,11 +103,11 @@ struct ExportOptionsView: View {
                     .disabled(isExporting || options.fileName.isEmpty)
                 }
             }
-            .navigationTitle("Export Resume")
+            .navigationTitle("Lebenslauf exportieren")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Abbrechen") { dismiss() }
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -115,10 +115,10 @@ struct ExportOptionsView: View {
                     ShareSheetView(url: result.url, result: result)
                 }
             }
-            .alert("Export Failed", isPresented: $showError) {
+            .alert("Export fehlgeschlagen", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(exportError ?? "An unknown error occurred.")
+                Text(exportError ?? "Ein unbekannter Fehler ist aufgetreten.")
             }
         }
     }
@@ -232,17 +232,17 @@ private struct ExportPreviewCard: View {
                 StatItem(
                     icon: "briefcase.fill",
                     value: "\((resume.experiences ?? []).filter(\.isVisible).count)",
-                    label: "Jobs"
+                    label: "Positionen"
                 )
                 StatItem(
                     icon: "star.fill",
                     value: "\((resume.skills ?? []).filter(\.isVisible).count)",
-                    label: "Skills"
+                    label: "Fähigkeiten"
                 )
                 StatItem(
                     icon: "text.word.spacing",
                     value: "\(wordCount)",
-                    label: "Words"
+                    label: "Wörter"
                 )
             }
             
@@ -264,13 +264,13 @@ private struct ExportPreviewCard: View {
     private var formatInfo: String {
         switch format {
         case .pdf:
-            return "PDF format preserves formatting and is ideal for job applications."
+            return "Das PDF-Format erhält die Formatierung und ist ideal für Bewerbungen."
         case .text:
-            return "Plain text format is ATS-friendly and works with any system."
+            return "Reines Textformat ist ATS-freundlich und funktioniert in jedem System."
         case .markdown:
-            return "Markdown is great for version control and easy editing."
+            return "Markdown eignet sich gut für Versionskontrolle und einfache Bearbeitung."
         case .html:
-            return "HTML format can be viewed in any web browser."
+            return "Das HTML-Format kann in jedem Webbrowser angezeigt werden."
         }
     }
 }
@@ -322,17 +322,17 @@ private struct ShareSheetView: View {
                 .padding(.top, 24)
                 
                 // Title
-                Text("Export Successful!")
+                Text("Export erfolgreich!")
                     .font(.title2.bold())
                 
                 // Details card
                 VStack(alignment: .leading, spacing: 12) {
                     DetailRow(label: "Format", value: result.format.rawValue)
-                    DetailRow(label: "File Size", value: result.fileSizeFormatted)
+                    DetailRow(label: "Dateigröße", value: result.fileSizeFormatted)
                     if let pages = result.pageCount {
-                        DetailRow(label: "Pages", value: "\(pages)")
+                        DetailRow(label: "Seiten", value: "\(pages)")
                     }
-                    DetailRow(label: "Created", value: result.exportDate.formatted(date: .abbreviated, time: .shortened))
+                    DetailRow(label: "Erstellt", value: result.exportDate.formatted(date: .abbreviated, time: .shortened))
                 }
                 .padding()
                 .background(Color(.secondarySystemBackground))
@@ -345,7 +345,7 @@ private struct ShareSheetView: View {
                 Button {
                     showActivitySheet = true
                 } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label("Teilen", systemImage: "square.and.arrow.up")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -356,11 +356,11 @@ private struct ShareSheetView: View {
                 .padding(.horizontal)
                 .padding(.bottom)
             }
-            .navigationTitle("Export Complete")
+            .navigationTitle("Export abgeschlossen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Fertig") { dismiss() }
                 }
             }
             .sheet(isPresented: $showActivitySheet) {

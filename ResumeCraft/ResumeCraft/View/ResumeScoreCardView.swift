@@ -32,7 +32,7 @@ struct ResumeScoreCardView: View {
             .padding()
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Resume Score")
+        .navigationTitle("Lebenslaufbewertung")
         .onAppear {
             withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
                 animateScore = true
@@ -88,14 +88,14 @@ struct ResumeScoreCardView: View {
                 QuickStatView(
                     icon: "checkmark.circle.fill",
                     value: "\(strongCategoryCount)",
-                    label: "Strong Areas",
+                    label: "Stärken",
                     color: .green
                 )
                 
                 QuickStatView(
                     icon: "exclamationmark.triangle.fill",
                     value: "\(improvementCount)",
-                    label: "To Improve",
+                    label: "Verbesserungspotenzial",
                     color: .orange
                 )
             }
@@ -111,7 +111,7 @@ struct ResumeScoreCardView: View {
     @ViewBuilder
     private var categoryBreakdownSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Score Breakdown")
+            Text("Punkteübersicht")
                 .font(.headline)
             
             ForEach(score.categoryScores) { categoryScore in
@@ -144,7 +144,7 @@ struct ResumeScoreCardView: View {
                 HStack {
                     Image(systemName: category.icon)
                         .foregroundStyle(categoryColor(for: categoryScore.score))
-                    Text("\(category.rawValue) Details")
+                    Text("Details zu \(category.rawValue)")
                         .font(.headline)
                     Spacer()
                     Button {
@@ -181,7 +181,7 @@ struct ResumeScoreCardView: View {
                 HStack {
                     Image(systemName: "lightbulb.fill")
                         .foregroundStyle(.yellow)
-                    Text("Top Recommendations")
+                    Text("Top-Empfehlungen")
                         .font(.headline)
                 }
                 
@@ -438,12 +438,12 @@ struct CompactScoreBadge: View {
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("Resume Score")
+                Text("Lebenslaufbewertung")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 
                 HStack(spacing: 4) {
-                    Text("Grade: \(grade.rawValue)")
+                    Text("Note: \(grade.rawValue)")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(gradeColor)
                 }
@@ -482,7 +482,7 @@ struct ScoreSummaryRow: View {
             } else {
                 HStack {
                     ProgressView()
-                    Text("Calculating score...")
+                    Text("Bewertung wird berechnet...")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

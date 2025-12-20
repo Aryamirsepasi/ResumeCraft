@@ -19,11 +19,11 @@ enum PDFExportError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .resumeTooLong:
-            return "Resumes should not be more than two pages."
+            return "Lebensläufe sollten nicht länger als zwei Seiten sein."
         case .exportFailed(let reason):
-            return "Export failed: \(reason)"
+            return "Export fehlgeschlagen: \(reason)"
         case .invalidFormat:
-            return "Invalid export format selected."
+            return "Ungültiges Exportformat ausgewählt."
         }
     }
 }
@@ -32,14 +32,14 @@ enum PDFExportError: Error, LocalizedError {
 
 struct ExportOptions {
     var format: ExportFormat = .pdf
-    var fileName: String = "Resume"
+    var fileName: String = "Lebenslauf"
     var includeMetadata: Bool = true
     var pageSize: PageSize = .a4
     var margins: Margins = .standard
     
     enum ExportFormat: String, CaseIterable, Identifiable {
         case pdf = "PDF"
-        case text = "Plain Text"
+        case text = "Klartext"
         case markdown = "Markdown"
         case html = "HTML"
         
@@ -65,10 +65,10 @@ struct ExportOptions {
         
         var description: String {
             switch self {
-            case .pdf: return "Best for sharing and printing"
-            case .text: return "Plain text, ATS-friendly format"
-            case .markdown: return "Formatted text for version control"
-            case .html: return "Web-ready format"
+            case .pdf: return "Am besten zum Teilen und Drucken"
+            case .text: return "Klartext, ATS-freundliches Format"
+            case .markdown: return "Formatiert für Versionskontrolle"
+            case .html: return "Web-geeignetes Format"
             }
         }
     }
@@ -134,7 +134,7 @@ final class PDFExportService {
     }
     
     /// Legacy export method for backward compatibility
-    static func export(resume: Resume, fileName: String = "Resume.pdf") throws -> URL {
+    static func export(resume: Resume, fileName: String = "Lebenslauf.pdf") throws -> URL {
         var options = ExportOptions()
         options.fileName = fileName.replacingOccurrences(of: ".pdf", with: "")
         let result = try export(resume: resume, options: options)
@@ -191,7 +191,7 @@ final class PDFExportService {
                 kCGPDFContextTitle as String: options.fileName,
                 kCGPDFContextAuthor as String: "\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "")",
                 kCGPDFContextCreator as String: "ResumeCraft",
-                kCGPDFContextSubject as String: "Professional Resume"
+                kCGPDFContextSubject as String: "Lebenslauf"
             ]
         }
         
@@ -322,14 +322,14 @@ final class PDFExportService {
         
         // Summary
         if let summary = resume.summary, summary.isVisible, !summary.text.isEmpty {
-            md += "## Summary\n\n"
+            md += "## Zusammenfassung\n\n"
             md += summary.text + "\n\n"
         }
         
         // Skills
         let skills = (resume.skills ?? []).filter(\.isVisible)
         if !skills.isEmpty {
-            md += "## Skills\n\n"
+            md += "## Fähigkeiten\n\n"
             let grouped = Dictionary(grouping: skills) { $0.category }
             for (category, categorySkills) in grouped.sorted(by: { $0.key < $1.key }) {
                 if !category.isEmpty {
@@ -342,9 +342,9 @@ final class PDFExportService {
         // Experience
         let experiences = (resume.experiences ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !experiences.isEmpty {
-            md += "## Work Experience\n\n"
+            md += "## Berufserfahrung\n\n"
             for exp in experiences {
-                md += "### \(exp.title) at \(exp.company)\n"
+                md += "### \(exp.title) bei \(exp.company)\n"
                 md += "*\(formatDateRange(exp.startDate, exp.endDate, exp.isCurrent))* | \(exp.location)\n\n"
                 
                 let bullets = exp.details.components(separatedBy: "\n").filter { !$0.isEmpty }
@@ -358,11 +358,11 @@ final class PDFExportService {
         // Projects
         let projects = (resume.projects ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !projects.isEmpty {
-            md += "## Projects\n\n"
+            md += "## Projekte\n\n"
             for proj in projects {
                 md += "### \(proj.name)\n"
                 if !proj.technologies.isEmpty {
-                    md += "*Technologies: \(proj.technologies)*\n\n"
+                    md += "*Technologien: \(proj.technologies)*\n\n"
                 }
                 md += proj.details + "\n"
                 if let link = proj.link, !link.isEmpty {
@@ -375,12 +375,12 @@ final class PDFExportService {
         // Education
         let educations = (resume.educations ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !educations.isEmpty {
-            md += "## Education\n\n"
+            md += "## Ausbildung\n\n"
             for edu in educations {
                 md += "### \(edu.degree) in \(edu.field)\n"
                 md += "**\(edu.school)** | *\(formatDateRange(edu.startDate, edu.endDate, false))*\n"
                 if !edu.grade.isEmpty {
-                    md += "Grade: \(edu.grade)\n"
+                    md += "Note: \(edu.grade)\n"
                 }
                 md += "\n"
             }
@@ -389,7 +389,7 @@ final class PDFExportService {
         // Languages
         let languages = (resume.languages ?? []).filter(\.isVisible)
         if !languages.isEmpty {
-            md += "## Languages\n\n"
+            md += "## Sprachen\n\n"
             md += languages.map { "\($0.name) (\($0.proficiency))" }.joined(separator: " | ") + "\n"
         }
         
@@ -401,11 +401,11 @@ final class PDFExportService {
     private static func generateHTML(for resume: Resume) -> String {
         var html = """
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="de">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "") - Resume</title>
+            <title>\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "") - Lebenslauf</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
@@ -458,14 +458,14 @@ final class PDFExportService {
         
         // Summary
         if let summary = resume.summary, summary.isVisible, !summary.text.isEmpty {
-            html += "<h2>Summary</h2>\n"
+            html += "<h2>Zusammenfassung</h2>\n"
             html += "<p class=\"summary\">\(summary.text)</p>\n"
         }
         
         // Skills
         let skills = (resume.skills ?? []).filter(\.isVisible)
         if !skills.isEmpty {
-            html += "<h2>Skills</h2>\n<div class=\"skills\">\n"
+            html += "<h2>Fähigkeiten</h2>\n<div class=\"skills\">\n"
             for skill in skills {
                 html += "<span class=\"skill\">\(skill.name)</span>\n"
             }
@@ -475,10 +475,10 @@ final class PDFExportService {
         // Experience
         let experiences = (resume.experiences ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !experiences.isEmpty {
-            html += "<h2>Work Experience</h2>\n"
+            html += "<h2>Berufserfahrung</h2>\n"
             for exp in experiences {
                 html += "<div class=\"experience-item\">\n"
-                html += "<h3>\(exp.title) at \(exp.company)</h3>\n"
+                html += "<h3>\(exp.title) bei \(exp.company)</h3>\n"
                 html += "<p class=\"date\">\(formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)) • \(exp.location)</p>\n"
                 
                 let bullets = exp.details.components(separatedBy: "\n").filter { !$0.isEmpty }
@@ -496,7 +496,7 @@ final class PDFExportService {
         // Projects
         let projects = (resume.projects ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !projects.isEmpty {
-            html += "<h2>Projects</h2>\n"
+            html += "<h2>Projekte</h2>\n"
             for proj in projects {
                 html += "<div class=\"project-item\">\n"
                 html += "<h3>\(proj.name)</h3>\n"
@@ -514,14 +514,14 @@ final class PDFExportService {
         // Education
         let educations = (resume.educations ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !educations.isEmpty {
-            html += "<h2>Education</h2>\n"
+            html += "<h2>Ausbildung</h2>\n"
             for edu in educations {
                 html += "<div class=\"education-item\">\n"
                 html += "<h3>\(edu.degree) in \(edu.field)</h3>\n"
                 html += "<p><strong>\(edu.school)</strong></p>\n"
                 html += "<p class=\"date\">\(formatDateRange(edu.startDate, edu.endDate, false))</p>\n"
                 if !edu.grade.isEmpty {
-                    html += "<p>Grade: \(edu.grade)</p>\n"
+                    html += "<p>Note: \(edu.grade)</p>\n"
                 }
                 html += "</div>\n"
             }
@@ -530,7 +530,7 @@ final class PDFExportService {
         // Languages
         let languages = (resume.languages ?? []).filter(\.isVisible)
         if !languages.isEmpty {
-            html += "<h2>Languages</h2>\n<p>"
+            html += "<h2>Sprachen</h2>\n<p>"
             html += languages.map { "\($0.name) (\($0.proficiency))" }.joined(separator: " • ")
             html += "</p>\n"
         }
@@ -550,11 +550,12 @@ final class PDFExportService {
     private static func formatDateRange(_ start: Date, _ end: Date?, _ isCurrent: Bool) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM yyyy"
+        formatter.locale = Locale(identifier: "de_DE")
         
         let startStr = formatter.string(from: start)
         
         if isCurrent {
-            return "\(startStr) – Present"
+            return "\(startStr) – Heute"
         } else if let end = end {
             return "\(startStr) – \(formatter.string(from: end))"
         } else {

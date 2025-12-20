@@ -2,9 +2,7 @@ import SwiftUI
 
 struct SkillEditorView: View {
   @State private var name: String = ""
-  @State private var name_de: String = ""
   @State private var category: String = ""
-  @State private var category_de: String = ""
 
   var onSave: (Skill) -> Void
   var onCancel: () -> Void
@@ -25,30 +23,23 @@ struct SkillEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
-        Section("Skill") {
+        Section("Fähigkeit") {
           TextField("Name", text: $name)
             .autocapitalization(.words)
-            .accessibilityLabel("Skill Name")
-          TextField("Category", text: $category)
+            .accessibilityLabel("Fähigkeit")
+          TextField("Kategorie", text: $category)
             .autocapitalization(.words)
-            .accessibilityLabel("Skill Category")
-        }
-
-        Section("German Translation") {
-          TextField("Name (German)", text: $name_de)
-          TextField("Category (German)", text: $category_de)
+            .accessibilityLabel("Kategorie")
         }
       }
-      .navigationTitle("Edit Skill")
+      .navigationTitle("Fähigkeit bearbeiten")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
-          Button("Cancel", action: onCancel)
+          Button("Abbrechen", action: onCancel)
         }
         ToolbarItem(placement: .confirmationAction) {
-          Button("Save") {
+          Button("Speichern") {
             let skill = Skill(name: name, category: category)
-            skill.name_de = name_de.isEmpty ? nil : name_de
-            skill.category_de = category_de.isEmpty ? nil : category_de
             onSave(skill)
           }
           .disabled(name.isEmpty)
@@ -57,9 +48,7 @@ struct SkillEditorView: View {
       .onAppear {
         if let s = initialSkill {
           name = s.name
-          name_de = s.name_de ?? ""
           category = s.category
-          category_de = s.category_de ?? ""
         }
       }
     }

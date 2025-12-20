@@ -8,16 +8,12 @@ import SwiftUI
 
 struct ExperienceEditorView: View {
     @State private var title: String = ""
-    @State private var title_de: String = ""
     @State private var company: String = ""
-    @State private var company_de: String = ""
     @State private var location: String = ""
-    @State private var location_de: String = ""
     @State private var startDate: Date = Date()
     @State private var endDate: Date = Date()
     @State private var isCurrent: Bool = false
     @State private var details: String = ""
-    @State private var details_de: String = ""
 
     var onSave: (WorkExperience) -> Void
     var onCancel: () -> Void
@@ -38,43 +34,33 @@ struct ExperienceEditorView: View {
         NavigationStack {
             Form {
                 Section("Position") {
-                    TextField("Title", text: $title)
+                    TextField("Titel", text: $title)
                         .autocapitalization(.words)
-                    TextField("Company", text: $company)
-                    TextField("Location", text: $location)
+                    TextField("Unternehmen", text: $company)
+                    TextField("Ort", text: $location)
                 }
 
-                Section("Dates") {
-                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-                    Toggle("Current Position", isOn: $isCurrent)
+                Section("Zeitraum") {
+                    DatePicker("Startdatum", selection: $startDate, displayedComponents: .date)
+                    Toggle("Aktuelle Position", isOn: $isCurrent)
                     if !isCurrent {
-                        DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                        DatePicker("Enddatum", selection: $endDate, in: startDate..., displayedComponents: .date)
                     }
                 }
 
-                Section("Description") {
+                Section("Beschreibung") {
                     TextEditor(text: $details)
                         .frame(height: 100)
                         .accessibilityLabel("Details")
                 }
-
-                // MARK: - German Translation Section
-                Section("German Translation") {
-                    TextField("Title (German)", text: $title_de)
-                    TextField("Company (German)", text: $company_de)
-                    TextField("Location (German)", text: $location_de)
-                    TextEditor(text: $details_de)
-                        .frame(height: 100)
-                        .accessibilityLabel("Details (German)")
-                }
             }
-            .navigationTitle("Edit Experience")
+            .navigationTitle("Berufserfahrung bearbeiten")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                    Button("Abbrechen", action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("Speichern") {
                         let exp = WorkExperience(
                             title: title,
                             company: company,
@@ -84,12 +70,6 @@ struct ExperienceEditorView: View {
                             isCurrent: isCurrent,
                             details: details
                         )
-                        // Assign translations
-                        exp.title_de = title_de.isEmpty ? nil : title_de
-                        exp.company_de = company_de.isEmpty ? nil : company_de
-                        exp.location_de = location_de.isEmpty ? nil : location_de
-                        exp.details_de = details_de.isEmpty ? nil : details_de
-
                         onSave(exp)
                     }
                     .disabled(title.isEmpty || company.isEmpty)
@@ -98,16 +78,12 @@ struct ExperienceEditorView: View {
             .onAppear {
                 if let e = initialExperience {
                     title = e.title
-                    title_de = e.title_de ?? ""
                     company = e.company
-                    company_de = e.company_de ?? ""
                     location = e.location
-                    location_de = e.location_de ?? ""
                     startDate = e.startDate
                     endDate = e.endDate ?? e.startDate
                     isCurrent = e.isCurrent
                     details = e.details
-                    details_de = e.details_de ?? ""
                 }
             }
         }

@@ -101,7 +101,7 @@ final class WorkExperience {
   var details: String = ""
   var isVisible: Bool = true
 
-  // German translations (optional)
+  // Legacy translation fields (deprecated; kept for migration)
   var title_de: String? = nil
   var company_de: String? = nil
   var location_de: String? = nil
@@ -142,7 +142,7 @@ final class Project {
   var link: String? = nil
   var isVisible: Bool = true
 
-  // German translations (optional)
+  // Legacy translation fields (deprecated; kept for migration)
   var name_de: String? = nil
   var details_de: String? = nil
   var technologies_de: String? = nil
@@ -173,7 +173,7 @@ final class Skill {
   var category: String = ""
   var isVisible: Bool = true
 
-  // German translations (optional)
+  // Legacy translation fields (deprecated; kept for migration)
   var name_de: String? = nil
   var category_de: String? = nil
 
@@ -201,7 +201,7 @@ final class Education {
   var details: String = ""
   var isVisible: Bool = true
 
-  // German translations (optional)
+  // Legacy translation fields (deprecated; kept for migration)
   var school_de: String? = nil
   var degree_de: String? = nil
   var field_de: String? = nil
@@ -240,7 +240,7 @@ final class Extracurricular {
   var details: String = ""
   var isVisible: Bool = true
 
-  // German translations (optional)
+  // Legacy translation fields (deprecated; kept for migration)
   var title_de: String? = nil
   var organization_de: String? = nil
   var details_de: String? = nil
@@ -265,7 +265,7 @@ final class Language {
   var proficiency: String = ""
   var isVisible: Bool = true
 
-  // German translations (optional)
+  // Legacy translation fields (deprecated; kept for migration)
   var name_de: String? = nil
   var proficiency_de: String? = nil
 
@@ -296,7 +296,7 @@ struct SkillDTO: Decodable {
   let category: String
   let isVisible: Bool
 
-  // Optional German translations
+  // Legacy translation fields (deprecated; kept for migration)
   let name_de: String?
   let category_de: String?
 }
@@ -326,7 +326,7 @@ struct ExtracurricularDTO: Decodable {
   let details: String
   let isVisible: Bool
 
-  // Optional German translations
+  // Legacy translation fields (deprecated; kept for migration)
   let title_de: String?
   let organization_de: String?
   let details_de: String?
@@ -337,7 +337,7 @@ struct LanguageDTO: Decodable {
   let proficiency: String
   let isVisible: Bool
 
-  // Optional German translations
+  // Legacy translation fields (deprecated; kept for migration)
   let name_de: String?
   let proficiency_de: String?
 }
@@ -352,7 +352,7 @@ struct EducationDTO: Decodable {
   let details: String
   let isVisible: Bool
 
-  // Optional German translations
+  // Legacy translation fields (deprecated; kept for migration)
   let school_de: String?
   let degree_de: String?
   let field_de: String?

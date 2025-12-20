@@ -25,31 +25,31 @@ struct ResumePreviewScreen: View {
                         Button {
                             dismiss()
                         } label: {
-                            Label("Close", systemImage: "xmark")
+                            Label("Schließen", systemImage: "xmark")
                         }
-                        .accessibilityLabel("Close Preview")
+                        .accessibilityLabel("Vorschau schließen")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             Button {
                                 exportPDF()
                             } label: {
-                                Label("Quick Export PDF", systemImage: "doc.fill")
+                                Label("Schnell-Export PDF", systemImage: "doc.fill")
                             }
                             
                             Button {
                                 showExportOptions = true
                             } label: {
-                                Label("Export Options...", systemImage: "square.and.arrow.up")
+                                Label("Exportoptionen...", systemImage: "square.and.arrow.up")
                             }
                         } label: {
                             if isExporting {
                                 ProgressView()
                             } else {
-                                Label("Export", systemImage: "square.and.arrow.up")
+                                Label("Exportieren", systemImage: "square.and.arrow.up")
                             }
                         }
-                        .accessibilityLabel("Export Resume")
+                        .accessibilityLabel("Lebenslauf exportieren")
                     }
                 }
                 .sheet(isPresented: $showShareSheet, onDismiss: { pdfURL = nil }) {
@@ -60,19 +60,21 @@ struct ResumePreviewScreen: View {
                 .sheet(isPresented: $showExportOptions) {
                     ExportOptionsView(resume: resume)
                 }
-                .alert("Resume Too Long", isPresented: $showTooLongAlert) {
+                .alert("Lebenslauf zu lang", isPresented: $showTooLongAlert) {
                     Button("OK", role: .cancel) { }
                 } message: {
-                    Text("Resumes should not be more than two pages.")
+                    Text("Lebensläufe sollten nicht länger als zwei Seiten sein.")
                 }
         }
     }
 
     private func exportPDF() {
         isExporting = true
+        // Capture resume on the main actor before entering detached task
+        let resumeToExport = resume
         Task.detached(priority: .userInitiated) {
             do {
-                let pdf = try PDFExportService.export(resume: resume, fileName: "Resume.pdf")
+                let pdf = try PDFExportService.export(resume: resumeToExport, fileName: "Lebenslauf.pdf")
                 await MainActor.run {
                     pdfURL = pdf
                     showShareSheet = true

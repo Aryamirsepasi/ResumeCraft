@@ -66,7 +66,7 @@ struct ResumeRootView: View {
           // Ensure sheets (e.g. Settings) can access the same ResumeEditorModel
           .environment(resumeModel)
       } else {
-        ProgressView("Loading Resume…")
+        ProgressView("Lebenslauf wird geladen…")
           .task { await loadOrCreateResume() }
       }
     }
@@ -77,10 +77,10 @@ struct ResumeRootView: View {
   private func mainTabs(_ model: ResumeEditorModel) -> some View {
     TabView {
       homeTab(model)
-        .tabItem { Label("Home", systemImage: "house") }
+        .tabItem { Label("Start", systemImage: "house") }
 
       aiReviewTab(model)
-        .tabItem { Label("AI Review", systemImage: "sparkles") }
+        .tabItem { Label("KI-Bewertung", systemImage: "sparkles") }
     }
   }
 
@@ -124,13 +124,280 @@ struct ResumeRootView: View {
     let descriptor = FetchDescriptor<Resume>(
       sortBy: [SortDescriptor(\.updated, order: .reverse)]
     )
-    if let found = try? context.fetch(descriptor).first {
-      resumeModel = ResumeEditorModel(resume: found, context: context)
+    let found = (try? context.fetch(descriptor)) ?? []
+    if let primary = found.first {
+      let merged = mergeResumesIfNeeded(primary: primary, others: Array(found.dropFirst()))
+      migrateGermanFieldsIfNeeded(for: merged)
+      resumeModel = ResumeEditorModel(resume: merged, context: context)
+      scheduleMergeCheck()
     } else {
       let newResume = Resume()
       context.insert(newResume)
       try? context.save()
       resumeModel = ResumeEditorModel(resume: newResume, context: context)
+    }
+  }
+
+  @MainActor
+  private func scheduleMergeCheck() {
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      let descriptor = FetchDescriptor<Resume>(
+        sortBy: [SortDescriptor(\.updated, order: .reverse)]
+      )
+      let refreshed = (try? context.fetch(descriptor)) ?? []
+      guard let primary = refreshed.first, refreshed.count > 1 else { return }
+      let merged = mergeResumesIfNeeded(primary: primary, others: Array(refreshed.dropFirst()))
+      migrateGermanFieldsIfNeeded(for: merged)
+      if resumeModel?.resume.id != merged.id {
+        resumeModel = ResumeEditorModel(resume: merged, context: context)
+      } else {
+        resumeModel?.refreshAllModels()
+      }
+    }
+  }
+
+  @MainActor
+  private func mergeResumesIfNeeded(primary: Resume, others: [Resume]) -> Resume {
+    guard !others.isEmpty else { return primary }
+
+    for resume in others {
+      mergeResumeData(from: resume, into: primary)
+      context.delete(resume)
+    }
+
+    primary.updated = .now
+    dedupeAllSections(of: primary)
+    try? context.save()
+    return primary
+  }
+
+  private func mergeResumeData(from source: Resume, into target: Resume) {
+    if let sourcePersonal = source.personal {
+      if let targetPersonal = target.personal {
+        if targetPersonal.firstName.isEmpty { targetPersonal.firstName = sourcePersonal.firstName }
+        if targetPersonal.lastName.isEmpty { targetPersonal.lastName = sourcePersonal.lastName }
+        if targetPersonal.email.isEmpty { targetPersonal.email = sourcePersonal.email }
+        if targetPersonal.phone.isEmpty { targetPersonal.phone = sourcePersonal.phone }
+        if targetPersonal.address.isEmpty { targetPersonal.address = sourcePersonal.address }
+        if targetPersonal.linkedIn == nil { targetPersonal.linkedIn = sourcePersonal.linkedIn }
+        if targetPersonal.website == nil { targetPersonal.website = sourcePersonal.website }
+        if targetPersonal.github == nil { targetPersonal.github = sourcePersonal.github }
+      } else {
+        sourcePersonal.resume = target
+        target.personal = sourcePersonal
+      }
+    }
+
+    if let sourceSummary = source.summary {
+      if let targetSummary = target.summary {
+        if targetSummary.text.isEmpty { targetSummary.text = sourceSummary.text }
+        targetSummary.isVisible = targetSummary.isVisible || sourceSummary.isVisible
+      } else {
+        sourceSummary.resume = target
+        target.summary = sourceSummary
+      }
+    }
+
+    if let sourceSkills = source.skills {
+      var targetSkills = target.skills ?? []
+      for item in sourceSkills {
+        item.resume = target
+        targetSkills.append(item)
+      }
+      target.skills = targetSkills
+    }
+
+    if let sourceExperiences = source.experiences {
+      var targetExperiences = target.experiences ?? []
+      for item in sourceExperiences {
+        item.resume = target
+        targetExperiences.append(item)
+      }
+      target.experiences = targetExperiences
+    }
+
+    if let sourceProjects = source.projects {
+      var targetProjects = target.projects ?? []
+      for item in sourceProjects {
+        item.resume = target
+        targetProjects.append(item)
+      }
+      target.projects = targetProjects
+    }
+
+    if let sourceEducations = source.educations {
+      var targetEducations = target.educations ?? []
+      for item in sourceEducations {
+        item.resume = target
+        targetEducations.append(item)
+      }
+      target.educations = targetEducations
+    }
+
+    if let sourceExtracurriculars = source.extracurriculars {
+      var targetExtras = target.extracurriculars ?? []
+      for item in sourceExtracurriculars {
+        item.resume = target
+        targetExtras.append(item)
+      }
+      target.extracurriculars = targetExtras
+    }
+
+    if let sourceLanguages = source.languages {
+      var targetLanguages = target.languages ?? []
+      for item in sourceLanguages {
+        item.resume = target
+        targetLanguages.append(item)
+      }
+      target.languages = targetLanguages
+    }
+  }
+
+  @MainActor
+  private func migrateGermanFieldsIfNeeded(for resume: Resume) {
+    var didChange = false
+
+    if let summary = resume.summary {
+      if let textDe = summary.text_de, !textDe.isEmpty {
+        if summary.text.isEmpty {
+          summary.text = textDe
+        }
+        summary.text_de = nil
+        didChange = true
+      }
+    }
+
+    for exp in resume.experiences ?? [] {
+      if let value = exp.title_de, !value.isEmpty {
+        if exp.title.isEmpty { exp.title = value }
+        exp.title_de = nil
+        didChange = true
+      }
+      if let value = exp.company_de, !value.isEmpty {
+        if exp.company.isEmpty { exp.company = value }
+        exp.company_de = nil
+        didChange = true
+      }
+      if let value = exp.location_de, !value.isEmpty {
+        if exp.location.isEmpty { exp.location = value }
+        exp.location_de = nil
+        didChange = true
+      }
+      if let value = exp.details_de, !value.isEmpty {
+        if exp.details.isEmpty { exp.details = value }
+        exp.details_de = nil
+        didChange = true
+      }
+    }
+
+    for proj in resume.projects ?? [] {
+      if let value = proj.name_de, !value.isEmpty {
+        if proj.name.isEmpty { proj.name = value }
+        proj.name_de = nil
+        didChange = true
+      }
+      if let value = proj.details_de, !value.isEmpty {
+        if proj.details.isEmpty { proj.details = value }
+        proj.details_de = nil
+        didChange = true
+      }
+      if let value = proj.technologies_de, !value.isEmpty {
+        if proj.technologies.isEmpty { proj.technologies = value }
+        proj.technologies_de = nil
+        didChange = true
+      }
+    }
+
+    for skill in resume.skills ?? [] {
+      if let value = skill.name_de, !value.isEmpty {
+        if skill.name.isEmpty { skill.name = value }
+        skill.name_de = nil
+        didChange = true
+      }
+      if let value = skill.category_de, !value.isEmpty {
+        if skill.category.isEmpty { skill.category = value }
+        skill.category_de = nil
+        didChange = true
+      }
+    }
+
+    for edu in resume.educations ?? [] {
+      if let value = edu.school_de, !value.isEmpty {
+        if edu.school.isEmpty { edu.school = value }
+        edu.school_de = nil
+        didChange = true
+      }
+      if let value = edu.degree_de, !value.isEmpty {
+        if edu.degree.isEmpty { edu.degree = value }
+        edu.degree_de = nil
+        didChange = true
+      }
+      if let value = edu.field_de, !value.isEmpty {
+        if edu.field.isEmpty { edu.field = value }
+        edu.field_de = nil
+        didChange = true
+      }
+      if let value = edu.details_de, !value.isEmpty {
+        if edu.details.isEmpty { edu.details = value }
+        edu.details_de = nil
+        didChange = true
+      }
+    }
+
+    for extra in resume.extracurriculars ?? [] {
+      if let value = extra.title_de, !value.isEmpty {
+        if extra.title.isEmpty { extra.title = value }
+        extra.title_de = nil
+        didChange = true
+      }
+      if let value = extra.organization_de, !value.isEmpty {
+        if extra.organization.isEmpty { extra.organization = value }
+        extra.organization_de = nil
+        didChange = true
+      }
+      if let value = extra.details_de, !value.isEmpty {
+        if extra.details.isEmpty { extra.details = value }
+        extra.details_de = nil
+        didChange = true
+      }
+    }
+
+    for lang in resume.languages ?? [] {
+      if let value = lang.name_de, !value.isEmpty {
+        if lang.name.isEmpty { lang.name = value }
+        lang.name_de = nil
+        didChange = true
+      }
+      if let value = lang.proficiency_de, !value.isEmpty {
+        if lang.proficiency.isEmpty { lang.proficiency = value }
+        lang.proficiency_de = nil
+        didChange = true
+      }
+      lang.proficiency = normalizeProficiency(lang.proficiency)
+    }
+
+    if didChange {
+      resume.updated = .now
+      try? context.save()
+    }
+  }
+
+  private func normalizeProficiency(_ value: String) -> String {
+    let normalized = norm(value)
+    switch normalized {
+    case "native":
+      return "Muttersprache"
+    case "fluent":
+      return "Fließend"
+    case "professional":
+      return "Beruflich"
+    case "intermediate":
+      return "Fortgeschritten"
+    case "basic":
+      return "Grundkenntnisse"
+    default:
+      return value
     }
   }
 
@@ -159,7 +426,7 @@ struct ResumeRootView: View {
             domain: "PDFImport",
             code: 2,
             userInfo: [
-              NSLocalizedDescriptionKey: "Could not extract text from PDF.",
+              NSLocalizedDescriptionKey: "Text konnte nicht aus dem PDF extrahiert werden.",
             ]
           )
         }
@@ -177,7 +444,7 @@ struct ResumeRootView: View {
             code: 3,
             userInfo: [
               NSLocalizedDescriptionKey:
-                "AI failed to process the resume text.",
+                "Die KI konnte den Lebenslauftext nicht verarbeiten.",
             ]
           )
         }
@@ -199,7 +466,7 @@ struct ResumeRootView: View {
       throw NSError(
         domain: "PDFImport",
         code: 1,
-        userInfo: [NSLocalizedDescriptionKey: "Could not open PDF."]
+        userInfo: [NSLocalizedDescriptionKey: "PDF konnte nicht geöffnet werden."]
       )
     }
     var fullText = ""
@@ -365,7 +632,7 @@ struct ResumeRootView: View {
     for lang in languages where !lang.name.isEmpty {
       let language = Language(
         name: lang.name,
-        proficiency: lang.proficiency.isEmpty ? "Fluent" : lang.proficiency
+        proficiency: lang.proficiency.isEmpty ? "Fließend" : lang.proficiency
       )
       language.isVisible = true
       context.insert(language)
@@ -381,7 +648,7 @@ struct ResumeRootView: View {
       try context.save()
       model.refreshAllModels()
     } catch {
-      importError = "Failed to save imported data: \(error.localizedDescription)"
+      importError = "Importierte Daten konnten nicht gespeichert werden: \(error.localizedDescription)"
     }
   }
 
@@ -397,8 +664,11 @@ struct ResumeRootView: View {
       .replacingOccurrences(of: " to ", with: "-")
 
     // Check for "Present" or "Current"
-    if cleaned.lowercased().contains("present")
-      || cleaned.lowercased().contains("current")
+    let lowered = cleaned.lowercased()
+    if lowered.contains("present")
+      || lowered.contains("current")
+      || lowered.contains("heute")
+      || lowered.contains("aktuell")
     {
       return Date()
     }
@@ -417,13 +687,16 @@ struct ResumeRootView: View {
     ]
 
     let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    let locales = [Locale(identifier: "en_US_POSIX"), Locale(identifier: "de_DE")]
 
-    for format in formats {
-      formatter.dateFormat = format
-      if let date = formatter.date(from: cleaned) {
-        return date
+    for locale in locales {
+      formatter.locale = locale
+      for format in formats {
+        formatter.dateFormat = format
+        if let date = formatter.date(from: cleaned) {
+          return date
+        }
       }
     }
 
@@ -628,6 +901,13 @@ struct ResumeRootView: View {
       "professional": 3,
       "intermediate": 2,
       "basic": 1,
+      "muttersprache": 5,
+      "fließend": 4,
+      "fliessend": 4,
+      "beruflich": 3,
+      "fortgeschritten": 2,
+      "grundkenntnisse": 1,
+      "grundkenntnis": 1,
     ]
 
     func score(_ s: String) -> Int { rank[norm(s)] ?? 0 }
@@ -725,7 +1005,7 @@ extension DateFormatter {
     static let resumeMonthYear: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM yyyy"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = Locale(identifier: "de_DE")
         return formatter
     }()
 }
@@ -749,10 +1029,10 @@ extension PersonalInfo {
 
 extension Skill {
   convenience init(dto: SkillDTO) {
-    self.init(name: dto.name, category: dto.category)
+    let name = dto.name.isEmpty ? (dto.name_de ?? "") : dto.name
+    let category = dto.category.isEmpty ? (dto.category_de ?? "") : dto.category
+    self.init(name: name, category: category)
     self.isVisible = dto.isVisible
-    self.name_de = dto.name_de
-    self.category_de = dto.category_de
   }
 }
 
@@ -785,43 +1065,44 @@ extension Project {
 
 extension Extracurricular {
   convenience init(dto: ExtracurricularDTO) {
+    let title = dto.title.isEmpty ? (dto.title_de ?? "") : dto.title
+    let organization = dto.organization.isEmpty ? (dto.organization_de ?? "") : dto.organization
+    let details = dto.details.isEmpty ? (dto.details_de ?? "") : dto.details
     self.init(
-      title: dto.title,
-      organization: dto.organization,
-      details: dto.details
+      title: title,
+      organization: organization,
+      details: details
     )
     self.isVisible = dto.isVisible
-    self.title_de = dto.title_de
-    self.organization_de = dto.organization_de
-    self.details_de = dto.details_de
   }
 }
 
 extension Language {
   convenience init(dto: LanguageDTO) {
-    self.init(name: dto.name, proficiency: dto.proficiency)
+    let name = dto.name.isEmpty ? (dto.name_de ?? "") : dto.name
+    let rawProficiency = dto.proficiency.isEmpty ? (dto.proficiency_de ?? "") : dto.proficiency
+    let proficiency = rawProficiency.isEmpty ? "Fließend" : rawProficiency
+    self.init(name: name, proficiency: proficiency)
     self.isVisible = dto.isVisible
-    self.name_de = dto.name_de
-    self.proficiency_de = dto.proficiency_de
   }
 }
 
 extension Education {
   convenience init(dto: EducationDTO) {
+    let school = dto.school.isEmpty ? (dto.school_de ?? "") : dto.school
+    let degree = dto.degree.isEmpty ? (dto.degree_de ?? "") : dto.degree
+    let field = dto.field.isEmpty ? (dto.field_de ?? "") : dto.field
+    let details = dto.details.isEmpty ? (dto.details_de ?? "") : dto.details
     self.init(
-      school: dto.school,
-      degree: dto.degree,
-      field: dto.field,
+      school: school,
+      degree: degree,
+      field: field,
       startDate: dto.startDate,
       endDate: dto.endDate,
       grade: dto.grade,
-      details: dto.details
+      details: details
     )
     self.isVisible = dto.isVisible
-    self.school_de = dto.school_de
-    self.degree_de = dto.degree_de
-    self.field_de = dto.field_de
-    self.details_de = dto.details_de
   }
 }
 
@@ -849,7 +1130,7 @@ private struct Modifiers: ViewModifier {
         PDFImportPicker { url in importPDF(url) }
       }
       .alert(
-        "Error",
+        "Fehler",
         isPresented: Binding(
           get: { importError != nil || showError },
           set: { _ in importError = nil; showError = false }
@@ -861,7 +1142,7 @@ private struct Modifiers: ViewModifier {
       }
       .overlay {
         if isImporting {
-          ProgressView("Importing PDF…")
+          ProgressView("PDF wird importiert…")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black.opacity(0.2))
         }

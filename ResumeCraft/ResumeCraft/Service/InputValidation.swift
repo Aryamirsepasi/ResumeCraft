@@ -61,17 +61,17 @@ extension String {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return .invalid(message: "Email is required")
+            return .invalid(message: "E-Mail ist erforderlich")
         }
         
         if !trimmed.isValidEmail {
-            return .invalid(message: "Please enter a valid email address")
+            return .invalid(message: "Bitte gib eine gültige E-Mail-Adresse ein")
         }
         
         // Check for professional email
         let unprofessionalDomains = ["hotmail.com", "aol.com", "yahoo.com"]
         if unprofessionalDomains.contains(where: { trimmed.lowercased().hasSuffix($0) }) {
-            return .warning(message: "Consider using a professional email domain")
+            return .warning(message: "Erwäge eine professionelle E-Mail-Domain")
         }
         
         return .valid
@@ -91,17 +91,21 @@ extension String {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return .warning(message: "Phone number recommended for recruiter contact")
+            return .warning(message: "Telefonnummer empfohlen für Recruiter-Kontakt")
         }
         
         let digitsOnly = trimmed.filter { $0.isNumber }
         
         if digitsOnly.count < 7 {
-            return .invalid(message: "Phone number appears too short")
+            return .invalid(message: "Telefonnummer wirkt zu kurz")
         }
         
         if digitsOnly.count > 15 {
-            return .invalid(message: "Phone number appears too long")
+            return .invalid(message: "Telefonnummer wirkt zu lang")
+        }
+        
+        if !trimmed.isValidPhone {
+            return .invalid(message: "Bitte gib eine gültige Telefonnummer ein")
         }
         
         return .valid
@@ -111,25 +115,45 @@ extension String {
     
     /// Validates URL format
     var isValidURL: Bool {
-        guard let url = URL(string: self) else { return false }
+        guard let url = normalizedURL else { return false }
         return url.scheme != nil && url.host != nil
+    }
+    
+    private var normalizedURLString: String? {
+        let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return nil
+        }
+        
+        var urlString = trimmed
+        let lowercased = urlString.lowercased()
+        if !lowercased.hasPrefix("http://") && !lowercased.hasPrefix("https://") {
+            urlString = "https://" + urlString
+        }
+        
+        return urlString
+    }
+    
+    private var normalizedURL: URL? {
+        guard let urlString = normalizedURLString else { return nil }
+        return URL(string: urlString)
     }
     
     func validateURL(allowEmpty: Bool = true) -> ValidationResult {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return allowEmpty ? .valid : .invalid(message: "URL is required")
+            return allowEmpty ? .valid : .invalid(message: "URL ist erforderlich")
         }
         
-        // Auto-add https if missing
-        var urlString = trimmed
-        if !urlString.hasPrefix("http://") && !urlString.hasPrefix("https://") {
-            urlString = "https://" + urlString
-        }
-        
-        guard URL(string: urlString) != nil else {
-            return .invalid(message: "Please enter a valid URL")
+        guard
+            let url = trimmed.normalizedURL,
+            let scheme = url.scheme,
+            let host = url.host,
+            !scheme.isEmpty,
+            !host.isEmpty
+        else {
+            return .invalid(message: "Bitte gib eine gültige URL ein")
         }
         
         return .valid
@@ -139,26 +163,44 @@ extension String {
     
     /// Validates LinkedIn profile URL
     var isValidLinkedIn: Bool {
-        let lowercased = self.lowercased()
-        return lowercased.contains("linkedin.com/in/") ||
-               lowercased.contains("linkedin.com/pub/")
+        guard
+            let url = normalizedURL,
+            let host = url.host?.lowercased()
+        else {
+            return false
+        }
+        
+        if host != "linkedin.com" && !host.hasSuffix(".linkedin.com") {
+            return false
+        }
+        
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        let pathRoot = pathComponents.first?.lowercased()
+        return (pathRoot == "in" || pathRoot == "pub") && pathComponents.count >= 2
     }
     
     func validateLinkedIn() -> ValidationResult {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return .warning(message: "LinkedIn profile highly recommended (94% of recruiters use it)")
+            return .warning(message: "LinkedIn-Profil dringend empfohlen (94 % der Recruiter nutzen es)")
         }
         
-        let lowercased = trimmed.lowercased()
-        
-        if !lowercased.contains("linkedin.com") {
-            return .invalid(message: "Please enter a valid LinkedIn URL")
+        guard
+            let url = trimmed.normalizedURL,
+            let host = url.host?.lowercased()
+        else {
+            return .invalid(message: "Bitte gib eine gültige LinkedIn-URL ein")
         }
         
-        if !lowercased.contains("/in/") && !lowercased.contains("/pub/") {
-            return .warning(message: "This doesn't look like a profile URL. Expected format: linkedin.com/in/yourname")
+        if host != "linkedin.com" && !host.hasSuffix(".linkedin.com") {
+            return .invalid(message: "Bitte gib eine gültige LinkedIn-URL ein")
+        }
+        
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        let pathRoot = pathComponents.first?.lowercased()
+        if pathRoot != "in" && pathRoot != "pub" || pathComponents.count < 2 {
+            return .warning(message: "Das sieht nicht wie eine Profil-URL aus. Erwartetes Format: linkedin.com/in/deinname")
         }
         
         return .valid
@@ -168,8 +210,14 @@ extension String {
     
     /// Validates GitHub profile URL
     var isValidGitHub: Bool {
-        let lowercased = self.lowercased()
-        return lowercased.contains("github.com/")
+        guard
+            let url = normalizedURL,
+            let host = url.host?.lowercased()
+        else {
+            return false
+        }
+        
+        return host == "github.com" || host.hasSuffix(".github.com")
     }
     
     func validateGitHub() -> ValidationResult {
@@ -179,19 +227,20 @@ extension String {
             return .valid // GitHub is optional for non-tech roles
         }
         
-        let lowercased = trimmed.lowercased()
-        
-        if !lowercased.contains("github.com") {
-            return .invalid(message: "Please enter a valid GitHub URL")
+        guard
+            let url = trimmed.normalizedURL,
+            let host = url.host?.lowercased()
+        else {
+            return .invalid(message: "Bitte gib eine gültige GitHub-URL ein")
         }
         
-        // Check for repo URL vs profile URL
-        let pathComponents = trimmed.components(separatedBy: "github.com/")
+        if host != "github.com" && !host.hasSuffix(".github.com") {
+            return .invalid(message: "Bitte gib eine gültige GitHub-URL ein")
+        }
+        
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
         if pathComponents.count > 1 {
-            let path = pathComponents[1]
-            if path.components(separatedBy: "/").filter({ !$0.isEmpty }).count > 1 {
-                return .warning(message: "This looks like a repository URL. Use your profile URL instead")
-            }
+            return .warning(message: "Das sieht wie eine Repository-URL aus. Bitte nutze stattdessen deine Profil-URL")
         }
         
         return .valid
@@ -215,20 +264,20 @@ extension String {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return .invalid(message: "\(fieldName) is required")
+            return .invalid(message: "\(fieldName) ist erforderlich")
         }
         
         if trimmed.count < 2 {
-            return .invalid(message: "\(fieldName) is too short")
+            return .invalid(message: "\(fieldName) ist zu kurz")
         }
         
         if trimmed.count > 50 {
-            return .warning(message: "\(fieldName) is unusually long")
+            return .warning(message: "\(fieldName) ist ungewöhnlich lang")
         }
         
         // Check for numbers in name
         if trimmed.contains(where: { $0.isNumber }) {
-            return .warning(message: "\(fieldName) contains numbers")
+            return .warning(message: "\(fieldName) enthält Zahlen")
         }
         
         return .valid
@@ -240,26 +289,32 @@ extension String {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return .warning(message: "A professional summary helps recruiters quickly understand your value")
+            return .warning(message: "Eine professionelle Zusammenfassung hilft Recruitern, deinen Mehrwert schnell zu erfassen")
         }
         
         let wordCount = trimmed.split(separator: " ").count
         
         if wordCount < 20 {
-            return .warning(message: "Summary is too brief. Aim for 50-100 words")
+            return .warning(message: "Die Zusammenfassung ist zu kurz. Ziel: 50–100 Wörter")
         }
         
         if wordCount > 150 {
-            return .warning(message: "Summary is too long. Keep it under 100 words for maximum impact")
+            return .warning(message: "Die Zusammenfassung ist zu lang. Halte sie für maximale Wirkung unter 100 Wörtern")
         }
         
         // Check for first-person pronouns
-        let hasFirstPerson = trimmed.lowercased().contains("i ") ||
-                            trimmed.lowercased().contains("my ") ||
-                            trimmed.lowercased().contains(" me ")
+        let lowered = trimmed.lowercased()
+        let hasFirstPerson = lowered.contains("i ") ||
+                            lowered.contains("my ") ||
+                            lowered.contains(" me ") ||
+                            lowered.contains("ich ") ||
+                            lowered.contains("mein ") ||
+                            lowered.contains("meine ") ||
+                            lowered.contains("mich ") ||
+                            lowered.contains("mir ")
         
         if hasFirstPerson {
-            return .warning(message: "Consider writing in third person or implied first person")
+            return .warning(message: "Erwäge die Formulierung in der dritten Person oder impliziten ersten Person")
         }
         
         return .valid
@@ -271,7 +326,7 @@ extension String {
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if trimmed.isEmpty {
-            return .warning(message: "Add details about your responsibilities and achievements")
+            return .warning(message: "Ergänze Details zu Verantwortungen und Erfolgen")
         }
         
         // Check for metrics
@@ -280,15 +335,26 @@ extension String {
                         trimmed.contains("$")
         
         if !hasMetrics {
-            return .warning(message: "Consider adding quantifiable metrics (numbers, percentages)")
+            return .warning(message: "Erwäge messbare Kennzahlen (Zahlen, Prozente)")
         }
         
         // Check for weak verbs
-        let weakVerbs = ["responsible for", "helped", "worked on", "involved in", "assisted with"]
+        let weakVerbs = [
+            "responsible for",
+            "helped",
+            "worked on",
+            "involved in",
+            "assisted with",
+            "zuständig für",
+            "geholfen",
+            "mitgearbeitet",
+            "beteiligt",
+            "unterstützt",
+        ]
         let hasWeakVerbs = weakVerbs.contains(where: { trimmed.lowercased().contains($0) })
         
         if hasWeakVerbs {
-            return .warning(message: "Use stronger action verbs (Led, Achieved, Drove, Built)")
+            return .warning(message: "Verwende stärkere Aktionsverben (z. B. \"geleitet\", \"erreicht\", \"vorangetrieben\", \"gebaut\")")
         }
         
         return .valid
@@ -303,8 +369,8 @@ extension PersonalInfo {
     func validate() -> [String: ValidationResult] {
         var results: [String: ValidationResult] = [:]
         
-        results["firstName"] = firstName.validateName(fieldName: "First name")
-        results["lastName"] = lastName.validateName(fieldName: "Last name")
+        results["firstName"] = firstName.validateName(fieldName: "Vorname")
+        results["lastName"] = lastName.validateName(fieldName: "Nachname")
         results["email"] = email.validateEmail()
         results["phone"] = phone.validatePhone()
         results["linkedIn"] = (linkedIn ?? "").validateLinkedIn()
@@ -342,11 +408,11 @@ extension Date {
     /// Validates that end date is after start date
     func validateEndDate(after startDate: Date) -> ValidationResult {
         if self < startDate {
-            return .invalid(message: "End date must be after start date")
+            return .invalid(message: "Enddatum muss nach dem Startdatum liegen")
         }
         
         if self > Date() {
-            return .warning(message: "End date is in the future")
+            return .warning(message: "Enddatum liegt in der Zukunft")
         }
         
         return .valid
@@ -358,11 +424,11 @@ extension Date {
         let yearsAgo = calendar.date(byAdding: .year, value: -maxYearsAgo, to: Date())!
         
         if self < yearsAgo {
-            return .warning(message: "Date seems unusually old")
+            return .warning(message: "Datum wirkt ungewöhnlich weit in der Vergangenheit")
         }
         
         if self > Date() {
-            return .warning(message: "Date is in the future")
+            return .warning(message: "Datum liegt in der Zukunft")
         }
         
         return .valid
@@ -375,11 +441,11 @@ extension Skill {
     
     func validate() -> ValidationResult {
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return .invalid(message: "Skill name is required")
+            return .invalid(message: "Fähigkeitsname ist erforderlich")
         }
         
         if name.count > 50 {
-            return .warning(message: "Skill name is too long")
+            return .warning(message: "Fähigkeitsname ist zu lang")
         }
         
         return .valid
@@ -394,9 +460,9 @@ extension WorkExperience {
         var results: [String: ValidationResult] = [:]
         
         results["title"] = title.isEmpty ? 
-            .invalid(message: "Job title is required") : .valid
+            .invalid(message: "Jobtitel ist erforderlich") : .valid
         results["company"] = company.isEmpty ? 
-            .invalid(message: "Company name is required") : .valid
+            .invalid(message: "Unternehmensname ist erforderlich") : .valid
         results["details"] = details.validateJobDetails()
         
         if !isCurrent, let endDate = endDate {
@@ -423,11 +489,11 @@ extension Project {
         var results: [String: ValidationResult] = [:]
         
         results["name"] = name.isEmpty ? 
-            .invalid(message: "Project name is required") : .valid
+            .invalid(message: "Projektname ist erforderlich") : .valid
         results["details"] = details.isEmpty ? 
-            .warning(message: "Add project description for better context") : .valid
+            .warning(message: "Füge eine Projektbeschreibung für mehr Kontext hinzu") : .valid
         results["technologies"] = technologies.isEmpty ? 
-            .warning(message: "List technologies used in this project") : .valid
+            .warning(message: "Liste die in diesem Projekt verwendeten Technologien auf") : .valid
         
         if let link = link, !link.isEmpty {
             results["link"] = link.validateURL(allowEmpty: true)
@@ -445,9 +511,9 @@ extension Education {
         var results: [String: ValidationResult] = [:]
         
         results["school"] = school.isEmpty ? 
-            .invalid(message: "School/Institution name is required") : .valid
+            .invalid(message: "Name der Schule/Institution ist erforderlich") : .valid
         results["degree"] = degree.isEmpty ? 
-            .warning(message: "Degree or certification recommended") : .valid
+            .warning(message: "Abschluss oder Zertifizierung empfohlen") : .valid
         
         if let endDate = endDate {
             results["dates"] = endDate.validateEndDate(after: startDate)

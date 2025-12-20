@@ -20,14 +20,14 @@ struct AIReviewSheet: View {
     // Focus tags that can be toggled
     @State private var selectedFocusTags: Set<String> = []
     private let availableFocusTags = [
-        "Impact & Metrics",
-        "Clarity & Concision", 
-        "ATS Optimization",
-        "Action Verbs",
-        "Keywords",
-        "Professional Tone",
-        "Formatting",
-        "Overall Flow"
+        "Wirkung & Kennzahlen",
+        "Klarheit & Prägnanz",
+        "ATS-Optimierung",
+        "Aktionsverben",
+        "Schlüsselwörter",
+        "Professioneller Ton",
+        "Formatierung",
+        "Gesamteindruck"
     ]
 
     var body: some View {
@@ -54,7 +54,7 @@ struct AIReviewSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("AI Resume Review")
+            .navigationTitle("KI-Lebenslaufprüfung")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
             .sheet(isPresented: $showingInfoSheet) { infoSheet }
@@ -90,12 +90,12 @@ struct AIReviewSheet: View {
                             .symbolEffect(.pulse)
                         
                         VStack(spacing: 8) {
-                            Text("Full Resume Review")
+                            Text("Komplette Lebenslaufprüfung")
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundStyle(.white)
                             
-                            Text("Get comprehensive AI feedback on your entire resume")
+                            Text("Erhalte umfassendes KI-Feedback zu deinem gesamten Lebenslauf")
                                 .font(.subheadline)
                                 .foregroundStyle(.white.opacity(0.9))
                                 .multilineTextAlignment(.center)
@@ -105,7 +105,7 @@ struct AIReviewSheet: View {
                         HStack(spacing: 6) {
                             Image(systemName: "lock.shield.fill")
                                 .font(.footnote)
-                            Text("On-device processing • Your data stays private")
+                            Text("On-Device-Verarbeitung • Deine Daten bleiben privat")
                                 .font(.footnote)
                                 .fontWeight(.medium)
                         }
@@ -127,32 +127,32 @@ struct AIReviewSheet: View {
     @ViewBuilder
     private var resumeOverviewSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Resume Overview", systemImage: "doc.text")
+            Label("Lebenslauf-Übersicht", systemImage: "doc.text")
                 .font(.headline)
             
             HStack(spacing: 16) {
                 StatCard(
                     icon: "briefcase.fill",
-                    title: "Experience",
+                    title: "Berufserfahrung",
                     value: "\((resumeModel.resume.experiences ?? []).filter(\.isVisible).count)"
                 )
                 
                 StatCard(
                     icon: "graduationcap.fill",
-                    title: "Education",
+                    title: "Ausbildung",
                     value: "\((resumeModel.resume.educations ?? []).filter(\.isVisible).count)"
                 )
                 
                 StatCard(
                     icon: "star.fill",
-                    title: "Skills",
+                    title: "Fähigkeiten",
                     value: "\((resumeModel.resume.skills ?? []).filter(\.isVisible).count)"
                 )
             }
             
             // Character count
             let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume)
-            Text("\(resumeText.count) characters • ~\(resumeText.split(separator: " ").count) words")
+            Text("\(resumeText.count) Zeichen • ~\(resumeText.split(separator: " ").count) Wörter")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -168,7 +168,7 @@ struct AIReviewSheet: View {
     private var jobDescriptionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Job Description", systemImage: "briefcase.fill")
+                Label("Stellenbeschreibung", systemImage: "briefcase.fill")
                     .font(.headline)
                 
                 Spacer()
@@ -180,7 +180,7 @@ struct AIReviewSheet: View {
                 }
             }
             
-            Text("Paste the job posting for tailored suggestions")
+            Text("Füge die Stellenanzeige ein für gezielte Vorschläge")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
@@ -195,7 +195,7 @@ struct AIReviewSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(alignment: .topLeading) {
                 if viewModel.jobDescription.isEmpty {
-                    Text("Paste job description here...")
+                    Text("Stellenbeschreibung hier einfügen…")
                         .foregroundStyle(.tertiary)
                         .padding(.top, 16)
                         .padding(.leading, 12)
@@ -214,10 +214,10 @@ struct AIReviewSheet: View {
     @ViewBuilder
     private var focusAreasSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Focus Areas (Optional)", systemImage: "target")
+            Label("Fokusbereiche (optional)", systemImage: "target")
                 .font(.headline)
             
-            Text("Select specific areas for deeper analysis")
+            Text("Wähle Bereiche für eine tiefere Analyse")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
@@ -262,7 +262,7 @@ struct AIReviewSheet: View {
                         .symbolEffect(.bounce, value: viewModel.isGenerating)
                 }
                 
-                Text(viewModel.isGenerating ? "Analyzing Resume..." : "Generate AI Review")
+                Text(viewModel.isGenerating ? "Lebenslauf wird analysiert..." : "KI-Review erstellen")
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
@@ -301,10 +301,10 @@ struct AIReviewSheet: View {
             ProgressView()
                 .scaleEffect(1.2)
             
-            Text("Analyzing your entire resume...")
+            Text("Dein gesamter Lebenslauf wird analysiert...")
                 .font(.headline)
             
-            Text("This comprehensive review may take a moment")
+            Text("Diese umfassende Prüfung kann einen Moment dauern")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -320,7 +320,7 @@ struct AIReviewSheet: View {
     private func feedbackView(_ feedback: String) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Label("AI Suggestions", systemImage: "sparkles")
+                Label("KI-Vorschläge", systemImage: "sparkles")
                     .font(.headline)
                 
                 Spacer()
@@ -380,7 +380,7 @@ struct AIReviewSheet: View {
                 .font(.largeTitle)
                 .foregroundStyle(.orange)
             
-            Text("Unable to Generate Review")
+            Text("Review konnte nicht erstellt werden")
                 .font(.headline)
             
             Text(error)
@@ -388,7 +388,7 @@ struct AIReviewSheet: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             
-            Button("Try Again") {
+            Button("Erneut versuchen") {
                 viewModel.errorMessage = nil
             }
             .buttonStyle(.bordered)
@@ -406,7 +406,7 @@ struct AIReviewSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
-            Button("Done") { dismiss() }
+            Button("Fertig") { dismiss() }
         }
         
         ToolbarItem(placement: .navigationBarTrailing) {
@@ -426,52 +426,52 @@ struct AIReviewSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("How it Works", systemImage: "sparkles")
+                        Label("So funktioniert es", systemImage: "sparkles")
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("This AI-powered review analyzes your complete resume and provides comprehensive feedback tailored to your target job.")
+                        Text("Diese KI-gestützte Prüfung analysiert deinen gesamten Lebenslauf und liefert umfassendes Feedback zur Zielstelle.")
                             .font(.body)
                     }
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Privacy First", systemImage: "lock.shield.fill")
+                        Label("Datenschutz zuerst", systemImage: "lock.shield.fill")
                             .font(.headline)
                         
-                        Text("All processing happens on your device. Your resume data never leaves your iPhone and is not sent to any external servers.")
+                        Text("Die Verarbeitung erfolgt auf deinem Gerät. Deine Daten verlassen dein iPhone nicht und werden nicht an externe Server gesendet.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Best Practices", systemImage: "lightbulb.fill")
+                        Label("Empfehlungen", systemImage: "lightbulb.fill")
                             .font(.headline)
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            bulletPoint("Include the full job description for best results")
-                            bulletPoint("Select focus areas for targeted analysis")
-                            bulletPoint("Apply suggestions that align with your experience")
-                            bulletPoint("Keep your resume to 1-2 pages maximum")
-                            bulletPoint("Update based on feedback iteratively")
+                            bulletPoint("Füge die vollständige Stellenbeschreibung für beste Ergebnisse ein")
+                            bulletPoint("Wähle Fokusbereiche für eine gezielte Analyse")
+                            bulletPoint("Setze Vorschläge um, die zu deiner Erfahrung passen")
+                            bulletPoint("Halte deinen Lebenslauf bei maximal 1–2 Seiten")
+                            bulletPoint("Aktualisiere schrittweise basierend auf dem Feedback")
                         }
                     }
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Understanding the Feedback", systemImage: "doc.text.magnifyingglass")
+                        Label("Feedback verstehen", systemImage: "doc.text.magnifyingglass")
                             .font(.headline)
                         
-                        Text("The AI provides suggestions, not requirements. Use your judgment to determine which recommendations best fit your unique situation and career goals.")
+                        Text("Die KI liefert Vorschläge, keine Vorgaben. Nutze dein Urteil, welche Empfehlungen zu deiner Situation und deinen Zielen passen.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                 }
                 .padding()
             }
-            .navigationTitle("About AI Review")
+            .navigationTitle("Über die KI-Review")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button("Fertig") {
                         showingInfoSheet = false
                     }
                 }
@@ -606,7 +606,7 @@ private struct FocusTagChip: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        let button = Button(action: action) {
             HStack(spacing: 6) {
                 if isSelected {
                     Image(systemName: "checkmark")
@@ -624,14 +624,24 @@ private struct FocusTagChip: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .glassEffect(
-            isSelected
-                ? .regular.tint(.accentColor).interactive()
-                : .regular.interactive(),
-            in: .capsule
-        )
-        .animation(.snappy, value: isSelected)
-        .sensoryFeedback(.selection, trigger: isSelected)
+        
+        if #available(iOS 26, *) {
+            button
+                .glassEffect(
+                    isSelected
+                        ? .regular.tint(.accentColor).interactive()
+                        : .regular.interactive(),
+                    in: .capsule
+                )
+                .animation(.snappy, value: isSelected)
+                .sensoryFeedback(.selection, trigger: isSelected)
+        } else {
+            button
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .animation(.snappy, value: isSelected)
+                .sensoryFeedback(.selection, trigger: isSelected)
+        }
     }
 }
 
@@ -644,4 +654,3 @@ struct AIReviewTabView: View {
         }
     }
 }
-

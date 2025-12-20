@@ -10,8 +10,12 @@ import SwiftUI
 struct ProjectsListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
   @Bindable var model: ProjectsModel
-  @State private var editingProject: Project?
-  @State private var showEditor = false
+  @State private var editorContext: ProjectEditorContext?
+
+  private struct ProjectEditorContext: Identifiable {
+    let id = UUID()
+    let project: Project?
+  }
 
   var body: some View {
     NavigationStack {
@@ -22,11 +26,10 @@ struct ProjectsListView: View {
               // Re-fetch fresh instance by id before opening editor
               let id = project.id
               if let fresh = model.items.first(where: { $0.id == id }) {
-                editingProject = fresh
+                editorContext = ProjectEditorContext(project: fresh)
               } else {
-                editingProject = project
+                editorContext = ProjectEditorContext(project: project)
               }
-              showEditor = true
             }
             Spacer()
             Toggle(
@@ -39,7 +42,7 @@ struct ProjectsListView: View {
               )
             ) {
               Image(systemName: project.isVisible ? "eye" : "eye.slash")
-                .accessibilityLabel(project.isVisible ? "Visible" : "Hidden")
+                .accessibilityLabel(project.isVisible ? "Sichtbar" : "Ausgeblendet")
             }
             .labelsHidden()
             .toggleStyle(.button)
@@ -58,39 +61,35 @@ struct ProjectsListView: View {
           }
         }
       }
-      .navigationTitle("Projects")
+      .navigationTitle("Projekte")
       .toolbar {
         ToolbarItem(placement: .topBarLeading) { EditButton() }
         ToolbarItem(placement: .primaryAction) {
           Button {
-            editingProject = nil
-            showEditor = true
+            editorContext = ProjectEditorContext(project: nil)
           } label: {
-            Label("Add", systemImage: "plus")
+            Label("Hinzufügen", systemImage: "plus")
           }
-          .accessibilityLabel("Add new project")
+          .accessibilityLabel("Neues Projekt hinzufügen")
         }
       }
-      .sheet(isPresented: $showEditor) {
+      .sheet(item: $editorContext) { context in
         ProjectEditorView(
-          project: editingProject,
+          project: context.project,
           onSave: { newProj in
-            if let existing = editingProject {
+            if let existing = context.project {
               existing.name = newProj.name
-              existing.name_de = newProj.name_de
               existing.details = newProj.details
-              existing.details_de = newProj.details_de
               existing.technologies = newProj.technologies
-              existing.technologies_de = newProj.technologies_de
               existing.link = newProj.link
               existing.isVisible = true
             } else {
               model.add(newProj)
             }
-            showEditor = false
+            editorContext = nil
             try? resumeModel.save()
           },
-          onCancel: { showEditor = false }
+          onCancel: { editorContext = nil }
         )
       }
     }

@@ -17,12 +17,12 @@ struct SmartSuggestion: Identifiable {
     let actionable: Bool
     
     enum SuggestionType: String {
-        case missing = "Missing Content"
-        case improvement = "Improvement"
-        case ats = "ATS Optimization"
-        case formatting = "Formatting"
-        case length = "Length"
-        case impact = "Impact"
+        case missing = "Fehlender Inhalt"
+        case improvement = "Verbesserung"
+        case ats = "ATS-Optimierung"
+        case formatting = "Formatierung"
+        case length = "Länge"
+        case impact = "Wirkung"
     }
     
     enum Priority: Int, Comparable {
@@ -82,10 +82,10 @@ final class SmartSuggestionsEngine {
         guard let personal = personal else {
             suggestions.append(.init(
                 type: .missing,
-                title: "Add Personal Information",
-                description: "Your resume needs basic contact information",
+                title: "Persönliche Daten hinzufügen",
+                description: "Dein Lebenslauf benötigt grundlegende Kontaktdaten",
                 priority: .critical,
-                section: "Personal Info",
+                section: "Persönliche Daten",
                 actionable: true
             ))
             return suggestions
@@ -94,10 +94,10 @@ final class SmartSuggestionsEngine {
         if personal.linkedIn == nil || personal.linkedIn?.isEmpty == true {
             suggestions.append(.init(
                 type: .missing,
-                title: "Add LinkedIn Profile",
-                description: "94% of recruiters use LinkedIn to evaluate candidates",
+                title: "LinkedIn-Profil hinzufügen",
+                description: "94 % der Recruiter nutzen LinkedIn zur Bewertung",
                 priority: .high,
-                section: "Personal Info",
+                section: "Persönliche Daten",
                 actionable: true
             ))
         }
@@ -106,10 +106,10 @@ final class SmartSuggestionsEngine {
             // Check if this is likely a tech resume
             suggestions.append(.init(
                 type: .improvement,
-                title: "Consider Adding GitHub Profile",
-                description: "GitHub showcases your coding projects and contributions",
+                title: "GitHub-Profil hinzufügen",
+                description: "GitHub zeigt deine Coding-Projekte und Beiträge",
                 priority: .medium,
-                section: "Personal Info",
+                section: "Persönliche Daten",
                 actionable: true
             ))
         }
@@ -118,10 +118,10 @@ final class SmartSuggestionsEngine {
         if !personal.email.isEmpty && !personal.email.contains("@") {
             suggestions.append(.init(
                 type: .formatting,
-                title: "Check Email Format",
-                description: "Email address appears to be invalid",
+                title: "E-Mail-Format prüfen",
+                description: "Die E-Mail-Adresse scheint ungültig zu sein",
                 priority: .critical,
-                section: "Personal Info",
+                section: "Persönliche Daten",
                 actionable: true
             ))
         }
@@ -135,10 +135,10 @@ final class SmartSuggestionsEngine {
         guard let summary = summary, !summary.text.isEmpty else {
             suggestions.append(.init(
                 type: .missing,
-                title: "Add Professional Summary",
-                description: "A strong summary helps recruiters quickly understand your value",
+                title: "Professionelle Zusammenfassung hinzufügen",
+                description: "Eine starke Zusammenfassung hilft Recruitern, deinen Mehrwert schnell zu verstehen",
                 priority: .high,
-                section: "Summary",
+                section: "Zusammenfassung",
                 actionable: true
             ))
             return suggestions
@@ -149,35 +149,41 @@ final class SmartSuggestionsEngine {
         if wordCount < 20 {
             suggestions.append(.init(
                 type: .length,
-                title: "Expand Your Summary",
-                description: "Aim for 50-100 words to effectively showcase your expertise",
+                title: "Zusammenfassung erweitern",
+                description: "Ziele auf 50–100 Wörter, um deine Expertise wirksam darzustellen",
                 priority: .medium,
-                section: "Summary",
+                section: "Zusammenfassung",
                 actionable: true
             ))
         } else if wordCount > 150 {
             suggestions.append(.init(
                 type: .length,
-                title: "Shorten Your Summary",
-                description: "Keep your summary concise (50-100 words) for maximum impact",
+                title: "Zusammenfassung kürzen",
+                description: "Halte die Zusammenfassung knapp (50–100 Wörter) für maximale Wirkung",
                 priority: .medium,
-                section: "Summary",
+                section: "Zusammenfassung",
                 actionable: true
             ))
         }
         
         // Check for first-person pronouns
-        let hasFirstPerson = summary.text.lowercased().contains("i ") || 
-                            summary.text.lowercased().contains("my ") ||
-                            summary.text.lowercased().contains("me ")
+        let lowered = summary.text.lowercased()
+        let hasFirstPerson = lowered.contains("i ") || 
+                            lowered.contains("my ") ||
+                            lowered.contains("me ") ||
+                            lowered.contains("ich ") ||
+                            lowered.contains("mein ") ||
+                            lowered.contains("meine ") ||
+                            lowered.contains("mich ") ||
+                            lowered.contains("mir ")
         
         if hasFirstPerson {
             suggestions.append(.init(
                 type: .formatting,
-                title: "Remove First-Person Pronouns",
-                description: "Write in third person or implied first person (without 'I', 'my', 'me')",
+                title: "Ich-Form vermeiden",
+                description: "Schreibe in der dritten Person oder impliziten Ich-Form (ohne „ich“, „mein“, „mich“)",
                 priority: .low,
-                section: "Summary",
+                section: "Zusammenfassung",
                 actionable: true
             ))
         }
@@ -193,10 +199,10 @@ final class SmartSuggestionsEngine {
         if visibleExperiences.isEmpty {
             suggestions.append(.init(
                 type: .missing,
-                title: "Add Work Experience",
-                description: "Work experience is crucial for most resumes",
+                title: "Berufserfahrung hinzufügen",
+                description: "Berufserfahrung ist für die meisten Lebensläufe entscheidend",
                 priority: .critical,
-                section: "Work Experience",
+                section: "Berufserfahrung",
                 actionable: true
             ))
             return suggestions
@@ -212,16 +218,27 @@ final class SmartSuggestionsEngine {
         if !hasNumbers {
             suggestions.append(.init(
                 type: .impact,
-                title: "Add Metrics to Achievements",
-                description: "Quantify your impact with numbers, percentages, or dollar amounts",
+                title: "Kennzahlen ergänzen",
+                description: "Quantifiziere deinen Impact mit Zahlen, Prozenten oder Beträgen",
                 priority: .high,
-                section: "Work Experience",
+                section: "Berufserfahrung",
                 actionable: true
             ))
         }
         
         // Check for action verbs
-        let weakVerbs = ["responsible for", "helped", "worked on", "involved in", "assisted with"]
+        let weakVerbs = [
+            "responsible for",
+            "helped",
+            "worked on",
+            "involved in",
+            "assisted with",
+            "zuständig für",
+            "geholfen",
+            "mitgearbeitet",
+            "beteiligt",
+            "unterstützt",
+        ]
         let hasWeakVerbs = visibleExperiences.contains { exp in
             weakVerbs.contains(where: { exp.details.lowercased().contains($0) })
         }
@@ -229,10 +246,10 @@ final class SmartSuggestionsEngine {
         if hasWeakVerbs {
             suggestions.append(.init(
                 type: .improvement,
-                title: "Use Stronger Action Verbs",
-                description: "Replace passive phrases with powerful action verbs (Led, Achieved, Drove, Built)",
+                title: "Stärkere Aktionsverben nutzen",
+                description: "Ersetze passive Formulierungen durch starke Aktionsverben (z. B. „geleitet“, „erreicht“, „vorangetrieben“, „aufgebaut“)",
                 priority: .high,
-                section: "Work Experience",
+                section: "Berufserfahrung",
                 actionable: true
             ))
         }
@@ -243,10 +260,10 @@ final class SmartSuggestionsEngine {
             if bulletPoints.count == 1 && exp.details.count > 100 {
                 suggestions.append(.init(
                     type: .formatting,
-                    title: "Use Bullet Points",
-                    description: "Break down responsibilities into clear bullet points for \(exp.title)",
+                    title: "Aufzählungspunkte nutzen",
+                    description: "Gliedere Aufgaben für \(exp.title) in klare Aufzählungspunkte",
                     priority: .medium,
-                    section: "Work Experience",
+                    section: "Berufserfahrung",
                     actionable: true
                 ))
                 break // Only suggest once
@@ -264,10 +281,10 @@ final class SmartSuggestionsEngine {
         if visibleSkills.isEmpty {
             suggestions.append(.init(
                 type: .missing,
-                title: "Add Skills Section",
-                description: "Skills help ATS systems match your resume to job descriptions",
+                title: "Fähigkeiten hinzufügen",
+                description: "Fähigkeiten helfen ATS-Systemen, deinen Lebenslauf passenden Stellen zuzuordnen",
                 priority: .critical,
-                section: "Skills",
+                section: "Fähigkeiten",
                 actionable: true
             ))
             return suggestions
@@ -276,19 +293,19 @@ final class SmartSuggestionsEngine {
         if visibleSkills.count < 5 {
             suggestions.append(.init(
                 type: .improvement,
-                title: "Add More Skills",
-                description: "Include 8-12 relevant skills to improve ATS matching",
+                title: "Mehr Fähigkeiten hinzufügen",
+                description: "Füge 8–12 relevante Fähigkeiten hinzu, um die ATS-Treffer zu verbessern",
                 priority: .medium,
-                section: "Skills",
+                section: "Fähigkeiten",
                 actionable: true
             ))
         } else if visibleSkills.count > 20 {
             suggestions.append(.init(
                 type: .ats,
-                title: "Reduce Number of Skills",
-                description: "Focus on 8-12 most relevant skills to avoid appearing unfocused",
+                title: "Anzahl der Fähigkeiten reduzieren",
+                description: "Konzentriere dich auf 8–12 wichtigste Fähigkeiten, um fokussiert zu wirken",
                 priority: .low,
-                section: "Skills",
+                section: "Fähigkeiten",
                 actionable: true
             ))
         }
@@ -298,10 +315,10 @@ final class SmartSuggestionsEngine {
         if categorized.count < visibleSkills.count / 2 && visibleSkills.count > 6 {
             suggestions.append(.init(
                 type: .formatting,
-                title: "Categorize Your Skills",
-                description: "Group skills by category (e.g., Programming Languages, Frameworks, Tools)",
+                title: "Fähigkeiten kategorisieren",
+                description: "Gruppiere Fähigkeiten nach Kategorie (z. B. Programmiersprachen, Frameworks, Tools)",
                 priority: .low,
-                section: "Skills",
+                section: "Fähigkeiten",
                 actionable: true
             ))
         }
@@ -317,10 +334,10 @@ final class SmartSuggestionsEngine {
         if visibleProjects.isEmpty {
             suggestions.append(.init(
                 type: .improvement,
-                title: "Consider Adding Projects",
-                description: "Projects demonstrate practical skills and initiative",
+                title: "Projekte erwägen",
+                description: "Projekte zeigen praktische Fähigkeiten und Eigeninitiative",
                 priority: .low,
-                section: "Projects",
+                section: "Projekte",
                 actionable: true
             ))
             return suggestions
@@ -332,10 +349,10 @@ final class SmartSuggestionsEngine {
         if projectsWithLinks.count < visibleProjects.count {
             suggestions.append(.init(
                 type: .improvement,
-                title: "Add Links to Projects",
-                description: "Include GitHub repos or live demos to showcase your work",
+                title: "Links zu Projekten hinzufügen",
+                description: "Füge GitHub-Repos oder Live-Demos hinzu, um deine Arbeit zu zeigen",
                 priority: .medium,
-                section: "Projects",
+                section: "Projekte",
                 actionable: true
             ))
         }
@@ -353,8 +370,8 @@ final class SmartSuggestionsEngine {
         if wordCount < 200 {
             suggestions.append(.init(
                 type: .length,
-                title: "Resume is Too Short",
-                description: "Add more detail to reach 300-500 words for a one-page resume",
+                title: "Lebenslauf ist zu kurz",
+                description: "Füge mehr Details hinzu, um ca. 300–500 Wörter für eine Seite zu erreichen",
                 priority: .high,
                 section: nil,
                 actionable: false
@@ -362,8 +379,8 @@ final class SmartSuggestionsEngine {
         } else if wordCount > 1000 {
             suggestions.append(.init(
                 type: .length,
-                title: "Resume is Too Long",
-                description: "Aim for 1-2 pages (400-800 words) to keep recruiters engaged",
+                title: "Lebenslauf ist zu lang",
+                description: "Ziele auf 1–2 Seiten (ca. 400–800 Wörter), um Recruiter zu halten",
                 priority: .medium,
                 section: nil,
                 actionable: false
@@ -377,10 +394,10 @@ final class SmartSuggestionsEngine {
             if hasGaps {
                 suggestions.append(.init(
                     type: .improvement,
-                    title: "Address Employment Gaps",
-                    description: "Consider adding explanations for significant gaps in employment",
+                    title: "Beschäftigungslücken adressieren",
+                    description: "Erwäge Erklärungen für größere Lücken im Lebenslauf",
                     priority: .low,
-                    section: "Work Experience",
+                    section: "Berufserfahrung",
                     actionable: true
                 ))
             }

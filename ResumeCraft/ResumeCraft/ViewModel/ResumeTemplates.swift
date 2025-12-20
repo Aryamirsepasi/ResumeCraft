@@ -9,28 +9,28 @@ import Foundation
 
 enum ResumeTemplate: String, CaseIterable, Identifiable {
     case modern = "Modern"
-    case traditional = "Traditional"
-    case tech = "Tech Professional"
-    case creative = "Creative"
-    case academic = "Academic"
-    case student = "Student/Entry Level"
+    case traditional = "Klassisch"
+    case tech = "Tech-Profil"
+    case creative = "Kreativ"
+    case academic = "Akademisch"
+    case student = "Studierende/Berufseinstieg"
     
     var id: String { rawValue }
     
     var description: String {
         switch self {
         case .modern:
-            return "Clean, contemporary design with accent colors and modern layout"
+            return "Sauberes, zeitgemäßes Design mit Akzentfarben und modernem Layout"
         case .traditional:
-            return "Classic, professional format preferred by conservative industries"
+            return "Klassisches, professionelles Format für konservative Branchen"
         case .tech:
-            return "Optimized for software engineering and tech roles"
+            return "Optimiert für Softwareentwicklung und Tech-Rollen"
         case .creative:
-            return "Showcases creativity with unique layout and visual elements"
+            return "Betont Kreativität mit einzigartigem Layout und visuellen Elementen"
         case .academic:
-            return "Emphasizes publications, research, and academic achievements"
+            return "Fokus auf Publikationen, Forschung und akademische Leistungen"
         case .student:
-            return "Highlights education, projects, and relevant coursework"
+            return "Betont Ausbildung, Projekte und relevante Kurse"
         }
     }
     
@@ -77,13 +77,13 @@ enum ResumeTemplate: String, CaseIterable, Identifiable {
 }
 
 enum ResumeSection: String, CaseIterable {
-    case summary = "Summary"
-    case experience = "Work Experience"
-    case education = "Education"
-    case skills = "Skills"
-    case projects = "Projects"
-    case languages = "Languages"
-    case extracurricular = "Activities"
+    case summary = "Zusammenfassung"
+    case experience = "Berufserfahrung"
+    case education = "Ausbildung"
+    case skills = "Fähigkeiten"
+    case projects = "Projekte"
+    case languages = "Sprachen"
+    case extracurricular = "Aktivitäten"
 }
 
 // MARK: - Template Recommendations
@@ -102,10 +102,22 @@ extension ResumeTemplate {
         let experienceCount = (resume.experiences ?? []).filter(\.isVisible).count
         let projectCount = (resume.projects ?? []).filter(\.isVisible).count
         let educationCount = (resume.educations ?? []).filter(\.isVisible).count
-        let skillCount = (resume.skills ?? []).filter(\.isVisible).count
         
         // Analyze for Tech template
-        let techKeywords = ["software", "developer", "engineer", "programming", "code", "api", "cloud", "database"]
+        let techKeywords = [
+            "software",
+            "developer",
+            "engineer",
+            "programming",
+            "code",
+            "api",
+            "cloud",
+            "database",
+            "entwickler",
+            "ingenieur",
+            "programmierung",
+            "datenbank",
+        ]
         let hasTechKeywords = resume.skills?.contains { skill in
             techKeywords.contains(where: { skill.name.lowercased().contains($0) })
         } ?? false
@@ -115,9 +127,9 @@ extension ResumeTemplate {
                 template: .tech,
                 confidence: hasTechKeywords ? 0.9 : 0.7,
                 reasons: [
-                    "Technical skills detected",
-                    "Multiple projects (\(projectCount))",
-                    "Optimized for ATS systems in tech"
+                    "Technische Fähigkeiten erkannt",
+                    "Mehrere Projekte (\(projectCount))",
+                    "Für ATS-Systeme im Tech-Bereich optimiert"
                 ]
             ))
         }
@@ -128,15 +140,27 @@ extension ResumeTemplate {
                 template: .student,
                 confidence: 0.85,
                 reasons: [
-                    "Limited work experience",
-                    "Education highlighted",
-                    "Great for entry-level positions"
+                    "Wenig Berufserfahrung",
+                    "Ausbildung im Fokus",
+                    "Ideal für Einstiegspositionen"
                 ]
             ))
         }
         
         // Academic template
-        let academicKeywords = ["research", "publication", "phd", "postdoc", "professor", "lecturer"]
+        let academicKeywords = [
+            "research",
+            "publication",
+            "phd",
+            "postdoc",
+            "professor",
+            "lecturer",
+            "forschung",
+            "publikation",
+            "promotion",
+            "doktor",
+            "dozent",
+        ]
         let hasAcademicKeywords = resume.experiences?.contains { exp in
             academicKeywords.contains(where: { exp.title.lowercased().contains($0) })
         } ?? false
@@ -146,9 +170,9 @@ extension ResumeTemplate {
                 template: .academic,
                 confidence: 0.85,
                 reasons: [
-                    "Academic roles detected",
-                    "Multiple degrees",
-                    "Emphasizes education and research"
+                    "Akademische Rollen erkannt",
+                    "Mehrere Abschlüsse",
+                    "Betont Ausbildung und Forschung"
                 ]
             ))
         }
@@ -158,9 +182,9 @@ extension ResumeTemplate {
             template: .modern,
             confidence: 0.75,
             reasons: [
-                "Versatile across industries",
-                "Clean, professional appearance",
-                "ATS-friendly"
+                "Vielseitig in vielen Branchen",
+                "Klarer, professioneller Eindruck",
+                "ATS-freundlich"
             ]
         ))
         

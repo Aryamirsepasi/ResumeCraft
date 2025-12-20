@@ -10,8 +10,12 @@ import SwiftUI
 struct LanguagesListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
   @Bindable var model: LanguageModel
-  @State private var editingLanguage: Language?
-  @State private var showEditor = false
+  @State private var editorContext: LanguageEditorContext?
+
+  private struct LanguageEditorContext: Identifiable {
+    let id = UUID()
+    let language: Language?
+  }
 
   var body: some View {
     NavigationStack {
@@ -22,11 +26,10 @@ struct LanguagesListView: View {
               // Re-fetch fresh instance by id before opening editor
               let id = lang.id
               if let fresh = model.items.first(where: { $0.id == id }) {
-                editingLanguage = fresh
+                editorContext = LanguageEditorContext(language: fresh)
               } else {
-                editingLanguage = lang
+                editorContext = LanguageEditorContext(language: lang)
               }
-              showEditor = true
             }
             Spacer()
             Toggle(
@@ -39,7 +42,7 @@ struct LanguagesListView: View {
               )
             ) {
               Image(systemName: lang.isVisible ? "eye" : "eye.slash")
-                .accessibilityLabel(lang.isVisible ? "Visible" : "Hidden")
+                .accessibilityLabel(lang.isVisible ? "Sichtbar" : "Ausgeblendet")
             }
             .labelsHidden()
             .toggleStyle(.button)
@@ -58,36 +61,33 @@ struct LanguagesListView: View {
           }
         }
       }
-      .navigationTitle("Languages")
+      .navigationTitle("Sprachen")
       .toolbar {
         ToolbarItem(placement: .topBarLeading) { EditButton() }
         ToolbarItem(placement: .primaryAction) {
           Button {
-            editingLanguage = nil
-            showEditor = true
+            editorContext = LanguageEditorContext(language: nil)
           } label: {
-            Label("Add", systemImage: "plus")
+            Label("Hinzufügen", systemImage: "plus")
           }
-          .accessibilityLabel("Add new language")
+          .accessibilityLabel("Neue Sprache hinzufügen")
         }
       }
-      .sheet(isPresented: $showEditor) {
+      .sheet(item: $editorContext) { context in
         LanguageEditorView(
-          language: editingLanguage,
+          language: context.language,
           onSave: { newLang in
-            if let existing = editingLanguage {
+            if let existing = context.language {
               existing.name = newLang.name
-              existing.name_de = newLang.name_de
               existing.proficiency = newLang.proficiency
-              existing.proficiency_de = newLang.proficiency_de
               existing.isVisible = true
             } else {
               model.add(newLang)
             }
-            showEditor = false
+            editorContext = nil
             try? resumeModel.save()
           },
-          onCancel: { showEditor = false }
+          onCancel: { editorContext = nil }
         )
       }
     }

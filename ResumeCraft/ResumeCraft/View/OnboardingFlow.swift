@@ -55,17 +55,17 @@ struct OnboardingWelcomePage: View {
         .shadow(radius: 12)
         .accessibilityHidden(true)
 
-      Text("Welcome to ResumeCraft")
+      Text("Willkommen bei ResumeCraft")
         .font(.largeTitle).fontWeight(.bold)
         .multilineTextAlignment(.center)
 
-      Text("Build a job-ready résumé with privacy-first AI.")
+      Text("Erstelle einen jobbereiten Lebenslauf mit datenschutzfreundlicher KI.")
         .font(.title3)
         .multilineTextAlignment(.center)
         .foregroundColor(.secondary)
 
       Spacer()
-      Button("Continue", action: nextAction)
+      Button("Weiter", action: nextAction)
         .font(.title2)
         .frame(width: 150, height: 40)
         .background(Color.blue)
@@ -83,14 +83,14 @@ struct OnboardingFeaturesPage: View {
   var body: some View {
     VStack(spacing: 24) {
       Spacer()
-      Text("What ResumeCraft Can Do")
+      Text("Was ResumeCraft kann")
         .font(.title).fontWeight(.semibold)
 
       VStack(alignment: .leading, spacing: 18) {
-        FeatureBullet(text: "Import and parse your résumé from PDF")
-        FeatureBullet(text: "Get on-device AI feedback (Apple Intelligence)")
-        FeatureBullet(text: "Export ATS-friendly résumés as PDF")
-        FeatureBullet(text: "Sync with iCloud (private database)")
+        FeatureBullet(text: "Lebenslauf aus PDF importieren und analysieren")
+        FeatureBullet(text: "On-Device-KI-Feedback erhalten (Apple Intelligence)")
+        FeatureBullet(text: "ATS-freundliche Lebensläufe als PDF exportieren")
+        FeatureBullet(text: "Mit iCloud synchronisieren (private Datenbank)")
       }
       .padding()
       .background(
@@ -99,7 +99,7 @@ struct OnboardingFeaturesPage: View {
       )
 
       Spacer()
-      Button("Next", action: nextAction)
+      Button("Weiter", action: nextAction)
         .font(.title2)
         .frame(width: 150, height: 40)
         .background(Color.blue)
@@ -129,7 +129,7 @@ struct OnboardingAIChoicePage: View {
   var body: some View {
     VStack(spacing: 24) {
       Spacer()
-      Text("How AI Works in ResumeCraft")
+      Text("So funktioniert KI in ResumeCraft")
         .font(.title2).fontWeight(.semibold)
         .multilineTextAlignment(.center)
 
@@ -138,10 +138,10 @@ struct OnboardingAIChoicePage: View {
           Image(systemName: "sparkles")
             .foregroundStyle(.primary)
           VStack(alignment: .leading, spacing: 6) {
-            Text("On-device AI (Apple Intelligence)")
+            Text("On-Device-KI (Apple Intelligence)")
               .font(.headline)
             Text(
-              "When available, ResumeCraft uses Apple’s on-device foundation language model to review your résumé. Your data stays on your device."
+              "Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät."
             )
             .font(.caption)
             .foregroundColor(.secondary)
@@ -151,7 +151,7 @@ struct OnboardingAIChoicePage: View {
         Divider().padding(.vertical, 4)
 
         Text(
-          "If on-device AI is unavailable, you can still edit, import, and export. To enable AI review, turn on Apple Intelligence in Settings."
+          "Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein."
         )
         .font(.footnote)
         .foregroundColor(.secondary)
@@ -163,7 +163,7 @@ struct OnboardingAIChoicePage: View {
       )
 
       Spacer()
-      Button("Get Started") {
+      Button("Loslegen") {
         finishAction()
       }
       .font(.title2)

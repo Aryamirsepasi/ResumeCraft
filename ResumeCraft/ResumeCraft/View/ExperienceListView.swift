@@ -10,8 +10,12 @@ import SwiftUI
 struct ExperienceListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
   @Bindable var model: ExperienceModel
-  @State private var editingExperience: WorkExperience?
-  @State private var showEditor = false
+  @State private var editorContext: ExperienceEditorContext?
+
+  private struct ExperienceEditorContext: Identifiable {
+    let id = UUID()
+    let experience: WorkExperience?
+  }
 
   var body: some View {
     NavigationStack {
@@ -22,11 +26,10 @@ struct ExperienceListView: View {
               // Re-fetch fresh instance by id before opening editor
               let id = exp.id
               if let fresh = model.items.first(where: { $0.id == id }) {
-                editingExperience = fresh
+                editorContext = ExperienceEditorContext(experience: fresh)
               } else {
-                editingExperience = exp
+                editorContext = ExperienceEditorContext(experience: exp)
               }
-              showEditor = true
             }
             Spacer()
             Toggle(
@@ -39,7 +42,7 @@ struct ExperienceListView: View {
               )
             ) {
               Image(systemName: exp.isVisible ? "eye" : "eye.slash")
-                .accessibilityLabel(exp.isVisible ? "Visible" : "Hidden")
+                .accessibilityLabel(exp.isVisible ? "Sichtbar" : "Ausgeblendet")
             }
             .labelsHidden()
             .toggleStyle(.button)
@@ -58,43 +61,38 @@ struct ExperienceListView: View {
           }
         }
       }
-      .navigationTitle("Experience")
+      .navigationTitle("Berufserfahrung")
       .toolbar {
         ToolbarItem(placement: .topBarLeading) { EditButton() }
         ToolbarItem(placement: .primaryAction) {
           Button {
-            editingExperience = nil
-            showEditor = true
+            editorContext = ExperienceEditorContext(experience: nil)
           } label: {
-            Label("Add", systemImage: "plus")
+            Label("Hinzufügen", systemImage: "plus")
           }
-          .accessibilityLabel("Add new experience")
+          .accessibilityLabel("Neue Berufserfahrung hinzufügen")
         }
       }
-      .sheet(isPresented: $showEditor) {
+      .sheet(item: $editorContext) { context in
         ExperienceEditorView(
-          experience: editingExperience,
+          experience: context.experience,
           onSave: { newExp in
-            if let existing = editingExperience {
+            if let existing = context.experience {
               existing.title = newExp.title
-              existing.title_de = newExp.title_de
               existing.company = newExp.company
-              existing.company_de = newExp.company_de
               existing.location = newExp.location
-              existing.location_de = newExp.location_de
               existing.startDate = newExp.startDate
               existing.endDate = newExp.endDate
               existing.isCurrent = newExp.isCurrent
               existing.details = newExp.details
-              existing.details_de = newExp.details_de
               existing.isVisible = true
             } else {
               model.add(newExp)
             }
-            showEditor = false
+            editorContext = nil
             try? resumeModel.save()
           },
-          onCancel: { showEditor = false }
+          onCancel: { editorContext = nil }
         )
       }
     }
@@ -116,7 +114,7 @@ struct ExperienceRowView: View {
             .foregroundStyle(.secondary)
           Spacer()
           Text(
-            "\(formattedDate(experience.startDate)) - \(experience.isCurrent ? "Present" : formattedDate(experience.endDate))"
+            "\(formattedDate(experience.startDate)) - \(experience.isCurrent ? "Heute" : formattedDate(experience.endDate))"
           )
           .font(.caption)
           .foregroundStyle(.tertiary)
@@ -124,7 +122,7 @@ struct ExperienceRowView: View {
       }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(
-        "\(experience.title) at \(experience.company), \(experience.location), \(formattedDate(experience.startDate)) to \(experience.isCurrent ? "present" : formattedDate(experience.endDate))"
+        "\(experience.title) bei \(experience.company), \(experience.location), \(formattedDate(experience.startDate)) bis \(experience.isCurrent ? "heute" : formattedDate(experience.endDate))"
       )
     }
   }

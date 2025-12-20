@@ -39,7 +39,7 @@ final class OpenRouterProvider: AIProvider {
   }
 
   func processText(
-    systemPrompt: String? = "You are a helpful writing assistant.",
+    systemPrompt: String? = "Du bist ein hilfreicher Schreibassistent. Antworte auf Deutsch.",
     userPrompt: String,
     images: [Data] = [],
     streaming: Bool = false
@@ -56,7 +56,7 @@ final class OpenRouterProvider: AIProvider {
       throw NSError(
         domain: "OpenRouterAPI",
         code: -1,
-        userInfo: [NSLocalizedDescriptionKey: "API key is missing."]
+        userInfo: [NSLocalizedDescriptionKey: "API-Schlüssel fehlt."]
       )
     }
 
@@ -69,7 +69,7 @@ final class OpenRouterProvider: AIProvider {
         domain: "OpenRouterAPI",
         code: -1,
         userInfo: [
-          NSLocalizedDescriptionKey: "Failed to initialize AIProxy service."
+          NSLocalizedDescriptionKey: "AIProxy-Dienst konnte nicht initialisiert werden."
         ]
       )
     }
@@ -112,7 +112,7 @@ final class OpenRouterProvider: AIProvider {
         throw NSError(
           domain: "OpenRouterAPI",
           code: statusCode,
-          userInfo: [NSLocalizedDescriptionKey: "API error: \(responseBody)"]
+          userInfo: [NSLocalizedDescriptionKey: "API-Fehler: \(responseBody)"]
         )
       }
     }

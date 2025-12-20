@@ -10,8 +10,12 @@ import SwiftUI
 struct EducationListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
   @Bindable var model: EducationModel
-  @State private var editingEducation: Education?
-  @State private var showEditor = false
+  @State private var editorContext: EducationEditorContext?
+
+  private struct EducationEditorContext: Identifiable {
+    let id = UUID()
+    let education: Education?
+  }
 
   var body: some View {
     NavigationStack {
@@ -22,11 +26,10 @@ struct EducationListView: View {
               // Re-fetch fresh instance by id before opening editor
               let id = edu.id
               if let fresh = model.items.first(where: { $0.id == id }) {
-                editingEducation = fresh
+                editorContext = EducationEditorContext(education: fresh)
               } else {
-                editingEducation = edu
+                editorContext = EducationEditorContext(education: edu)
               }
-              showEditor = true
             }
             Spacer()
             Toggle(
@@ -39,7 +42,7 @@ struct EducationListView: View {
               )
             ) {
               Image(systemName: edu.isVisible ? "eye" : "eye.slash")
-                .accessibilityLabel(edu.isVisible ? "Visible" : "Hidden")
+                .accessibilityLabel(edu.isVisible ? "Sichtbar" : "Ausgeblendet")
             }
             .labelsHidden()
             .toggleStyle(.button)
@@ -58,43 +61,38 @@ struct EducationListView: View {
           }
         }
       }
-      .navigationTitle("Education")
+      .navigationTitle("Ausbildung")
       .toolbar {
         ToolbarItem(placement: .topBarLeading) { EditButton() }
         ToolbarItem(placement: .primaryAction) {
           Button {
-            editingEducation = nil
-            showEditor = true
+            editorContext = EducationEditorContext(education: nil)
           } label: {
-            Label("Add", systemImage: "plus")
+            Label("Hinzufügen", systemImage: "plus")
           }
-          .accessibilityLabel("Add new education")
+          .accessibilityLabel("Neue Ausbildung hinzufügen")
         }
       }
-      .sheet(isPresented: $showEditor) {
+      .sheet(item: $editorContext) { context in
         EducationEditorView(
-          education: editingEducation,
+          education: context.education,
           onSave: { newEdu in
-            if let existing = editingEducation {
+            if let existing = context.education {
               existing.school = newEdu.school
-              existing.school_de = newEdu.school_de
               existing.degree = newEdu.degree
-              existing.degree_de = newEdu.degree_de
               existing.field = newEdu.field
-              existing.field_de = newEdu.field_de
               existing.startDate = newEdu.startDate
               existing.endDate = newEdu.endDate
               existing.grade = newEdu.grade
               existing.details = newEdu.details
-              existing.details_de = newEdu.details_de
               existing.isVisible = true
             } else {
               model.add(newEdu)
             }
-            showEditor = false
+            editorContext = nil
             try? resumeModel.save()
           },
-          onCancel: { showEditor = false }
+          onCancel: { editorContext = nil }
         )
       }
     }
@@ -120,7 +118,7 @@ struct EducationRowView: View {
           .font(.caption)
           .foregroundStyle(.tertiary)
           if !education.grade.isEmpty {
-            Text("Grade: \(education.grade)")
+            Text("Note: \(education.grade)")
               .font(.caption2)
               .foregroundStyle(.gray)
           }
@@ -128,7 +126,7 @@ struct EducationRowView: View {
       }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(
-        "\(education.degree) in \(education.field) at \(education.school), \(formattedDate(education.startDate)) to \(formattedDate(education.endDate)), Grade: \(education.grade)"
+        "\(education.degree) in \(education.field) an \(education.school), \(formattedDate(education.startDate)) bis \(formattedDate(education.endDate)), Note: \(education.grade)"
       )
     }
   }

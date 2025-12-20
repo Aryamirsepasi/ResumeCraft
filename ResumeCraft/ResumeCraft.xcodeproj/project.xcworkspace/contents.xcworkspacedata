@@ -4,4 +4,10 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:CloudKitSyncDiagnostics.swift">
+   </FileRef>
+   <FileRef
+      location = "group:CLOUDKIT_TROUBLESHOOTING.md">
+   </FileRef>
 </Workspace>

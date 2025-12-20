@@ -60,8 +60,19 @@ final class FoundationModelProvider: AIProvider {
         domain: "FoundationModels",
         code: -2,
         userInfo: [NSLocalizedDescriptionKey:
-          "Apple Intelligence model unavailable: \(String(describing: reason)). " +
-          "Enable Apple Intelligence in Settings to use on-device review."]
+          "Apple Intelligence ist nicht verfügbar: \(String(describing: reason)). " +
+          "Aktiviere Apple Intelligence in den Einstellungen, um die On-Device-Prüfung zu nutzen."]
+      )
+    }
+
+    let germanLocale = Locale(identifier: "de_DE")
+    if !SystemLanguageModel.default.supportsLocale(germanLocale) {
+      throw NSError(
+        domain: "FoundationModels",
+        code: -3,
+        userInfo: [NSLocalizedDescriptionKey:
+          "Das installierte Sprachmodell unterstützt Deutsch nicht. " +
+          "Bitte installiere eine deutsche Systemsprachunterstützung oder wähle ein anderes Modell."]
       )
     }
 

@@ -21,9 +21,9 @@ struct HomeView: View {
           Button(action: { importPDF() }) {
             Label {
               VStack(alignment: .leading, spacing: 4) {
-                Text("Import from PDF")
+                Text("Aus PDF importieren")
                   .font(.headline)
-                Text("Automatically extract and fill resume sections")
+                Text("Abschnitte automatisch extrahieren und ausfüllen")
                   .font(.caption)
                   .foregroundStyle(.secondary)
               }
@@ -34,10 +34,10 @@ struct HomeView: View {
                 .foregroundStyle(.blue)
             }
           }
-          .accessibilityHint("Import your resume as a PDF and auto-fill sections.")
+          .accessibilityHint("Importiere deinen Lebenslauf als PDF und fülle Abschnitte automatisch aus.")
           .listRowBackground(Color.clear)
         } header: {
-          Text("Quick Actions")
+          Text("Schnellaktionen")
             .font(.subheadline)
             .fontWeight(.semibold)
         }
@@ -46,7 +46,7 @@ struct HomeView: View {
         Section {
           ResumeStatsRow(resumeModel: resumeModel)
         } header: {
-          Text("Resume Overview")
+          Text("Lebenslauf-Übersicht")
             .font(.subheadline)
             .fontWeight(.semibold)
         }
@@ -54,77 +54,77 @@ struct HomeView: View {
         // Edit Sections with better visual grouping
         Section {
           HomeRow(
-            title: Text("Personal Info"),
-            subtitle: Text("Name, contact, links"),
+            title: Text("Persönliche Daten"),
+            subtitle: Text("Name, Kontakt, Links"),
             systemImage: "person.circle.fill",
             iconColor: .blue,
             destination: AnyView(PersonalInfoView(model: resumeModel.personalModel))
           )
           HomeRow(
-            title: Text("Summary"),
-            subtitle: Text("Short intro below personal info"),
+            title: Text("Zusammenfassung"),
+            subtitle: Text("Kurze Einführung unter persönlichen Daten"),
             systemImage: "text.justify",
             iconColor: .purple,
             destination: AnyView(SummaryEditorView())
           )
         } header: {
-          Text("Basic Information")
+          Text("Grundinformationen")
             .font(.subheadline)
             .fontWeight(.semibold)
         }
         
         Section {
           HomeRow(
-            title: Text("Work Experience"),
-            subtitle: Text("Jobs and responsibilities"),
+            title: Text("Berufserfahrung"),
+            subtitle: Text("Positionen und Aufgaben"),
             systemImage: "briefcase.fill",
             iconColor: .orange,
             destination: AnyView(ExperienceListView(model: resumeModel.experienceModel))
           )
           HomeRow(
-            title: Text("Projects"),
-            subtitle: Text("Personal and professional projects"),
+            title: Text("Projekte"),
+            subtitle: Text("Private und berufliche Projekte"),
             systemImage: "hammer.fill",
             iconColor: .green,
             destination: AnyView(ProjectsListView(model: resumeModel.projectsModel))
           )
           HomeRow(
-            title: Text("Skills"),
-            subtitle: Text("Technical and soft skills"),
+            title: Text("Fähigkeiten"),
+            subtitle: Text("Technische und soziale Fähigkeiten"),
             systemImage: "star.circle.fill",
             iconColor: .yellow,
             destination: AnyView(SkillsListView(model: resumeModel.skillsModel))
           )
         } header: {
-          Text("Professional")
+          Text("Beruflich")
             .font(.subheadline)
             .fontWeight(.semibold)
         }
         
         Section {
           HomeRow(
-            title: Text("Education"),
-            subtitle: Text("Degrees, dates, details"),
+            title: Text("Ausbildung"),
+            subtitle: Text("Abschlüsse, Daten, Details"),
             systemImage: "graduationcap.fill",
             iconColor: .indigo,
             destination: AnyView(EducationListView(model: resumeModel.educationModel))
           )
           HomeRow(
-            title: Text("Activities"),
-            subtitle: Text("Clubs, volunteering, more"),
+            title: Text("Aktivitäten"),
+            subtitle: Text("Vereine, Ehrenamt, mehr"),
             systemImage: "figure.wave",
             iconColor: .pink,
             destination: AnyView(ExtracurricularListView(model: resumeModel.extracurricularModel))
           )
           HomeRow(
-            title: Text("Languages"),
-            subtitle: Text("Languages and proficiency"),
+            title: Text("Sprachen"),
+            subtitle: Text("Sprachen und Kenntnisstand"),
             systemImage: "globe.americas.fill",
             iconColor: .teal,
             destination: AnyView(LanguagesListView(model: resumeModel.languageModel))
           )
         } header: {
-          Text("Additional")
+          Text("Zusätzliches")
             .font(.subheadline)
             .fontWeight(.semibold)
         }
@@ -134,13 +134,13 @@ struct HomeView: View {
       .toolbar {
         ToolbarItem(placement: .topBarLeading) {
           Button(action: openPreview) {
-            Label("Preview", systemImage: "doc.text.magnifyingglass")
+            Label("Vorschau", systemImage: "doc.text.magnifyingglass")
           }
           .tint(.blue)
         }
         ToolbarItem(placement: .topBarTrailing) {
           Button(action: openSettings) {
-            Label("Settings", systemImage: "gearshape")
+            Label("Einstellungen", systemImage: "gearshape")
           }
         }
       }
@@ -193,28 +193,28 @@ private struct ResumeStatsRow: View {
       StatBadge(
         icon: "briefcase.fill",
         count: (resumeModel.resume.experiences ?? []).filter(\.isVisible).count,
-        label: "Jobs",
+        label: "Positionen",
         color: .orange
       )
       
       StatBadge(
         icon: "graduationcap.fill",
         count: (resumeModel.resume.educations ?? []).filter(\.isVisible).count,
-        label: "Education",
+        label: "Ausbildung",
         color: .indigo
       )
       
       StatBadge(
         icon: "star.fill",
         count: (resumeModel.resume.skills ?? []).filter(\.isVisible).count,
-        label: "Skills",
+        label: "Fähigkeiten",
         color: .yellow
       )
       
       StatBadge(
         icon: "hammer.fill",
         count: (resumeModel.resume.projects ?? []).filter(\.isVisible).count,
-        label: "Projects",
+        label: "Projekte",
         color: .green
       )
     }
@@ -247,4 +247,3 @@ private struct StatBadge: View {
     .frame(maxWidth: .infinity)
   }
 }
-

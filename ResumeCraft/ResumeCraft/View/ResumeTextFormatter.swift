@@ -20,7 +20,7 @@ struct ResumeTextFormatter {
             if !personal.phone.isEmpty { contactItems.append(personal.phone) }
             if !personal.address.isEmpty { contactItems.append(personal.address) }
             if !contactItems.isEmpty {
-                result += contactItems.joined(separator: " • ") + "\n"
+                result += contactItems.joined(separator: " | ") + "\n"
             }
             
             var links: [String] = []
@@ -28,24 +28,73 @@ struct ResumeTextFormatter {
             if let website = personal.website, !website.isEmpty { links.append(website) }
             if let github = personal.github, !github.isEmpty { links.append(github) }
             if !links.isEmpty {
-                result += links.joined(separator: " • ") + "\n"
+                result += links.joined(separator: " | ") + "\n"
             }
             result += "\n"
         }
         
         // MARK: - Summary
         if let summary = resume.summary, summary.isVisible, !summary.text.isEmpty {
-            result += "SUMMARY\n"
+            result += "ZUSAMMENFASSUNG\n"
             result += summary.text + "\n\n"
         }
         
+        // MARK: - Work Experience
+        let visibleExperiences = (resume.experiences ?? [])
+            .filter(\.isVisible)
+            .sorted(by: { $0.orderIndex < $1.orderIndex })
+        
+        if !visibleExperiences.isEmpty {
+            result += "BERUFSERFAHRUNG\n"
+            for exp in visibleExperiences {
+                result += "\(exp.title) bei \(exp.company)\n"
+                
+                var locationDate = ""
+                if !exp.location.isEmpty { locationDate += exp.location + " | " }
+                locationDate += dateRange(exp.startDate, exp.endDate, exp.isCurrent)
+                result += locationDate + "\n"
+                
+                if !exp.details.isEmpty {
+                    result += exp.details + "\n"
+                }
+                result += "\n"
+            }
+        }
+        
+        // MARK: - Education
+        let visibleEducations = (resume.educations ?? [])
+            .filter(\.isVisible)
+            .sorted(by: { $0.orderIndex < $1.orderIndex })
+        
+        if !visibleEducations.isEmpty {
+            result += "AUSBILDUNG\n"
+            for edu in visibleEducations {
+                result += "\(edu.degree)"
+                if !edu.field.isEmpty {
+                    result += " in \(edu.field)"
+                }
+                result += "\n"
+                
+                result += "\(edu.school) | \(dateRange(edu.startDate, edu.endDate, false))\n"
+                
+                if !edu.grade.isEmpty {
+                    result += "Note: \(edu.grade)\n"
+                }
+                
+                if !edu.details.isEmpty {
+                    result += edu.details + "\n"
+                }
+                result += "\n"
+            }
+        }
+
         // MARK: - Skills
         let visibleSkills = (resume.skills ?? [])
             .filter(\.isVisible)
             .sorted(by: { $0.orderIndex < $1.orderIndex })
         
         if !visibleSkills.isEmpty {
-            result += "SKILLS\n"
+            result += "FÄHIGKEITEN\n"
             let grouped = Dictionary(grouping: visibleSkills) { $0.category }
             
             if grouped.keys.contains(where: { !$0.isEmpty }) {
@@ -64,36 +113,14 @@ struct ResumeTextFormatter {
             }
             result += "\n"
         }
-        
-        // MARK: - Work Experience
-        let visibleExperiences = (resume.experiences ?? [])
-            .filter(\.isVisible)
-            .sorted(by: { $0.orderIndex < $1.orderIndex })
-        
-        if !visibleExperiences.isEmpty {
-            result += "WORK EXPERIENCE\n"
-            for exp in visibleExperiences {
-                result += "\(exp.title) at \(exp.company)\n"
-                
-                var locationDate = ""
-                if !exp.location.isEmpty { locationDate += exp.location + " • " }
-                locationDate += dateRange(exp.startDate, exp.endDate, exp.isCurrent)
-                result += locationDate + "\n"
-                
-                if !exp.details.isEmpty {
-                    result += exp.details + "\n"
-                }
-                result += "\n"
-            }
-        }
-        
+
         // MARK: - Projects
         let visibleProjects = (resume.projects ?? [])
             .filter(\.isVisible)
             .sorted(by: { $0.orderIndex < $1.orderIndex })
         
         if !visibleProjects.isEmpty {
-            result += "PROJECTS\n"
+            result += "PROJEKTE\n"
             for proj in visibleProjects {
                 result += proj.name
                 if let link = proj.link, !link.isEmpty {
@@ -102,7 +129,7 @@ struct ResumeTextFormatter {
                 result += "\n"
                 
                 if !proj.technologies.isEmpty {
-                    result += "Technologies: \(proj.technologies)\n"
+                    result += "Technologien: \(proj.technologies)\n"
                 }
                 
                 if !proj.details.isEmpty {
@@ -111,45 +138,29 @@ struct ResumeTextFormatter {
                 result += "\n"
             }
         }
-        
-        // MARK: - Education
-        let visibleEducations = (resume.educations ?? [])
+
+        // MARK: - Languages
+        let visibleLanguages = (resume.languages ?? [])
             .filter(\.isVisible)
             .sorted(by: { $0.orderIndex < $1.orderIndex })
         
-        if !visibleEducations.isEmpty {
-            result += "EDUCATION\n"
-            for edu in visibleEducations {
-                result += "\(edu.degree)"
-                if !edu.field.isEmpty {
-                    result += " in \(edu.field)"
-                }
-                result += "\n"
-                
-                result += "\(edu.school) • \(dateRange(edu.startDate, edu.endDate, false))\n"
-                
-                if !edu.grade.isEmpty {
-                    result += "Grade: \(edu.grade)\n"
-                }
-                
-                if !edu.details.isEmpty {
-                    result += edu.details + "\n"
-                }
-                result += "\n"
-            }
+        if !visibleLanguages.isEmpty {
+            result += "SPRACHEN\n"
+            result += visibleLanguages.map { "\($0.name) - \($0.proficiency)" }.joined(separator: ", ")
+            result += "\n"
         }
-        
+
         // MARK: - Extracurricular
         let visibleExtracurriculars = (resume.extracurriculars ?? [])
             .filter(\.isVisible)
             .sorted(by: { $0.orderIndex < $1.orderIndex })
         
         if !visibleExtracurriculars.isEmpty {
-            result += "EXTRACURRICULAR ACTIVITIES\n"
+            result += "AKTIVITÄTEN\n"
             for ext in visibleExtracurriculars {
                 result += ext.title
                 if !ext.organization.isEmpty {
-                    result += " at \(ext.organization)"
+                    result += " bei \(ext.organization)"
                 }
                 result += "\n"
                 
@@ -160,26 +171,16 @@ struct ResumeTextFormatter {
             }
         }
         
-        // MARK: - Languages
-        let visibleLanguages = (resume.languages ?? [])
-            .filter(\.isVisible)
-            .sorted(by: { $0.orderIndex < $1.orderIndex })
-        
-        if !visibleLanguages.isEmpty {
-            result += "LANGUAGES\n"
-            result += visibleLanguages.map { "\($0.name) - \($0.proficiency)" }.joined(separator: ", ")
-            result += "\n"
-        }
-        
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     private static func dateRange(_ start: Date, _ end: Date?, _ isCurrent: Bool) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM yyyy"
+        formatter.locale = Locale(identifier: "de_DE")
         
         if isCurrent {
-            return "\(formatter.string(from: start)) – Present"
+            return "\(formatter.string(from: start)) – Heute"
         } else if let end = end {
             return "\(formatter.string(from: start)) – \(formatter.string(from: end))"
         } else {

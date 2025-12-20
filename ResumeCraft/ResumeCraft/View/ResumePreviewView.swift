@@ -37,9 +37,9 @@ struct ResumePreviewView: View {
             }
             .background(Color(.systemGray6))
         }
-        .navigationTitle("Resume Preview")
+        .navigationTitle("Lebenslauf-Vorschau")
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Resume Preview Paper")
+        .accessibilityLabel("Lebenslauf-Vorschau (Papier)")
     }
 }
 
@@ -55,7 +55,7 @@ struct ResumeA4PreviewView: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = 0
         textView.setContentCompressionResistancePriority(.required, for: .vertical)
         textView.setContentCompressionResistancePriority(.required, for: .horizontal)
-        textView.accessibilityLabel = "Resume Preview"
+        textView.accessibilityLabel = "Lebenslauf-Vorschau"
         textView.adjustsFontForContentSizeCategory = true
         return textView
     }

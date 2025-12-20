@@ -142,6 +142,7 @@ struct ResumeCraftApp: App {
       .environment(openRouterSettings)
       .environment(openRouterProvider)
       .environment(persistenceStatus)
+      .environment(\.locale, Locale(identifier: "de_DE"))
       .overlay(AppleIntelligenceGate())
     }
     .modelContainer(modelContainer)
@@ -165,8 +166,8 @@ private struct AppleIntelligenceGate: View {
         Spacer()
         HStack(spacing: 12) {
           Image(systemName: "sparkles")
-          Text("On-device AI is unavailable (\(String(describing: reason))). Enable Apple Intelligence in Settings.")
-          Button("Open Settings") {
+          Text("On-Device-KI ist nicht verfügbar (\(String(describing: reason))). Aktiviere Apple Intelligence in den Einstellungen.")
+          Button("Einstellungen öffnen") {
             openAppSettings()
           }
         }

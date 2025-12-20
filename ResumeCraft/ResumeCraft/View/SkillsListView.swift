@@ -10,8 +10,12 @@ import SwiftUI
 struct SkillsListView: View {
   @Bindable var model: SkillsModel
   @Environment(ResumeEditorModel.self) private var resumeModel
-  @State private var editingSkill: Skill?
-  @State private var showEditor = false
+  @State private var editorContext: SkillEditorContext?
+
+  private struct SkillEditorContext: Identifiable {
+    let id = UUID()
+    let skill: Skill?
+  }
 
   var body: some View {
     NavigationStack {
@@ -22,11 +26,10 @@ struct SkillsListView: View {
               // Re-fetch fresh instance by id before opening editor
               let id = skill.id
               if let fresh = model.items.first(where: { $0.id == id }) {
-                editingSkill = fresh
+                editorContext = SkillEditorContext(skill: fresh)
               } else {
-                editingSkill = skill
+                editorContext = SkillEditorContext(skill: skill)
               }
-              showEditor = true
             } label: {
               Text(skill.name).font(.headline)
             }
@@ -41,7 +44,7 @@ struct SkillsListView: View {
               )
             ) {
               Image(systemName: skill.isVisible ? "eye" : "eye.slash")
-                .accessibilityLabel(skill.isVisible ? "Visible" : "Hidden")
+                .accessibilityLabel(skill.isVisible ? "Sichtbar" : "Ausgeblendet")
             }
             .labelsHidden()
             .toggleStyle(.button)
@@ -60,36 +63,33 @@ struct SkillsListView: View {
           }
         }
       }
-      .navigationTitle("Skills")
+      .navigationTitle("Fähigkeiten")
       .toolbar {
         ToolbarItem(placement: .topBarLeading) { EditButton() }
         ToolbarItem(placement: .primaryAction) {
           Button {
-            editingSkill = nil
-            showEditor = true
+            editorContext = SkillEditorContext(skill: nil)
           } label: {
-            Label("Add", systemImage: "plus")
+            Label("Hinzufügen", systemImage: "plus")
           }
-          .accessibilityLabel("Add new skill")
+          .accessibilityLabel("Neue Fähigkeit hinzufügen")
         }
       }
-      .sheet(isPresented: $showEditor) {
+      .sheet(item: $editorContext) { context in
         SkillEditorView(
-          skill: editingSkill,
+          skill: context.skill,
           onSave: { newSkill in
-            if let existing = editingSkill {
+            if let existing = context.skill {
               existing.name = newSkill.name
               existing.category = newSkill.category
-              existing.name_de = newSkill.name_de
-              existing.category_de = newSkill.category_de
               existing.isVisible = true
             } else {
               model.add(newSkill)
             }
-            showEditor = false
+            editorContext = nil
             try? resumeModel.save()
           },
-          onCancel: { showEditor = false }
+          onCancel: { editorContext = nil }
         )
       }
     }

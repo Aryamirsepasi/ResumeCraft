@@ -26,13 +26,13 @@ struct VersionHistoryView: View {
                 emptyStateView
             }
         }
-        .navigationTitle("Version History")
+        .navigationTitle("Versionsverlauf")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     saveSnapshot()
                 } label: {
-                    Label("Save Snapshot", systemImage: "plus.circle")
+                    Label("Momentaufnahme speichern", systemImage: "plus.circle")
                 }
             }
         }
@@ -44,10 +44,10 @@ struct VersionHistoryView: View {
                 )
             }
         }
-        .alert("Snapshot Saved", isPresented: $showSaveConfirmation) {
+        .alert("Momentaufnahme gespeichert", isPresented: $showSaveConfirmation) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Your current resume state has been saved to the version history.")
+            Text("Dein aktueller Lebenslauf wurde im Versionsverlauf gespeichert.")
         }
         .task {
             await loadHistory()
@@ -59,14 +59,14 @@ struct VersionHistoryView: View {
     @ViewBuilder
     private var emptyStateView: some View {
         ContentUnavailableView {
-            Label("No Version History", systemImage: "clock.arrow.circlepath")
+            Label("Kein Versionsverlauf", systemImage: "clock.arrow.circlepath")
         } description: {
-            Text("Save snapshots of your resume to track changes over time.")
+            Text("Speichere Momentaufnahmen deines Lebenslaufs, um Änderungen nachzuverfolgen.")
         } actions: {
             Button {
                 saveSnapshot()
             } label: {
-                Text("Save Current Version")
+                Text("Aktuelle Version speichern")
             }
             .buttonStyle(.borderedProminent)
         }
@@ -81,7 +81,7 @@ struct VersionHistoryView: View {
             Section {
                 CurrentStateRow(resume: resumeModel.resume)
             } header: {
-                Text("Current")
+                Text("Aktuell")
             }
             
             // History section
@@ -103,14 +103,14 @@ struct VersionHistoryView: View {
                 }
             } header: {
                 HStack {
-                    Text("Previous Versions")
+                    Text("Vorherige Versionen")
                     Spacer()
                     Text("\(snapshots.count)/20")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             } footer: {
-                Text("Up to 20 snapshots are stored. Older versions are automatically removed.")
+                Text("Es werden bis zu 20 Momentaufnahmen gespeichert. Ältere Versionen werden automatisch entfernt.")
             }
         }
         .listStyle(.insetGrouped)
@@ -177,10 +177,10 @@ private struct CurrentStateRow: View {
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text("Current Version")
+                Text("Aktuelle Version")
                     .font(.headline)
                 
-                Text("Last updated \(resume.updated, style: .relative) ago")
+                Text("Zuletzt aktualisiert \(resume.updated, style: .relative)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -190,10 +190,10 @@ private struct CurrentStateRow: View {
             // Section counts
             VStack(alignment: .trailing, spacing: 2) {
                 let counts = sectionCounts
-                Text("\(counts.total) items")
+                Text("\(counts.total) Einträge")
                     .font(.caption.weight(.semibold))
                 
-                Text("\(wordCount) words")
+                Text("\(wordCount) Wörter")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -252,10 +252,10 @@ private struct SnapshotRow: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(totalItems) items")
+                    Text("\(totalItems) Einträge")
                         .font(.caption.weight(.semibold))
                     
-                    Text("\(snapshot.totalWordCount) words")
+                    Text("\(snapshot.totalWordCount) Wörter")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -288,25 +288,25 @@ private struct SnapshotRow: View {
                 SectionCountBadge(
                     icon: "briefcase.fill",
                     count: snapshot.sectionsCount.experiences,
-                    label: "Jobs",
+                    label: "Positionen",
                     color: .orange
                 )
                 SectionCountBadge(
                     icon: "star.fill",
                     count: snapshot.sectionsCount.skills,
-                    label: "Skills",
+                    label: "Fähigkeiten",
                     color: .yellow
                 )
                 SectionCountBadge(
                     icon: "hammer.fill",
                     count: snapshot.sectionsCount.projects,
-                    label: "Projects",
+                    label: "Projekte",
                     color: .green
                 )
                 SectionCountBadge(
                     icon: "graduationcap.fill",
                     count: snapshot.sectionsCount.educations,
-                    label: "Education",
+                    label: "Ausbildung",
                     color: .blue
                 )
             }
@@ -314,7 +314,7 @@ private struct SnapshotRow: View {
             // Summary preview
             if !snapshot.summarySnapshot.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Summary Preview")
+                    Text("Zusammenfassung (Vorschau)")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     
@@ -333,7 +333,7 @@ private struct SnapshotRow: View {
                 Button {
                     onCompare(previous)
                 } label: {
-                    Label("Compare with Previous", systemImage: "arrow.left.arrow.right")
+                    Label("Mit vorheriger vergleichen", systemImage: "arrow.left.arrow.right")
                         .font(.caption.weight(.medium))
                 }
                 .buttonStyle(.bordered)
@@ -407,11 +407,11 @@ private struct ComparisonSheet: View {
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Version Comparison")
+            .navigationTitle("Versionsvergleich")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("Schließen") { dismiss() }
                 }
             }
         }
@@ -436,7 +436,7 @@ private struct ComparisonSheet: View {
                         .foregroundStyle(.gray)
                 }
                 
-                Text("Previous")
+                Text("Vorherige")
                     .font(.caption.weight(.semibold))
                 
                 Text(previous.date, style: .date)
@@ -461,7 +461,7 @@ private struct ComparisonSheet: View {
                         .foregroundStyle(.indigo)
                 }
                 
-                Text("Current")
+                Text("Aktuelle")
                     .font(.caption.weight(.semibold))
                 
                 Text(current.date, style: .date)
@@ -477,26 +477,26 @@ private struct ComparisonSheet: View {
     @ViewBuilder
     private var statisticsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Changes")
+            Text("Änderungen")
                 .font(.headline)
             
             HStack(spacing: 16) {
                 StatisticCard(
-                    title: "Word Count",
+                    title: "Wortanzahl",
                     value: "\(abs(comparison.statistics.wordCountDelta))",
                     trend: comparison.statistics.wordCountDelta >= 0 ? .up : .down,
                     icon: "text.word.spacing"
                 )
                 
                 StatisticCard(
-                    title: "Sections",
+                    title: "Abschnitte",
                     value: "\(abs(comparison.statistics.sectionsDelta))",
                     trend: comparison.statistics.sectionsDelta >= 0 ? .up : .down,
                     icon: "list.bullet"
                 )
                 
                 StatisticCard(
-                    title: "Days Apart",
+                    title: "Tage Abstand",
                     value: "\(comparison.statistics.daysApart)",
                     trend: .neutral,
                     icon: "calendar"
@@ -511,12 +511,12 @@ private struct ComparisonSheet: View {
     @ViewBuilder
     private var changesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Section Breakdown")
+            Text("Abschnittsübersicht")
                 .font(.headline)
             
             // Experience
             ChangeRow(
-                label: "Work Experience",
+                label: "Berufserfahrung",
                 icon: "briefcase.fill",
                 oldValue: previous.sectionsCount.experiences,
                 newValue: current.sectionsCount.experiences,
@@ -525,7 +525,7 @@ private struct ComparisonSheet: View {
             
             // Skills
             ChangeRow(
-                label: "Skills",
+                label: "Fähigkeiten",
                 icon: "star.fill",
                 oldValue: previous.sectionsCount.skills,
                 newValue: current.sectionsCount.skills,
@@ -534,7 +534,7 @@ private struct ComparisonSheet: View {
             
             // Projects
             ChangeRow(
-                label: "Projects",
+                label: "Projekte",
                 icon: "hammer.fill",
                 oldValue: previous.sectionsCount.projects,
                 newValue: current.sectionsCount.projects,
@@ -543,7 +543,7 @@ private struct ComparisonSheet: View {
             
             // Education
             ChangeRow(
-                label: "Education",
+                label: "Ausbildung",
                 icon: "graduationcap.fill",
                 oldValue: previous.sectionsCount.educations,
                 newValue: current.sectionsCount.educations,
@@ -561,7 +561,7 @@ private struct ComparisonSheet: View {
             HStack {
                 Image(systemName: "lightbulb.fill")
                     .foregroundStyle(.yellow)
-                Text("Insight")
+                Text("Hinweis")
                     .font(.headline)
             }
             

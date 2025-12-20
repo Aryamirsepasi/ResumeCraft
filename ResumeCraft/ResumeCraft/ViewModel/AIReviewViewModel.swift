@@ -40,70 +40,70 @@ final class AIReviewViewModel {
 
         let focusLine = focusTags.isEmpty ? "" : """
         
-        Pay special attention to these areas:
+        Bitte achte besonders auf diese Bereiche:
         \(focusTags.map { "- \($0)" }.joined(separator: "\n"))
         """
 
         let prompt = """
-        You are an expert resume reviewer specializing in ATS optimization and career coaching.
+        Du bist ein:e Expert:in für Lebenslauf-Reviews mit Fokus auf ATS-Optimierung und Karriere-Coaching.
         
-        Analyze the following resume against the job description and provide specific, actionable feedback.
+        Analysiere den folgenden Lebenslauf im Vergleich zur Stellenbeschreibung und gib konkrete, umsetzbare Hinweise.
         
-        Structure your response with:
+        Strukturiere deine Antwort mit:
         
-        ## Strengths
-        - What's working well in this resume
+        ## Stärken
+        - Was an diesem Lebenslauf gut funktioniert
         
-        ## Areas for Improvement  
-        - Specific issues that need addressing
-        - Consider clarity, impact, and ATS compatibility
+        ## Verbesserungsbereiche
+        - Konkrete Punkte, die angepasst werden sollten
+        - Achte auf Klarheit, Wirkung und ATS-Kompatibilität
         
-        ## Suggested Rewrites
-        - Provide "before → after" examples for key improvements
-        - Focus on impact, metrics, and action verbs
-        - Ensure ATS compatibility
+        ## Vorschläge zur Überarbeitung
+        - Gib „vorher → nachher“-Beispiele für wichtige Verbesserungen
+        - Fokus auf Wirkung, Kennzahlen und Aktionsverben
+        - Stelle ATS-Kompatibilität sicher
         
-        ## Keywords to Add
-        - List relevant keywords from the job description that are missing
-        - Suggest where to incorporate them naturally
+        ## Keywords zum Ergänzen
+        - Nenne relevante Schlüsselwörter aus der Stellenbeschreibung, die fehlen
+        - Schlage vor, wo sie natürlich eingebaut werden können
         
         \(focusLine)
         
-        Full Resume:
+        Vollständiger Lebenslauf:
         \(resumeText)
         
-        Job Description:
+        Stellenbeschreibung:
         \(jobDescription)
         
-        Guidelines:
-        - Be specific and constructive
-        - Use bullet points for clarity
-        - Provide concrete examples, not generic advice
-        - Focus on measurable improvements
-        - Consider the overall narrative and flow
-        - Ensure consistency in formatting and style
-        - Keep suggestions concise and actionable
+        Vorgaben:
+        - Sei spezifisch und konstruktiv
+        - Nutze Bulletpoints für Klarheit
+        - Gib konkrete Beispiele, keine allgemeinen Ratschläge
+        - Fokus auf messbare Verbesserungen
+        - Achte auf den roten Faden und den Gesamteindruck
+        - Sorge für konsistentes Format und Stil
+        - Halte Vorschläge kurz und umsetzbar
         """
 
         do {
             // Try streaming first (better UX)
             let result = try await ai.processText(
                 systemPrompt: """
-                You are a professional resume coach with expertise in:
-                - ATS (Applicant Tracking System) optimization
-                - Industry-specific keywords and terminology
-                - Quantifying achievements with metrics
-                - Clear, impactful professional writing
-                - Resume structure and formatting best practices
+                Du bist ein professioneller Lebenslauf-Coach mit Expertise in:
+                - ATS-Optimierung (Applicant Tracking System)
+                - Branchenspezifischen Keywords und Terminologie
+                - Quantifizierung von Erfolgen mit Kennzahlen
+                - Klarer, wirkungsvoller professioneller Sprache
+                - Best Practices für Struktur und Formatierung
                 
-                Provide feedback that is:
-                1. Specific and actionable
-                2. Based on the content provided
-                3. Focused on measurable improvements
-                4. Constructive and encouraging
-                5. Tailored to the specific job description
+                Dein Feedback ist:
+                1. Spezifisch und umsetzbar
+                2. Am bereitgestellten Inhalt ausgerichtet
+                3. Auf messbare Verbesserungen fokussiert
+                4. Konstruktiv und ermutigend
+                5. Auf die konkrete Stellenbeschreibung zugeschnitten
                 
-                Format your response in clear Markdown with headers and bullet points.
+                Antworte auf Deutsch und formatiere die Antwort in sauberem Markdown mit Überschriften und Bulletpoints.
                 """,
                 userPrompt: prompt,
                 images: [],
@@ -114,7 +114,7 @@ final class AIReviewViewModel {
                 throw NSError(
                     domain: "AIReview",
                     code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "No feedback was generated. Please try again."]
+                    userInfo: [NSLocalizedDescriptionKey: "Es wurde kein Feedback erzeugt. Bitte versuche es erneut."]
                 )
             }
             

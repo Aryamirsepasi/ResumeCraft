@@ -112,13 +112,13 @@ struct ResumeComparisonResult {
         
         var improvementSuggestion: String {
             if wordCountDelta > 50 {
-                return "Resume has grown significantly. Consider condensing to 1-2 pages."
+                return "Der Lebenslauf ist deutlich umfangreicher geworden. Erwäge, auf 1–2 Seiten zu kürzen."
             } else if wordCountDelta < -50 {
-                return "Resume has shrunk. Ensure you're highlighting key achievements."
+                return "Der Lebenslauf ist kürzer geworden. Stelle sicher, dass zentrale Erfolge hervorgehoben werden."
             } else if sectionsDelta > 0 {
-                return "Good! You've added more content sections."
+                return "Gut! Du hast weitere Inhaltsabschnitte ergänzt."
             } else {
-                return "Resume length is stable."
+                return "Die Länge des Lebenslaufs ist stabil."
             }
         }
     }

@@ -11,26 +11,26 @@ import Observation
 struct PersonalInfoView: View {
     @Environment(ResumeEditorModel.self) private var resumeModel
     @Bindable var model: PersonalInfoModel
-    @State private var showEditor = false
+    @State private var editingInfo: PersonalInfo?
 
     var body: some View {
         NavigationStack {
             Form {
                 PersonalInfoSectionView(personal: model.personal)
             }
-            .navigationTitle("Personal Info")
+            .navigationTitle("Persönliche Daten")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Edit") {
+                    Button("Bearbeiten") {
                         // Ensure we open editor with freshest instance
-                        showEditor = true
+                        editingInfo = model.personal
                     }
-                    .accessibilityLabel("Edit Personal Info")
+                    .accessibilityLabel("Persönliche Daten bearbeiten")
                 }
             }
-            .sheet(isPresented: $showEditor) {
+            .sheet(item: $editingInfo) { info in
                 PersonalInfoEditorView(
-                    info: model.personal,
+                    info: info,
                     onSave: { updated in
                         model.personal.firstName = updated.firstName
                         model.personal.lastName = updated.lastName
@@ -40,14 +40,14 @@ struct PersonalInfoView: View {
                         model.personal.linkedIn = updated.linkedIn
                         model.personal.website = updated.website
                         model.personal.github = updated.github
-                        showEditor = false
+                        editingInfo = nil
                         do {
                             try resumeModel.save()
                         } catch {
                             print("Error saving: \(error.localizedDescription)")
                         }
                     },
-                    onCancel: { showEditor = false }
+                    onCancel: { editingInfo = nil }
                 )
             }
         }
@@ -60,24 +60,24 @@ struct PersonalInfoSectionView: View {
     var body: some View {
         Section("Name") {
             Text(personal.firstName)
-                .accessibilityLabel("First Name")
+                .accessibilityLabel("Vorname")
             Text(personal.lastName)
-                .accessibilityLabel("Last Name")
+                .accessibilityLabel("Nachname")
         }
-        Section("Contact") {
+        Section("Kontakt") {
             Text(personal.email)
-                .accessibilityLabel("Email")
+                .accessibilityLabel("E-Mail")
             Text(personal.phone)
-                .accessibilityLabel("Phone")
+                .accessibilityLabel("Telefon")
             Text(personal.address)
-                .accessibilityLabel("Address")
+                .accessibilityLabel("Adresse")
         }
         Section("Links") {
             if let linkedIn = personal.linkedIn, !linkedIn.isEmpty {
                 Text(linkedIn).accessibilityLabel("LinkedIn")
             }
             if let website = personal.website, !website.isEmpty {
-                Text(website).accessibilityLabel("Website")
+                Text(website).accessibilityLabel("Webseite")
             }
             if let github = personal.github, !github.isEmpty {
                 Text(github).accessibilityLabel("GitHub")

@@ -11,9 +11,9 @@ struct SummaryView: View {
     let text: String
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Summary").font(.headline)
+            Text("Zusammenfassung").font(.headline)
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text("No summary yet.").foregroundStyle(.secondary)
+                Text("Noch keine Zusammenfassung.").foregroundStyle(.secondary)
             } else {
                 Text(text)
             }

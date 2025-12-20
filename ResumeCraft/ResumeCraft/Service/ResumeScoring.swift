@@ -36,11 +36,11 @@ struct ResumeScore: Identifiable {
     }
     
     enum Category: String, CaseIterable {
-        case completeness = "Completeness"
-        case contentQuality = "Content Quality"
-        case atsOptimization = "ATS Optimization"
-        case formatting = "Formatting"
-        case impact = "Impact & Metrics"
+        case completeness = "Vollständigkeit"
+        case contentQuality = "Inhaltsqualität"
+        case atsOptimization = "ATS-Optimierung"
+        case formatting = "Formatierung"
+        case impact = "Wirkung & Kennzahlen"
         
         var icon: String {
             switch self {
@@ -55,15 +55,15 @@ struct ResumeScore: Identifiable {
         var description: String {
             switch self {
             case .completeness:
-                return "How complete is your resume information"
+                return "Wie vollständig sind deine Lebenslaufdaten"
             case .contentQuality:
-                return "Quality of writing and content depth"
+                return "Qualität der Texte und inhaltliche Tiefe"
             case .atsOptimization:
-                return "Compatibility with applicant tracking systems"
+                return "Kompatibilität mit Bewerbermanagement-Systemen"
             case .formatting:
-                return "Structure and organization of content"
+                return "Struktur und Organisation der Inhalte"
             case .impact:
-                return "Use of metrics and quantifiable achievements"
+                return "Einsatz von Kennzahlen und messbaren Erfolgen"
             }
         }
     }
@@ -87,11 +87,11 @@ struct ResumeScore: Identifiable {
         
         var description: String {
             switch self {
-            case .a: return "Excellent! Your resume is well-optimized"
-            case .b: return "Good resume with minor improvements needed"
-            case .c: return "Average - several areas need attention"
-            case .d: return "Below average - significant improvements needed"
-            case .f: return "Needs work - missing critical information"
+            case .a: return "Ausgezeichnet! Dein Lebenslauf ist sehr gut optimiert"
+            case .b: return "Guter Lebenslauf mit kleinen Verbesserungen"
+            case .c: return "Durchschnittlich – mehrere Bereiche brauchen Aufmerksamkeit"
+            case .d: return "Unterdurchschnittlich – deutliche Verbesserungen nötig"
+            case .f: return "Verbesserungsbedarf – wichtige Informationen fehlen"
             }
         }
         
@@ -192,8 +192,8 @@ final class ResumeScoringEngine {
     
     private static func scorePersonalInfo(_ personal: PersonalInfo?) -> ResumeScore.ScoreDetail {
         guard let personal = personal else {
-            return .init(criterion: "Personal Information", points: 0, maxPoints: 25,
-                        feedback: "Add your contact information")
+            return .init(criterion: "Persönliche Daten", points: 0, maxPoints: 25,
+                        feedback: "Füge deine Kontaktdaten hinzu")
         }
         
         var points = 0
@@ -216,19 +216,19 @@ final class ResumeScoringEngine {
         var feedback: String? = nil
         if points < 25 {
             if personal.linkedIn?.isEmpty ?? true {
-                feedback = "Add LinkedIn profile for better visibility"
+                feedback = "Füge ein LinkedIn-Profil für bessere Sichtbarkeit hinzu"
             } else if personal.phone.isEmpty {
-                feedback = "Add phone number for recruiter contact"
+                feedback = "Füge eine Telefonnummer für Recruiter-Kontakt hinzu"
             }
         }
         
-        return .init(criterion: "Personal Information", points: points, maxPoints: 25, feedback: feedback)
+        return .init(criterion: "Persönliche Daten", points: points, maxPoints: 25, feedback: feedback)
     }
     
     private static func scoreSummary(_ summary: Summary?) -> ResumeScore.ScoreDetail {
         guard let summary = summary, summary.isVisible, !summary.text.isEmpty else {
-            return .init(criterion: "Professional Summary", points: 0, maxPoints: 15,
-                        feedback: "Add a compelling professional summary")
+            return .init(criterion: "Professionelle Zusammenfassung", points: 0, maxPoints: 15,
+                        feedback: "Füge eine überzeugende professionelle Zusammenfassung hinzu")
         }
         
         let wordCount = summary.text.split(separator: " ").count
@@ -242,32 +242,46 @@ final class ResumeScoringEngine {
         if wordCount >= 30 && wordCount <= 100 {
             points += 5
         } else if wordCount > 100 {
-            feedback = "Shorten summary to 50-100 words"
+            feedback = "Kürze die Zusammenfassung auf 50–100 Wörter"
             points += 2
         } else {
-            feedback = "Expand summary to 50-100 words"
+            feedback = "Erweitere die Zusammenfassung auf 50–100 Wörter"
             points += 2
         }
         
         // Quality indicators (5 points)
-        let hasActionWords = ["developed", "led", "managed", "created", "achieved", "drove", "built"]
-            .contains(where: { summary.text.lowercased().contains($0) })
+        let hasActionWords = [
+            "developed",
+            "led",
+            "managed",
+            "created",
+            "achieved",
+            "drove",
+            "built",
+            "entwickelt",
+            "geleitet",
+            "geführt",
+            "erstellt",
+            "erreicht",
+            "vorangetrieben",
+            "aufgebaut",
+        ].contains(where: { summary.text.lowercased().contains($0) })
         
         if hasActionWords {
             points += 5
         } else {
-            feedback = feedback ?? "Include action verbs in your summary"
+            feedback = feedback ?? "Nutze Aktionsverben in deiner Zusammenfassung"
         }
         
-        return .init(criterion: "Professional Summary", points: points, maxPoints: 15, feedback: feedback)
+        return .init(criterion: "Professionelle Zusammenfassung", points: points, maxPoints: 15, feedback: feedback)
     }
     
     private static func scoreExperienceCompleteness(_ experiences: [WorkExperience]) -> ResumeScore.ScoreDetail {
         let visible = experiences.filter(\.isVisible)
         
         if visible.isEmpty {
-            return .init(criterion: "Work Experience", points: 0, maxPoints: 25,
-                        feedback: "Add work experience to strengthen your resume")
+            return .init(criterion: "Berufserfahrung", points: 0, maxPoints: 25,
+                        feedback: "Füge Berufserfahrung hinzu, um deinen Lebenslauf zu stärken")
         }
         
         var points = 0
@@ -280,7 +294,7 @@ final class ResumeScoringEngine {
         if visible.count >= 2 {
             points += 5
         } else {
-            feedback = "Consider adding more work experience"
+            feedback = "Erwäge, mehr Berufserfahrung aufzunehmen"
         }
         
         // Details present (10 points)
@@ -288,18 +302,18 @@ final class ResumeScoringEngine {
         if hasDetails {
             points += 10
         } else {
-            feedback = feedback ?? "Add details for all work experiences"
+            feedback = feedback ?? "Füge Details zu allen Stationen hinzu"
         }
         
-        return .init(criterion: "Work Experience", points: points, maxPoints: 25, feedback: feedback)
+        return .init(criterion: "Berufserfahrung", points: points, maxPoints: 25, feedback: feedback)
     }
     
     private static func scoreSkillsCompleteness(_ skills: [Skill]) -> ResumeScore.ScoreDetail {
         let visible = skills.filter(\.isVisible)
         
         if visible.isEmpty {
-            return .init(criterion: "Skills", points: 0, maxPoints: 15,
-                        feedback: "Add relevant skills to your resume")
+            return .init(criterion: "Fähigkeiten", points: 0, maxPoints: 15,
+                        feedback: "Füge relevante Fähigkeiten zu deinem Lebenslauf hinzu")
         }
         
         var points = 5 // Has skills
@@ -309,10 +323,10 @@ final class ResumeScoringEngine {
         if visible.count >= 5 && visible.count <= 15 {
             points += 5
         } else if visible.count > 15 {
-            feedback = "Consider reducing to 8-12 most relevant skills"
+            feedback = "Reduziere auf 8–12 wichtigste Fähigkeiten"
             points += 2
         } else {
-            feedback = "Add more relevant skills (aim for 8-12)"
+            feedback = "Füge mehr relevante Fähigkeiten hinzu (Ziel: 8–12)"
             points += 2
         }
         
@@ -321,18 +335,18 @@ final class ResumeScoringEngine {
         if categorized.count >= visible.count / 2 {
             points += 5
         } else {
-            feedback = feedback ?? "Categorize your skills for better organization"
+            feedback = feedback ?? "Kategorisiere deine Fähigkeiten für bessere Übersicht"
         }
         
-        return .init(criterion: "Skills", points: points, maxPoints: 15, feedback: feedback)
+        return .init(criterion: "Fähigkeiten", points: points, maxPoints: 15, feedback: feedback)
     }
     
     private static func scoreEducationCompleteness(_ educations: [Education]) -> ResumeScore.ScoreDetail {
         let visible = educations.filter(\.isVisible)
         
         if visible.isEmpty {
-            return .init(criterion: "Education", points: 0, maxPoints: 10,
-                        feedback: "Add your educational background")
+            return .init(criterion: "Ausbildung", points: 0, maxPoints: 10,
+                        feedback: "Füge deine Ausbildung hinzu")
         }
         
         var points = 5 // Has education
@@ -343,7 +357,7 @@ final class ResumeScoringEngine {
             points += 5
         }
         
-        return .init(criterion: "Education", points: points, maxPoints: 10, feedback: nil)
+        return .init(criterion: "Ausbildung", points: points, maxPoints: 10, feedback: nil)
     }
     
     private static func scoreOptionalSections(_ resume: Resume) -> ResumeScore.ScoreDetail {
@@ -361,7 +375,7 @@ final class ResumeScoringEngine {
         let hasExtracurriculars = !(resume.extracurriculars ?? []).filter(\.isVisible).isEmpty
         if hasExtracurriculars { points += 2 }
         
-        return .init(criterion: "Optional Sections", points: points, maxPoints: 10, feedback: nil)
+        return .init(criterion: "Optionale Abschnitte", points: points, maxPoints: 10, feedback: nil)
     }
     
     // MARK: - Content Quality Score (25%)
@@ -395,44 +409,95 @@ final class ResumeScoringEngine {
     
     private static func scoreSummaryQuality(_ summary: Summary?) -> ResumeScore.ScoreDetail {
         guard let summary = summary, !summary.text.isEmpty else {
-            return .init(criterion: "Summary Quality", points: 0, maxPoints: 30,
-                        feedback: "Add a professional summary")
+            return .init(criterion: "Qualität der Zusammenfassung", points: 0, maxPoints: 30,
+                        feedback: "Füge eine professionelle Zusammenfassung hinzu")
         }
         
         var points = 10 // Has summary
         let text = summary.text.lowercased()
         
         // No first person (10 points)
-        let hasFirstPerson = text.contains("i ") || text.contains("my ") || text.contains(" me ")
+        let hasFirstPerson = text.contains("i ") ||
+            text.contains("my ") ||
+            text.contains(" me ") ||
+            text.contains("ich ") ||
+            text.contains("mein ") ||
+            text.contains("meine ") ||
+            text.contains("mich ") ||
+            text.contains("mir ")
         if !hasFirstPerson {
             points += 10
         }
         
         // Professional language (10 points)
-        let professionalWords = ["professional", "experienced", "skilled", "expert", 
-                                "proficient", "dedicated", "proven", "strategic"]
+        let professionalWords = [
+            "professional",
+            "experienced",
+            "skilled",
+            "expert",
+            "proficient",
+            "dedicated",
+            "proven",
+            "strategic",
+            "professionell",
+            "erfahren",
+            "versiert",
+            "experte",
+            "kompetent",
+            "bewährt",
+            "strategisch",
+        ]
         if professionalWords.contains(where: { text.contains($0) }) {
             points += 10
         }
         
-        return .init(criterion: "Summary Quality", points: points, maxPoints: 30, feedback: nil)
+        return .init(criterion: "Qualität der Zusammenfassung", points: points, maxPoints: 30, feedback: nil)
     }
     
     private static func scoreExperienceQuality(_ experiences: [WorkExperience]) -> ResumeScore.ScoreDetail {
         let visible = experiences.filter(\.isVisible)
         
         if visible.isEmpty {
-            return .init(criterion: "Experience Quality", points: 0, maxPoints: 40,
-                        feedback: "Add work experience")
+            return .init(criterion: "Qualität der Berufserfahrung", points: 0, maxPoints: 40,
+                        feedback: "Füge Berufserfahrung hinzu")
         }
         
         var points = 10 // Has experience
         var feedback: String? = nil
         
         // Action verbs (15 points)
-        let actionVerbs = ["led", "managed", "developed", "created", "built", "designed",
-                         "implemented", "achieved", "drove", "increased", "reduced",
-                         "launched", "optimized", "delivered", "spearheaded"]
+        let actionVerbs = [
+            "led",
+            "managed",
+            "developed",
+            "created",
+            "built",
+            "designed",
+            "implemented",
+            "achieved",
+            "drove",
+            "increased",
+            "reduced",
+            "launched",
+            "optimized",
+            "delivered",
+            "spearheaded",
+            "geleitet",
+            "geführt",
+            "entwickelt",
+            "erstellt",
+            "aufgebaut",
+            "konzipiert",
+            "umgesetzt",
+            "erreicht",
+            "vorangetrieben",
+            "gesteigert",
+            "reduziert",
+            "eingeführt",
+            "optimiert",
+            "geliefert",
+            "initiiert",
+        ]
         
         let hasActionVerbs = visible.contains { exp in
             actionVerbs.contains(where: { exp.details.lowercased().contains($0) })
@@ -441,7 +506,7 @@ final class ResumeScoringEngine {
         if hasActionVerbs {
             points += 15
         } else {
-            feedback = "Use strong action verbs (Led, Achieved, Built)"
+            feedback = "Verwende starke Aktionsverben (z. B. „geleitet“, „erreicht“, „aufgebaut“)"
         }
         
         // Detailed descriptions (15 points)
@@ -450,18 +515,18 @@ final class ResumeScoringEngine {
             points += 15
         } else if avgDetailLength >= 50 {
             points += 8
-            feedback = feedback ?? "Expand job descriptions with more details"
+            feedback = feedback ?? "Erweitere Tätigkeitsbeschreibungen um mehr Details"
         }
         
-        return .init(criterion: "Experience Quality", points: points, maxPoints: 40, feedback: feedback)
+        return .init(criterion: "Qualität der Berufserfahrung", points: points, maxPoints: 40, feedback: feedback)
     }
     
     private static func scoreProjectQuality(_ projects: [Project]) -> ResumeScore.ScoreDetail {
         let visible = projects.filter(\.isVisible)
         
         if visible.isEmpty {
-            return .init(criterion: "Project Quality", points: 15, maxPoints: 30,
-                        feedback: "Consider adding projects")
+            return .init(criterion: "Qualität der Projekte", points: 15, maxPoints: 30,
+                        feedback: "Erwäge, Projekte hinzuzufügen")
         }
         
         var points = 15 // Has projects
@@ -474,7 +539,7 @@ final class ResumeScoringEngine {
         let hasTech = visible.allSatisfy { !$0.technologies.isEmpty }
         if hasTech { points += 5 }
         
-        return .init(criterion: "Project Quality", points: points, maxPoints: 30, feedback: nil)
+        return .init(criterion: "Qualität der Projekte", points: points, maxPoints: 30, feedback: nil)
     }
     
     // MARK: - ATS Optimization Score (20%)
@@ -510,12 +575,65 @@ final class ResumeScoringEngine {
         let fullText = ResumeTextFormatter.plainText(for: resume).lowercased()
         
         // Common ATS keywords by category
-        let technicalKeywords = ["python", "java", "javascript", "sql", "aws", "docker",
-                                "kubernetes", "react", "node", "api", "database", "cloud"]
-        let softKeywords = ["leadership", "communication", "teamwork", "problem-solving",
-                           "analytical", "strategic", "collaborative", "innovative"]
-        let actionKeywords = ["managed", "led", "developed", "implemented", "achieved",
-                             "increased", "reduced", "improved", "designed", "built"]
+        let technicalKeywords = [
+            "python",
+            "java",
+            "javascript",
+            "swift",
+            "sql",
+            "aws",
+            "docker",
+            "kubernetes",
+            "react",
+            "node",
+            "api",
+            "database",
+            "datenbank",
+            "cloud",
+            "microservices",
+            "ci/cd",
+            "git",
+        ]
+        let softKeywords = [
+            "leadership",
+            "communication",
+            "teamwork",
+            "problem-solving",
+            "analytical",
+            "strategic",
+            "collaborative",
+            "innovative",
+            "führung",
+            "kommunikation",
+            "teamarbeit",
+            "problemlösung",
+            "analytisch",
+            "strategisch",
+            "kollaborativ",
+            "innovativ",
+        ]
+        let actionKeywords = [
+            "managed",
+            "led",
+            "developed",
+            "implemented",
+            "achieved",
+            "increased",
+            "reduced",
+            "improved",
+            "designed",
+            "built",
+            "geführt",
+            "geleitet",
+            "entwickelt",
+            "umgesetzt",
+            "erreicht",
+            "gesteigert",
+            "reduziert",
+            "verbessert",
+            "konzipiert",
+            "aufgebaut",
+        ]
         
         var points = 0
         
@@ -533,10 +651,10 @@ final class ResumeScoringEngine {
         
         var feedback: String? = nil
         if points < 20 {
-            feedback = "Add more industry keywords to improve ATS matching"
+            feedback = "Füge mehr relevante Keywords hinzu, um die ATS-Treffer zu verbessern"
         }
         
-        return .init(criterion: "Keyword Optimization", points: points, maxPoints: 40, feedback: feedback)
+        return .init(criterion: "Keyword-Optimierung", points: points, maxPoints: 40, feedback: feedback)
     }
     
     private static func scoreATSFormatting(_ resume: Resume) -> ResumeScore.ScoreDetail {
@@ -555,7 +673,7 @@ final class ResumeScoringEngine {
             if !personal.firstName.isEmpty && !personal.lastName.isEmpty { points += 5 }
         }
         
-        return .init(criterion: "ATS-Friendly Format", points: points, maxPoints: 30, feedback: nil)
+        return .init(criterion: "ATS-freundliches Format", points: points, maxPoints: 30, feedback: nil)
     }
     
     private static func scoreCleanContent(_ resume: Resume) -> ResumeScore.ScoreDetail {
@@ -564,19 +682,20 @@ final class ResumeScoringEngine {
         var feedback: String? = nil
         
         // Check for special characters that might confuse ATS
-        let problematicChars = ["→", "•", "★", "●", "►", "◆"]
+        let problematicChars = ["→", "★", "►", "◆"]
         if problematicChars.contains(where: { fullText.contains($0) }) {
             points -= 10
-            feedback = "Some special characters may not parse well in ATS"
+            feedback = "Manche Sonderzeichen werden vom ATS ggf. schlecht erkannt"
         }
         
         // Check for tables/graphics mention (we can't detect actual images)
         if fullText.lowercased().contains("see attached") ||
-           fullText.lowercased().contains("portfolio:") {
+           fullText.lowercased().contains("portfolio:") ||
+           fullText.lowercased().contains("siehe anhang") {
             points -= 5
         }
         
-        return .init(criterion: "Clean Content", points: max(points, 0), maxPoints: 30, feedback: feedback)
+        return .init(criterion: "Saubere Inhalte", points: max(points, 0), maxPoints: 30, feedback: feedback)
     }
     
     // MARK: - Formatting Score (15%)
@@ -626,7 +745,7 @@ final class ResumeScoringEngine {
         if hasSkills { points += 6 }
         if hasEducation { points += 6 }
         
-        return .init(criterion: "Section Organization", points: points, maxPoints: 40, feedback: nil)
+        return .init(criterion: "Abschnittsstruktur", points: points, maxPoints: 40, feedback: nil)
     }
     
     private static func scoreBulletUsage(_ resume: Resume) -> ResumeScore.ScoreDetail {
@@ -642,10 +761,10 @@ final class ResumeScoringEngine {
         if usesBullets {
             points += 15
         } else if !experiences.isEmpty {
-            feedback = "Use bullet points to break up job descriptions"
+            feedback = "Nutze Aufzählungspunkte, um Tätigkeiten zu strukturieren"
         }
         
-        return .init(criterion: "Bullet Point Usage", points: points, maxPoints: 30, feedback: feedback)
+        return .init(criterion: "Aufzählungspunkte", points: points, maxPoints: 30, feedback: feedback)
     }
     
     private static func scoreLength(_ resume: Resume) -> ResumeScore.ScoreDetail {
@@ -660,19 +779,19 @@ final class ResumeScoringEngine {
         } else if wordCount >= 200 && wordCount <= 900 {
             points = 20
             if wordCount < 300 {
-                feedback = "Resume could use more detail"
+                feedback = "Der Lebenslauf könnte mehr Details enthalten"
             } else {
-                feedback = "Consider condensing to 1-2 pages"
+                feedback = "Erwäge, auf 1–2 Seiten zu kürzen"
             }
         } else if wordCount < 200 {
             points = 10
-            feedback = "Resume is too short - add more content"
+            feedback = "Der Lebenslauf ist zu kurz – füge mehr Inhalte hinzu"
         } else {
             points = 10
-            feedback = "Resume is too long - keep to 1-2 pages"
+            feedback = "Der Lebenslauf ist zu lang – bleibe bei 1–2 Seiten"
         }
         
-        return .init(criterion: "Appropriate Length", points: points, maxPoints: 30, feedback: feedback)
+        return .init(criterion: "Angemessene Länge", points: points, maxPoints: 30, feedback: feedback)
     }
     
     // MARK: - Impact Score (15%)
@@ -720,40 +839,73 @@ final class ResumeScoringEngine {
         if hasPercentages { points += 15 }
         
         // Check for dollar amounts
-        let hasDollars = fullText.contains("$") || fullText.contains("revenue") ||
-                        fullText.contains("budget") || fullText.contains("savings")
+        let hasDollars = fullText.contains("$") ||
+            fullText.contains("€") ||
+            fullText.lowercased().contains("revenue") ||
+            fullText.lowercased().contains("umsatz") ||
+            fullText.lowercased().contains("budget") ||
+            fullText.lowercased().contains("einspar")
         if hasDollars { points += 10 }
         
         // Check for time metrics
         let hasTimeMetrics = fullText.lowercased().contains("month") ||
-                            fullText.lowercased().contains("year") ||
-                            fullText.lowercased().contains("week")
+            fullText.lowercased().contains("year") ||
+            fullText.lowercased().contains("week") ||
+            fullText.lowercased().contains("monat") ||
+            fullText.lowercased().contains("jahr") ||
+            fullText.lowercased().contains("woche")
         if hasTimeMetrics { points += 10 }
         
         if points < 30 {
-            feedback = "Add more metrics (%, $, numbers) to quantify your achievements"
+            feedback = "Füge mehr Kennzahlen hinzu (%, €, Zahlen), um Erfolge zu quantifizieren"
         }
         
-        return .init(criterion: "Quantifiable Metrics", points: points, maxPoints: 50, feedback: feedback)
+        return .init(criterion: "Messbare Kennzahlen", points: points, maxPoints: 50, feedback: feedback)
     }
     
     private static func scoreActionVerbs(_ resume: Resume) -> ResumeScore.ScoreDetail {
         let experiences = (resume.experiences ?? []).filter(\.isVisible)
         let fullText = experiences.map(\.details).joined(separator: " ").lowercased()
         
-        let strongVerbs = ["led", "spearheaded", "pioneered", "transformed", "orchestrated",
-                         "architected", "revolutionized", "accelerated", "maximized",
-                         "championed", "launched", "drove", "delivered", "exceeded"]
+        let strongVerbs = [
+            "led",
+            "spearheaded",
+            "pioneered",
+            "transformed",
+            "orchestrated",
+            "architected",
+            "revolutionized",
+            "accelerated",
+            "maximized",
+            "championed",
+            "launched",
+            "drove",
+            "delivered",
+            "exceeded",
+            "geführt",
+            "geleitet",
+            "initiiert",
+            "transformiert",
+            "orchestriert",
+            "konzipiert",
+            "revolutioniert",
+            "beschleunigt",
+            "maximiert",
+            "vorangetrieben",
+            "eingeführt",
+            "geliefert",
+            "übertroffen",
+        ]
         
         let verbCount = strongVerbs.filter { fullText.contains($0) }.count
         let points = min(verbCount * 6, 30)
         
         var feedback: String? = nil
         if points < 18 {
-            feedback = "Use more powerful action verbs to describe achievements"
+            feedback = "Nutze stärkere Aktionsverben, um Erfolge zu beschreiben"
         }
         
-        return .init(criterion: "Strong Action Verbs", points: points, maxPoints: 30, feedback: feedback)
+        return .init(criterion: "Starke Aktionsverben", points: points, maxPoints: 30, feedback: feedback)
     }
     
     private static func scoreAchievementFocus(_ resume: Resume) -> ResumeScore.ScoreDetail {
@@ -763,19 +915,43 @@ final class ResumeScoringEngine {
         var points = 0
         
         // Achievement words
-        let achievementWords = ["achieved", "accomplished", "exceeded", "surpassed",
-                               "won", "awarded", "recognized", "promoted", "increased",
-                               "decreased", "improved", "saved", "generated"]
+        let achievementWords = [
+            "achieved",
+            "accomplished",
+            "exceeded",
+            "surpassed",
+            "won",
+            "awarded",
+            "recognized",
+            "promoted",
+            "increased",
+            "decreased",
+            "improved",
+            "saved",
+            "generated",
+            "erreicht",
+            "abgeschlossen",
+            "übertroffen",
+            "gewonnen",
+            "ausgezeichnet",
+            "anerkannt",
+            "befördert",
+            "gesteigert",
+            "reduziert",
+            "verbessert",
+            "eingespart",
+            "erzeugt",
+        ]
         
         let achievementCount = achievementWords.filter { fullText.contains($0) }.count
         points = min(achievementCount * 4, 20)
         
         var feedback: String? = nil
         if points < 12 {
-            feedback = "Focus on achievements rather than responsibilities"
+            feedback = "Fokussiere Erfolge statt nur Aufgaben"
         }
         
-        return .init(criterion: "Achievement Focus", points: points, maxPoints: 20, feedback: feedback)
+        return .init(criterion: "Erfolgsfokus", points: points, maxPoints: 20, feedback: feedback)
     }
 }
 

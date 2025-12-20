@@ -19,18 +19,6 @@ struct ResumePDFFormatter {
     let subFont = UIFont.systemFont(ofSize: 9)
     let gray = UIColor.gray
 
-    // MARK: - Language helpers
-    let isGerman = Locale.current.language.languageCode?.identifier == "de"
-    func localized(_ en: String, _ de: String?) -> String {
-      if isGerman,
-        let de,
-        !de.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-      {
-        return de
-      }
-      return en
-    }
-
     // Name Header
     if let personal = resume.personal {
       let name = "\(personal.firstName) \(personal.lastName)\n"
@@ -39,7 +27,7 @@ struct ResumePDFFormatter {
           string: name,
           attributes: [
             .font: headerFont,
-            .accessibilitySpeechLanguage: isGerman ? "de" : "en",
+            .accessibilitySpeechLanguage: "de",
           ]
         )
       )
@@ -55,7 +43,7 @@ struct ResumePDFFormatter {
         let mainContact = mainContactItems
           .compactMap { $0 }
           .filter { !$0.isEmpty }
-          .joined(separator: " · ")
+          .joined(separator: " | ")
 
         let secondaryContactItems: [String?] = [
           personal.linkedIn,
@@ -65,7 +53,7 @@ struct ResumePDFFormatter {
         let secondaryContact = secondaryContactItems
           .compactMap { $0 }
           .filter { !$0.isEmpty }
-          .joined(separator: " · ")
+          .joined(separator: " | ")
 
         if !mainContact.isEmpty {
           result.append(
@@ -91,76 +79,40 @@ struct ResumePDFFormatter {
         }
       }
 
-    // Summary (with translation)
+    // Summary
     if let summary = resume.summary, summary.isVisible {
       let paragraphStyle = NSMutableParagraphStyle()
       paragraphStyle.lineSpacing = 2
       paragraphStyle.paragraphSpacing = 4
       result.append(
         NSAttributedString(
-          string: NSLocalizedString("Summary", comment: "") + "\n",
+          string: "Zusammenfassung\n",
           attributes: [.font: sectionFont]
         )
       )
-      let summaryText = localized(summary.text, summary.text_de)
       result.append(
         NSAttributedString(
-          string: summaryText
+          string: summary.text
             .trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n",
           attributes: [.font: subFont, .paragraphStyle: paragraphStyle]
         )
       )
     }
 
-    // Skills (with translation) - preserve orderIndex within categories
-      let visibleSkills = (resume.skills ?? [])
-          .filter(\.isVisible)
-          .sorted(by: { $0.orderIndex < $1.orderIndex })
-
-    if !visibleSkills.isEmpty {
-      result.append(
-        NSAttributedString(
-          string: NSLocalizedString("Skills", comment: "") + "\n",
-          attributes: [.font: sectionFont]
-        )
-      )
-      let grouped = Dictionary(grouping: visibleSkills) {
-        localized($0.category, $0.category_de)
-      }
-      for (category, skills) in grouped.sorted(by: { $0.key < $1.key }) {
-        if !category.isEmpty {
-          result.append(
-            NSAttributedString(
-              string: "\(category): ",
-              attributes: [.font: bodyFont]
-            )
-          )
-        }
-        let names = skills
-          .sorted(by: { $0.orderIndex < $1.orderIndex })
-          .map { localized($0.name, $0.name_de) }
-          .joined(separator: ", ")
-        result.append(
-          NSAttributedString(string: names + "\n", attributes: [.font: bodyFont])
-        )
-      }
-      result.append(NSAttributedString(string: "\n"))
-    }
-
-    // MARK: - Work Experience (with translations)
-      let visibleExperiences = (resume.experiences ?? [])
-                  .filter(\.isVisible)
-                  .sorted(by: { $0.orderIndex < $1.orderIndex })
+    // MARK: - Work Experience
+    let visibleExperiences = (resume.experiences ?? [])
+      .filter(\.isVisible)
+      .sorted(by: { $0.orderIndex < $1.orderIndex })
     if !visibleExperiences.isEmpty {
       result.append(
         NSAttributedString(
-          string: NSLocalizedString("Work Experience", comment: "") + "\n",
+          string: "Berufserfahrung\n",
           attributes: [.font: sectionFont]
         )
       )
       for exp in visibleExperiences {
         let titleLine =
-          "\(localized(exp.title, exp.title_de)) at \(localized(exp.company, exp.company_de))\n"
+          "\(exp.title) bei \(exp.company)\n"
         result.append(
           NSAttributedString(
             string: titleLine,
@@ -168,7 +120,7 @@ struct ResumePDFFormatter {
           )
         )
         let dateLoc =
-          "\(localized(exp.location, exp.location_de)) · \(dateRange(exp.startDate, exp.endDate, exp.isCurrent, isGerman: isGerman))\n"
+          "\(exp.location) | \(dateRange(exp.startDate, exp.endDate, exp.isCurrent))\n"
         result.append(
           NSAttributedString(
             string: dateLoc,
@@ -178,11 +130,10 @@ struct ResumePDFFormatter {
             ]
           )
         )
-        let detailsText = localized(exp.details, exp.details_de)
-        if !detailsText.isEmpty {
+        if !exp.details.isEmpty {
           result.append(
             NSAttributedString(
-              string: detailsText + "\n",
+              string: exp.details + "\n",
               attributes: [.font: bodyFont]
             )
           )
@@ -191,69 +142,20 @@ struct ResumePDFFormatter {
       }
     }
 
-    // MARK: - Projects (with translations)
-      let visibleProjects = (resume.projects ?? [])
-                 .filter(\.isVisible)
-                 .sorted(by: { $0.orderIndex < $1.orderIndex })
-    if !visibleProjects.isEmpty {
-      result.append(
-        NSAttributedString(
-          string: NSLocalizedString("Projects", comment: "") + "\n",
-          attributes: [.font: sectionFont]
-        )
-      )
-      for proj in visibleProjects {
-        var projectLine = localized(proj.name, proj.name_de)
-        if let link = proj.link, !link.isEmpty {
-          projectLine += " (\(link))"
-        }
-        projectLine += "\n"
-        result.append(
-          NSAttributedString(
-            string: projectLine,
-            attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
-          )
-        )
-        let techText = localized(proj.technologies, proj.technologies_de)
-        if !techText.isEmpty {
-          result.append(
-            NSAttributedString(
-              string: techText + "\n",
-              attributes: [
-                .font: subFont,
-                .foregroundColor: gray,
-              ]
-            )
-          )
-        }
-        let detailsText = localized(proj.details, proj.details_de)
-        if !detailsText.isEmpty {
-          result.append(
-            NSAttributedString(
-              string: detailsText + "\n",
-              attributes: [.font: bodyFont]
-            )
-          )
-        }
-        result.append(NSAttributedString(string: "\n"))
-      }
-    }
-
-    // Education (with translations)
-      let visibleEducations = (resume.educations ?? [])
-                  .filter(\.isVisible)
-                  .sorted(by: { $0.orderIndex < $1.orderIndex })
-      
+    // Education
+    let visibleEducations = (resume.educations ?? [])
+      .filter(\.isVisible)
+      .sorted(by: { $0.orderIndex < $1.orderIndex })
     if !visibleEducations.isEmpty {
       result.append(
         NSAttributedString(
-          string: NSLocalizedString("Education", comment: "") + "\n",
+          string: "Ausbildung\n",
           attributes: [.font: sectionFont]
         )
       )
       for edu in visibleEducations {
         let titleLine =
-          "\(localized(edu.degree, edu.degree_de)) in \(localized(edu.field, edu.field_de))\n"
+          "\(edu.degree) in \(edu.field)\n"
         result.append(
           NSAttributedString(
             string: titleLine,
@@ -261,7 +163,7 @@ struct ResumePDFFormatter {
           )
         )
         let schoolLine =
-          "\(localized(edu.school, edu.school_de)) · \(dateRange(edu.startDate, edu.endDate, false, isGerman: isGerman))\n"
+          "\(edu.school) | \(dateRange(edu.startDate, edu.endDate, false))\n"
         result.append(
           NSAttributedString(
             string: schoolLine,
@@ -275,7 +177,7 @@ struct ResumePDFFormatter {
           result.append(
             NSAttributedString(
               string:
-                NSLocalizedString("Grade", comment: "") + ": \(edu.grade)\n",
+                "Note: \(edu.grade)\n",
               attributes: [
                 .font: subFont,
                 .foregroundColor: gray,
@@ -283,11 +185,10 @@ struct ResumePDFFormatter {
             )
           )
         }
-        let detailsText = localized(edu.details, edu.details_de)
-        if !detailsText.isEmpty {
+        if !edu.details.isEmpty {
           result.append(
             NSAttributedString(
-              string: detailsText + "\n",
+              string: edu.details + "\n",
               attributes: [.font: bodyFont]
             )
           )
@@ -296,61 +197,139 @@ struct ResumePDFFormatter {
       }
     }
 
-    // Extracurricular Activities (with translations)
-      let visibleExtracurriculars = (resume.extracurriculars ?? [])
-                  .filter(\.isVisible)
-                  .sorted(by: { $0.orderIndex < $1.orderIndex })
-      
+    // Skills - preserve orderIndex within categories
+    let visibleSkills = (resume.skills ?? [])
+      .filter(\.isVisible)
+      .sorted(by: { $0.orderIndex < $1.orderIndex })
+
+    if !visibleSkills.isEmpty {
+      result.append(
+        NSAttributedString(
+          string: "Fähigkeiten\n",
+          attributes: [.font: sectionFont]
+        )
+      )
+      let grouped = Dictionary(grouping: visibleSkills) {
+        $0.category
+      }
+      for (category, skills) in grouped.sorted(by: { $0.key < $1.key }) {
+        if !category.isEmpty {
+          result.append(
+            NSAttributedString(
+              string: "\(category): ",
+              attributes: [.font: bodyFont]
+            )
+          )
+        }
+        let names = skills
+          .sorted(by: { $0.orderIndex < $1.orderIndex })
+          .map { $0.name }
+          .joined(separator: ", ")
+        result.append(
+          NSAttributedString(string: names + "\n", attributes: [.font: bodyFont])
+        )
+      }
+      result.append(NSAttributedString(string: "\n"))
+    }
+
+    // MARK: - Projects
+    let visibleProjects = (resume.projects ?? [])
+      .filter(\.isVisible)
+      .sorted(by: { $0.orderIndex < $1.orderIndex })
+    if !visibleProjects.isEmpty {
+      result.append(
+        NSAttributedString(
+          string: "Projekte\n",
+          attributes: [.font: sectionFont]
+        )
+      )
+      for proj in visibleProjects {
+        var projectLine = proj.name
+        if let link = proj.link, !link.isEmpty {
+          projectLine += " (\(link))"
+        }
+        projectLine += "\n"
+        result.append(
+          NSAttributedString(
+            string: projectLine,
+            attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
+          )
+        )
+        if !proj.technologies.isEmpty {
+          result.append(
+            NSAttributedString(
+              string: proj.technologies + "\n",
+              attributes: [
+                .font: subFont,
+                .foregroundColor: gray,
+              ]
+            )
+          )
+        }
+        if !proj.details.isEmpty {
+          result.append(
+            NSAttributedString(
+              string: proj.details + "\n",
+              attributes: [.font: bodyFont]
+            )
+          )
+        }
+        result.append(NSAttributedString(string: "\n"))
+      }
+    }
+
+    // Languages
+    let visibleLanguages = (resume.languages ?? [])
+      .filter(\.isVisible)
+      .sorted(by: { $0.orderIndex < $1.orderIndex })
+    if !visibleLanguages.isEmpty {
+      result.append(
+        NSAttributedString(
+          string: "Sprachen\n",
+          attributes: [.font: sectionFont]
+        )
+      )
+      let langs = visibleLanguages
+        .map {
+          "\($0.name) (\($0.proficiency))"
+        }
+        .joined(separator: ", ")
+      result.append(
+        NSAttributedString(string: langs + "\n", attributes: [.font: bodyFont])
+      )
+    }
+
+    // Extracurricular Activities
+    let visibleExtracurriculars = (resume.extracurriculars ?? [])
+      .filter(\.isVisible)
+      .sorted(by: { $0.orderIndex < $1.orderIndex })
     if !visibleExtracurriculars.isEmpty {
       result.append(
         NSAttributedString(
           string:
-            NSLocalizedString("Extracurricular Activities", comment: "")
-              + "\n",
+            "Aktivitäten\n",
           attributes: [.font: sectionFont]
         )
       )
       for ext in visibleExtracurriculars {
         let titleLine =
-          "\(localized(ext.title, ext.title_de)) at \(localized(ext.organization, ext.organization_de))\n"
+          "\(ext.title) bei \(ext.organization)\n"
         result.append(
           NSAttributedString(
             string: titleLine,
             attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
           )
         )
-        let detailsText = localized(ext.details, ext.details_de)
-        if !detailsText.isEmpty {
+        if !ext.details.isEmpty {
           result.append(
             NSAttributedString(
-              string: detailsText + "\n",
+              string: ext.details + "\n",
               attributes: [.font: bodyFont]
             )
           )
         }
         result.append(NSAttributedString(string: "\n"))
       }
-    }
-
-    // Languages (with translations)
-      let visibleLanguages = (resume.languages ?? [])
-                  .filter(\.isVisible)
-                  .sorted(by: { $0.orderIndex < $1.orderIndex })
-    if !visibleLanguages.isEmpty {
-      result.append(
-        NSAttributedString(
-          string: NSLocalizedString("Languages", comment: "") + "\n",
-          attributes: [.font: sectionFont]
-        )
-      )
-      let langs = visibleLanguages
-        .map {
-          "\(localized($0.name, $0.name_de)) (\(localized($0.proficiency, $0.proficiency_de)))"
-        }
-        .joined(separator: ", ")
-      result.append(
-        NSAttributedString(string: langs + "\n", attributes: [.font: bodyFont])
-      )
     }
 
     return result
@@ -359,10 +338,9 @@ struct ResumePDFFormatter {
   private static func dateRange(
     _ start: Date,
     _ end: Date?,
-    _ isCurrent: Bool,
-    isGerman: Bool
+    _ isCurrent: Bool
   ) -> String {
-    let present = isGerman ? "Heute" : "Present"
+    let present = "Heute"
     if isCurrent {
       return
         "\(DateFormatter.resumeMonthYear.string(from: start)) – \(present)"
@@ -374,4 +352,3 @@ struct ResumePDFFormatter {
     }
   }
 }
-

@@ -56,12 +56,12 @@ struct LanguageEntry {
 @Observable
 final class ResumeParsingService {
     private let sectionHeaders: [String] = [
-        "contact", "personal information",
-        "summary", "profile", "about",
-        "experience", "work experience", "employment",
-        "education", "academic background",
-        "skills", "technical skills", "languages",
-        "projects", "certifications", "awards", "interests",
+        "contact", "personal information", "kontakt", "persönliche daten", "personliche daten",
+        "summary", "profile", "about", "zusammenfassung", "kurzprofil", "profil", "über mich", "uber mich",
+        "experience", "work experience", "employment", "berufserfahrung", "berufliche erfahrung", "arbeitserfahrung", "beruflicher werdegang",
+        "education", "academic background", "ausbildung", "studium", "bildung", "akademischer hintergrund",
+        "skills", "technical skills", "languages", "fähigkeiten", "faehigkeiten", "kenntnisse", "kompetenzen", "sprachen",
+        "projects", "projekte", "certifications", "awards", "interests", "aktivitäten", "aktivitaeten", "ehrenamt", "vereine",
     ]
 
     // Main entry point for parsing a resume PDF
@@ -115,6 +115,7 @@ final class ResumeParsingService {
                 }
                 request.recognitionLevel = .accurate
                 request.usesLanguageCorrection = true
+                request.recognitionLanguages = ["de-DE", "en-US"]
                 let handler = VNImageRequestHandler(cgImage: pageImage, options: [:])
                 try? handler.perform([request])
             }
@@ -126,7 +127,7 @@ final class ResumeParsingService {
 
     // Updated pattern to match the exact headers from canonicalization
     private let sectionPattern: String =
-        #"(?im)^\s*(CONTACT|PERSONAL\s*INFORMATION|SKILLS|TECHNICAL\s*SKILLS|WORK\s*EXPERIENCE|EMPLOYMENT|EXPERIENCE|EDUCATION|ACADEMIC\s*BACKGROUND|PROJECTS|EXTRACURRICULAR|ACTIVITIES|LANGUAGES)\s*:?\s*$"#
+        #"(?im)^\s*(CONTACT|PERSONAL\s*INFORMATION|SKILLS|TECHNICAL\s*SKILLS|WORK\s*EXPERIENCE|EMPLOYMENT|EXPERIENCE|EDUCATION|ACADEMIC\s*BACKGROUND|PROJECTS|EXTRACURRICULAR|ACTIVITIES|LANGUAGES|KONTAKT|PERS(?:Ö|OE)NLICHE\s*DATEN|ZUSAMMENFASSUNG|KURZPROFIL|PROFIL|ÜBER\s*MICH|UEBER\s*MICH|BERUFSERFAHRUNG|ARBEITSERFAHRUNG|WERDEGANG|AUSBILDUNG|STUDIUM|BILDUNG|PROJEKTE|AKTIVITÄTEN|AKTIVITAETEN|EHRENAMT|VEREINE|FÄHIGKEITEN|FAEHIGKEITEN|KENNTNISSE|KOMPETENZEN|SPRACHEN)\s*:?\s*$"#
 
     func splitSections(from text: String) -> [String: String] {
         var result: [String: String] = [:]
@@ -188,23 +189,44 @@ final class ResumeParsingService {
     private func mapSectionHeader(_ header: String) -> String {
         let normalizedHeader = header.lowercased().trimmingCharacters(in: .whitespaces)
 
-        if normalizedHeader.contains("contact") || normalizedHeader.contains("personal") {
+        if normalizedHeader.contains("contact")
+            || normalizedHeader.contains("personal")
+            || normalizedHeader.contains("kontakt")
+        {
             return "contact"
-        } else if normalizedHeader.contains("skill") {
+        } else if normalizedHeader.contains("skill")
+            || normalizedHeader.contains("fähigkeiten")
+            || normalizedHeader.contains("faehigkeiten")
+            || normalizedHeader.contains("kenntnisse")
+            || normalizedHeader.contains("kompetenzen")
+        {
             return "skills"
         } else if normalizedHeader.contains("experience")
             || normalizedHeader.contains("employment")
             || normalizedHeader.contains("work")
+            || normalizedHeader.contains("berufserfahrung")
+            || normalizedHeader.contains("arbeitserfahrung")
+            || normalizedHeader.contains("werdegang")
         {
             return "work experience"
-        } else if normalizedHeader.contains("education") || normalizedHeader.contains("academic") {
+        } else if normalizedHeader.contains("education")
+            || normalizedHeader.contains("academic")
+            || normalizedHeader.contains("ausbildung")
+            || normalizedHeader.contains("studium")
+            || normalizedHeader.contains("bildung")
+        {
             return "education"
-        } else if normalizedHeader.contains("project") {
+        } else if normalizedHeader.contains("project") || normalizedHeader.contains("projekte") {
             return "projects"
-        } else if normalizedHeader.contains("extracurricular") || normalizedHeader.contains("activit")
+        } else if normalizedHeader.contains("extracurricular")
+            || normalizedHeader.contains("activit")
+            || normalizedHeader.contains("aktivität")
+            || normalizedHeader.contains("aktivitaet")
+            || normalizedHeader.contains("ehrenamt")
+            || normalizedHeader.contains("verein")
         {
             return "extracurricular"
-        } else if normalizedHeader.contains("language") {
+        } else if normalizedHeader.contains("language") || normalizedHeader.contains("sprachen") {
             return "languages"
         }
         return normalizedHeader
@@ -304,7 +326,6 @@ final class ResumeParsingService {
             #"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?"#
         let monthLong =
             #"(January|February|March|April|May|June|July|August|September|October|November|December)"#
-        let year = #"(?:\d{4}|\d{2})"#
         let mmyyyy = #"(?:\d{1,2}\/\d{2,4})"#
         let dateToken = "(?:\(monthShort)\\s*\\d{2,4}|\(monthLong)\\s*\\d{2,4}|\(mmyyyy)|(?:19|20)\\d{2})"
         let rangeRegex =

@@ -11,6 +11,7 @@ struct SettingsView: View {
     
     @State private var iCloudAccountStatus: CKAccountStatus? = nil
     @State private var resumeScore: ResumeScore?
+    @State private var showCloudKitDiagnostics = false
 
     private func openAppSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
@@ -32,13 +33,13 @@ struct SettingsView: View {
                         HStack {
                             ProgressView()
                                 .padding(.trailing, 8)
-                            Text("Analyzing resume...")
+                            Text("Lebenslauf wird analysiert...")
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
                 } header: {
-                    Text("Resume Health")
+                    Text("Lebenslauf-Status")
                         .textCase(.uppercase)
                         .font(.caption)
                 }
@@ -58,9 +59,9 @@ struct SettingsView: View {
                                     .foregroundColor(.purple)
                             }
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Smart Suggestions")
+                                Text("Smarte Vorschläge")
                                     .font(.subheadline.weight(.medium))
-                                Text("AI-powered improvement tips")
+                                Text("KI-gestützte Verbesserungstipps")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -80,72 +81,72 @@ struct SettingsView: View {
                                     .foregroundColor(.indigo)
                             }
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Version History")
+                                Text("Versionsverlauf")
                                     .font(.subheadline.weight(.medium))
-                                Text("Track changes over time")
+                                Text("Änderungen im Zeitverlauf verfolgen")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
                     }
                 } header: {
-                    Text("Tools")
+                    Text("Werkzeuge")
                         .textCase(.uppercase)
                         .font(.caption)
                 }
                 
                 // On-device AI (Foundation Models) status
-                Section("On-device AI") {
+                Section("KI auf dem Gerät") {
                     if #available(iOS 26, *) {
                         let availability = SystemLanguageModel.default.availability
 
                         HStack {
                             switch availability {
                             case .available:
-                                Label("Apple Intelligence: Enabled", systemImage: "checkmark.seal.fill")
+                                Label("Apple Intelligence: Aktiviert", systemImage: "checkmark.seal.fill")
                                     .foregroundStyle(.green)
                             case .unavailable(let reason):
-                                Label("Apple Intelligence: Unavailable", systemImage: "xmark.octagon.fill")
+                                Label("Apple Intelligence: Nicht verfügbar", systemImage: "xmark.octagon.fill")
                                     .foregroundStyle(.red)
                                 Spacer()
-                                Button("Open Settings") {
+                                Button("Einstellungen öffnen") {
                                     openAppSettings()
                                 }
                                 .font(.caption)
                                 .buttonStyle(.bordered)
-                                .accessibilityLabel("Open Settings to enable Apple Intelligence")
-                                .help("Reason: \(String(describing: reason))")
+                                .accessibilityLabel("Einstellungen öffnen, um Apple Intelligence zu aktivieren")
+                                .help("Grund: \(String(describing: reason))")
                             }
                         }
                         .padding(.vertical, 4)
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Privacy & processing")
+                            Text("Datenschutz & Verarbeitung")
                                 .font(.callout).bold()
-                            Text("ResumeCraft uses the on-device foundation language model to review your résumé. Nothing leaves your device.")
+                            Text("ResumeCraft nutzt das On-Device-Sprachmodell, um deinen Lebenslauf zu prüfen. Deine Daten verlassen das Gerät nicht.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
                         .accessibilityElement(children: .combine)
                     } else {
-                        Label("Requires iOS 26 or later", systemImage: "clock.badge.exclamationmark")
+                        Label("Erfordert iOS 26 oder neuer", systemImage: "clock.badge.exclamationmark")
                             .foregroundStyle(.orange)
                     }
                 }
 
                 // iCloud Status
-                Section("iCloud Status") {
+                Section("iCloud-Status") {
                     HStack {
                         Image(systemName: persistenceStatus.isCloudKitEnabled ? "icloud.fill" : "externaldrive.fill")
                             .foregroundStyle(persistenceStatus.isCloudKitEnabled ? .blue : .orange)
                         let backendLabel: String = {
                             switch persistenceStatus.backend {
                             case .cloudKit:
-                                return "Sync enabled"
+                                return "Synchronisierung aktiv"
                             case .local:
-                                return "Local-only (sync disabled)"
+                                return "Nur lokal (Sync deaktiviert)"
                             case .inMemory:
-                                return "In-memory (not saved)"
+                                return "Im Speicher (nicht gespeichert)"
                             }
                         }()
                         Text(backendLabel)
@@ -158,17 +159,17 @@ struct SettingsView: View {
                     Text("Container: \(CloudKitConfiguration.containerIdentifier)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text("Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
+                    Text("Bundle-ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
                     if let error = persistenceStatus.cloudKitInitializationError {
-                        Text("iCloud init error: \(error)")
+                        Text("iCloud-Initialisierungsfehler: \(error)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
                     if let error = persistenceStatus.localInitializationError {
-                        Text("Local store error: \(error)")
+                        Text("Lokaler Speicherfehler: \(error)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -179,33 +180,33 @@ struct SettingsView: View {
                             case .available:
                                 Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(.green)
-                                Text("Connected to iCloud")
+                                Text("Mit iCloud verbunden")
                             case .noAccount:
                                 Image(systemName: "xmark.octagon.fill")
                                 .foregroundColor(.red)
-                                Text("Not signed in to iCloud (local-only mode)")
+                                Text("Nicht bei iCloud angemeldet (nur lokal)")
                             case .restricted:
                                 Image(systemName: "xmark.octagon.fill")
                                 .foregroundColor(.red)
-                                Text("iCloud restricted (local-only mode)")
+                                Text("iCloud eingeschränkt (nur lokal)")
                             case .couldNotDetermine:
                                 Image(systemName: "questionmark.circle.fill")
                                 .foregroundColor(.orange)
-                                Text("Could not determine iCloud status")
+                                Text("iCloud-Status konnte nicht ermittelt werden")
                             case .temporarilyUnavailable:
                                 Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.orange)
-                                Text("iCloud temporarily unavailable")
+                                Text("iCloud vorübergehend nicht verfügbar")
                             @unknown default:
                                 Image(systemName: "questionmark.circle.fill")
                                 .foregroundColor(.orange)
-                                Text("Unknown iCloud status")
+                                Text("Unbekannter iCloud-Status")
                             }
                             
                             Spacer()
                             
                             if status == .noAccount || status == .restricted {
-                                Button("Open Settings") {
+                                Button("Einstellungen öffnen") {
                                     openAppSettings()
                                 }
                                 .font(.caption)
@@ -216,15 +217,24 @@ struct SettingsView: View {
                     } else {
                         HStack {
                             ProgressView()
-                            Text("Checking iCloud…")
+                            Text("iCloud wird geprüft…")
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
 
-                    Text("Tip: CloudKit doesn’t sync between Debug/TestFlight/App Store builds (different environments). Make sure both devices run the same build channel.")
+                    Text("Hinweis: CloudKit synchronisiert nicht zwischen Debug/TestFlight/App-Store-Builds (verschiedene Umgebungen). Stelle sicher, dass beide Geräte denselben Build-Kanal nutzen.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                    
+                    Button {
+                        showCloudKitDiagnostics = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "stethoscope")
+                            Text("CloudKit-Diagnose ausführen")
+                        }
+                    }
                 }
 
                 // App info
@@ -235,7 +245,7 @@ struct SettingsView: View {
                             .frame(width: 60, height: 60)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             .shadow(radius: 4)
-                            .accessibilityLabel("App Icon")
+                            .accessibilityLabel("App-Symbol")
                         VStack(alignment: .leading) {
                             Text("ResumeCraft").font(.title2).fontWeight(.bold)
                             Text("Version 1.0.0").font(.caption).foregroundStyle(.secondary)
@@ -252,7 +262,7 @@ struct SettingsView: View {
                         AboutLinkRow(
                             iconName: "person.fill",
                             iconColor: .blue,
-                            title: "App Website",
+                            title: "App-Website",
                             subtitle: "Arya Mirsepasi",
                             url: URL(string: "https://aryamirsepasi.com/resumecraft")!
                         )
@@ -260,30 +270,33 @@ struct SettingsView: View {
                         AboutLinkRow(
                             iconName: "questionmark.circle.fill",
                             iconColor: .blue,
-                            title: "Having Issues?",
-                            subtitle: "Submit a new issue on the support page!",
+                            title: "Probleme?",
+                            subtitle: "Melde ein neues Problem auf der Support-Seite!",
                             url: URL(string: "https://aryamirsepasi.com/support")!
                         )
                         Divider()
                         AboutLinkRow(
                             iconName: "lock.shield.fill",
                             iconColor: .blue,
-                            title: "Privacy Policy",
-                            subtitle: "How your data is handled",
+                            title: "Datenschutzrichtlinie",
+                            subtitle: "Wie deine Daten verarbeitet werden",
                             url: URL(string: "https://aryamirsepasi.com/resumecraft/privacy")!
                         )
                     }
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("Einstellungen")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .imageScale(.large)
-                            .accessibilityLabel("Close")
+                            .accessibilityLabel("Schließen")
                     }
                 }
+            }
+            .sheet(isPresented: $showCloudKitDiagnostics) {
+                CloudKitDiagnosticsView()
             }
             .task { await checkICloudStatus() }
             .task { await calculateScore() }
@@ -332,7 +345,7 @@ private struct ResumeScoreRowContent: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Resume Score")
+                    Text("Lebenslaufbewertung")
                         .font(.headline)
                     
                     Text(score.grade.rawValue)

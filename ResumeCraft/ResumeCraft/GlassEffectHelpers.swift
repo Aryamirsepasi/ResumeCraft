@@ -18,8 +18,8 @@ struct GlassEffectContainer<Content: View>: View {
     }
     
     var body: some View {
-        // SwiftUI's native glass container - available in iOS 18+
-        if #available(iOS 18, *) {
+        // SwiftUI's native glass container - available in iOS 26+
+        if #available(iOS 26, *) {
             SwiftUI.GlassEffectContainer(spacing: spacing) {
                 content()
             }
@@ -40,7 +40,7 @@ extension ButtonStyle where Self == GlassButtonStyle {
 
 struct GlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        if #available(iOS 18, *) {
+        if #available(iOS 26, *) {
             configuration.label
                 .glassEffect(.regular.interactive())
         } else {
@@ -72,7 +72,7 @@ struct GlassCard<Content: View>: View {
     }
     
     var body: some View {
-        if #available(iOS 18, *) {
+        if #available(iOS 26, *) {
             content()
                 .padding()
                 .glassEffect(
@@ -87,7 +87,7 @@ struct GlassCard<Content: View>: View {
         }
     }
     
-    @available(iOS 18, *)
+    @available(iOS 26, *)
     private var glassConfig: Glass {
         var glass = Glass.regular
         if let tint = tint {
