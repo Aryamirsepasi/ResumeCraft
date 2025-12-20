@@ -48,15 +48,15 @@ enum ResumeTemplate: String, CaseIterable, Identifiable {
     var sectionOrder: [ResumeSection] {
         switch self {
         case .modern, .traditional:
-            return [.summary, .experience, .education, .skills, .projects, .languages]
+            return [.summary, .experience, .education, .skills, .projects, .languages, .miscellaneous]
         case .tech:
-            return [.summary, .skills, .experience, .projects, .education, .languages]
+            return [.summary, .skills, .experience, .projects, .education, .languages, .miscellaneous]
         case .creative:
-            return [.summary, .projects, .experience, .skills, .education]
+            return [.summary, .projects, .experience, .skills, .education, .miscellaneous]
         case .academic:
-            return [.education, .summary, .experience, .projects, .skills]
+            return [.education, .summary, .experience, .projects, .skills, .miscellaneous]
         case .student:
-            return [.education, .summary, .projects, .experience, .skills, .extracurricular]
+            return [.education, .summary, .projects, .experience, .skills, .extracurricular, .miscellaneous]
         }
     }
     
@@ -84,6 +84,7 @@ enum ResumeSection: String, CaseIterable {
     case projects = "Projekte"
     case languages = "Sprachen"
     case extracurricular = "Aktivitäten"
+    case miscellaneous = "Sonstiges"
 }
 
 // MARK: - Template Recommendations

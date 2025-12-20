@@ -12,6 +12,8 @@ final class Resume {
     @Relationship(deleteRule: .cascade, inverse: \Summary.resume)
     var summary: Summary?
 
+    var miscellaneous: String? = nil
+
     // One-to-many relationships (must be optional for CloudKit)
     @Relationship(deleteRule: .cascade, inverse: \WorkExperience.resume)
     var experiences: [WorkExperience]?

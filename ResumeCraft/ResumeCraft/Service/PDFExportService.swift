@@ -392,6 +392,13 @@ final class PDFExportService {
             md += "## Sprachen\n\n"
             md += languages.map { "\($0.name) (\($0.proficiency))" }.joined(separator: " | ") + "\n"
         }
+
+        if let miscText = resume.miscellaneous?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ), !miscText.isEmpty {
+            md += "\n## Sonstiges\n\n"
+            md += miscText + "\n"
+        }
         
         return md
     }
@@ -533,6 +540,13 @@ final class PDFExportService {
             html += "<h2>Sprachen</h2>\n<p>"
             html += languages.map { "\($0.name) (\($0.proficiency))" }.joined(separator: " • ")
             html += "</p>\n"
+        }
+
+        if let miscText = resume.miscellaneous?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ), !miscText.isEmpty {
+            html += "<h2>Sonstiges</h2>\n"
+            html += "<p>\(miscText)</p>\n"
         }
         
         html += "</body>\n</html>"

@@ -62,6 +62,7 @@ final class ResumeParsingService {
         "education", "academic background", "ausbildung", "studium", "bildung", "akademischer hintergrund",
         "skills", "technical skills", "languages", "fähigkeiten", "faehigkeiten", "kenntnisse", "kompetenzen", "sprachen",
         "projects", "projekte", "certifications", "awards", "interests", "aktivitäten", "aktivitaeten", "ehrenamt", "vereine",
+        "other", "miscellaneous", "additional information", "additional info", "sonstiges", "sonstige angaben", "weitere angaben",
     ]
 
     // Main entry point for parsing a resume PDF
@@ -127,7 +128,7 @@ final class ResumeParsingService {
 
     // Updated pattern to match the exact headers from canonicalization
     private let sectionPattern: String =
-        #"(?im)^\s*(CONTACT|PERSONAL\s*INFORMATION|SKILLS|TECHNICAL\s*SKILLS|WORK\s*EXPERIENCE|EMPLOYMENT|EXPERIENCE|EDUCATION|ACADEMIC\s*BACKGROUND|PROJECTS|EXTRACURRICULAR|ACTIVITIES|LANGUAGES|KONTAKT|PERS(?:Ö|OE)NLICHE\s*DATEN|ZUSAMMENFASSUNG|KURZPROFIL|PROFIL|ÜBER\s*MICH|UEBER\s*MICH|BERUFSERFAHRUNG|ARBEITSERFAHRUNG|WERDEGANG|AUSBILDUNG|STUDIUM|BILDUNG|PROJEKTE|AKTIVITÄTEN|AKTIVITAETEN|EHRENAMT|VEREINE|FÄHIGKEITEN|FAEHIGKEITEN|KENNTNISSE|KOMPETENZEN|SPRACHEN)\s*:?\s*$"#
+        #"(?im)^\s*(CONTACT|PERSONAL\s*INFORMATION|SKILLS|TECHNICAL\s*SKILLS|WORK\s*EXPERIENCE|EMPLOYMENT|EXPERIENCE|EDUCATION|ACADEMIC\s*BACKGROUND|PROJECTS|EXTRACURRICULAR|ACTIVITIES|LANGUAGES|OTHER|MISCELLANEOUS|KONTAKT|PERS(?:Ö|OE)NLICHE\s*DATEN|ZUSAMMENFASSUNG|KURZPROFIL|PROFIL|ÜBER\s*MICH|UEBER\s*MICH|BERUFSERFAHRUNG|ARBEITSERFAHRUNG|WERDEGANG|AUSBILDUNG|STUDIUM|BILDUNG|PROJEKTE|AKTIVITÄTEN|AKTIVITAETEN|EHRENAMT|VEREINE|FÄHIGKEITEN|FAEHIGKEITEN|KENNTNISSE|KOMPETENZEN|SPRACHEN|SONSTIGES|SONSTIGE\s*ANGABEN|WEITERE\s*ANGABEN)\s*:?\s*$"#
 
     func splitSections(from text: String) -> [String: String] {
         var result: [String: String] = [:]
@@ -228,6 +229,14 @@ final class ResumeParsingService {
             return "extracurricular"
         } else if normalizedHeader.contains("language") || normalizedHeader.contains("sprachen") {
             return "languages"
+        } else if normalizedHeader.contains("other")
+            || normalizedHeader.contains("misc")
+            || normalizedHeader.contains("sonstiges")
+            || normalizedHeader.contains("sonstige")
+            || normalizedHeader.contains("weitere")
+            || normalizedHeader.contains("additional")
+        {
+            return "miscellaneous"
         }
         return normalizedHeader
     }
@@ -664,6 +673,9 @@ final class ResumeParsingService {
       LANGUAGES:
       [Language] ([Proficiency level]), [Language] ([Proficiency level])
 
+      SONSTIGES:
+      [Additional information, certifications, interests, or other relevant details]
+
       Rules:
       1. Use ONLY the exact headers above followed by a colon
       2. Do NOT add bold formatting, asterisks, or extra punctuation
@@ -720,7 +732,7 @@ final class ResumeParsingService {
         // Ensure section headers are properly formatted
         let headers = [
             "CONTACT", "SKILLS", "WORK EXPERIENCE", "EDUCATION", "PROJECTS",
-            "EXTRACURRICULAR", "LANGUAGES",
+            "EXTRACURRICULAR", "LANGUAGES", "SONSTIGES",
         ]
         for header in headers {
             let pattern = "(?im)^\\s*\(header)\\s*:?.*$"

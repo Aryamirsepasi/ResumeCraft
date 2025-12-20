@@ -123,6 +123,13 @@ struct HomeView: View {
             iconColor: .teal,
             destination: AnyView(LanguagesListView(model: resumeModel.languageModel))
           )
+          HomeRow(
+            title: Text("Sonstiges"),
+            subtitle: Text("Weitere Informationen und Hinweise"),
+            systemImage: "ellipsis.circle.fill",
+            iconColor: .gray,
+            destination: AnyView(MiscellaneousEditorView())
+          )
         } header: {
           Text("Zusätzliches")
             .font(.subheadline)

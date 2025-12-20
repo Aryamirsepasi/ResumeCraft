@@ -199,6 +199,15 @@ struct ResumeRootView: View {
       }
     }
 
+    if let sourceMisc = source.miscellaneous?.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    ), !sourceMisc.isEmpty {
+      let targetMisc = target.miscellaneous?.trimmingCharacters(in: .whitespacesAndNewlines)
+      if targetMisc == nil || targetMisc?.isEmpty == true {
+        target.miscellaneous = sourceMisc
+      }
+    }
+
     if let sourceSkills = source.skills {
       var targetSkills = target.skills ?? []
       for item in sourceSkills {
@@ -638,6 +647,12 @@ struct ResumeRootView: View {
       context.insert(language)
       language.resume = resume
       resume.languages = (resume.languages ?? []) + [language]
+    }
+
+    let miscSection = sections["miscellaneous"] ?? sections["sonstiges"] ?? ""
+    let miscText = miscSection.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !miscText.isEmpty {
+      resume.miscellaneous = miscText
     }
 
     // Update timestamp and dedupe

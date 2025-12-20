@@ -295,7 +295,7 @@ struct ResumePDFFormatter {
         }
         .joined(separator: ", ")
       result.append(
-        NSAttributedString(string: langs + "\n", attributes: [.font: bodyFont])
+        NSAttributedString(string: langs + "\n\n", attributes: [.font: bodyFont])
       )
     }
 
@@ -330,6 +330,26 @@ struct ResumePDFFormatter {
         }
         result.append(NSAttributedString(string: "\n"))
       }
+    }
+
+    if let miscText = resume.miscellaneous?.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    ), !miscText.isEmpty {
+      let paragraphStyle = NSMutableParagraphStyle()
+      paragraphStyle.lineSpacing = 2
+      paragraphStyle.paragraphSpacing = 4
+      result.append(
+        NSAttributedString(
+          string: "Sonstiges\n",
+          attributes: [.font: sectionFont]
+        )
+      )
+      result.append(
+        NSAttributedString(
+          string: miscText + "\n\n",
+          attributes: [.font: bodyFont, .paragraphStyle: paragraphStyle]
+        )
+      )
     }
 
     return result

@@ -170,6 +170,13 @@ struct ResumeTextFormatter {
                 result += "\n"
             }
         }
+
+        if let miscText = resume.miscellaneous?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ), !miscText.isEmpty {
+            result += "SONSTIGES\n"
+            result += miscText + "\n\n"
+        }
         
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
