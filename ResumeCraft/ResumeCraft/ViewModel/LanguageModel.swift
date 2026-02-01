@@ -9,6 +9,7 @@ import Foundation
 import Observation
 import SwiftData
 
+@MainActor
 @Observable
 final class LanguageModel {
   private weak var resume: Resume?

@@ -43,6 +43,32 @@ struct SettingsView: View {
                         .textCase(.uppercase)
                         .font(.caption)
                 }
+
+                Section("Sprache") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Bearbeitungssprache")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ResumeLanguagePicker(
+                            titleKey: "Bearbeitungssprache",
+                            selection: contentLanguageBinding
+                        )
+                        .accessibilityLabel("Bearbeitungssprache")
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Ausgabesprache")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ResumeLanguagePicker(
+                            titleKey: "Ausgabesprache",
+                            selection: outputLanguageBinding
+                        )
+                        .accessibilityLabel("Ausgabesprache")
+                    }
+                    Text("Diese Auswahl steuert, in welcher Sprache du Inhalte bearbeitest und exportierst.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 
                 // Smart Suggestions Link
                 Section {
@@ -311,6 +337,26 @@ struct SettingsView: View {
         }
     }
     
+    private var contentLanguageBinding: Binding<ResumeLanguage> {
+        Binding(
+            get: { resumeModel.resume.contentLanguage },
+            set: { newValue in
+                resumeModel.resume.contentLanguage = newValue
+                try? resumeModel.save()
+            }
+        )
+    }
+
+    private var outputLanguageBinding: Binding<ResumeLanguage> {
+        Binding(
+            get: { resumeModel.resume.outputLanguage },
+            set: { newValue in
+                resumeModel.resume.outputLanguage = newValue
+                try? resumeModel.save()
+            }
+        )
+    }
+
     @MainActor
     private func calculateScore() async {
         let score = ResumeScoringEngine.calculate(for: resumeModel.resume)

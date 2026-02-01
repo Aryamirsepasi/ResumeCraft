@@ -22,7 +22,10 @@ struct LanguagesListView: View {
       List {
         ForEach(model.items) { lang in
           HStack {
-            LanguageRowView(language: lang) {
+            LanguageRowView(
+              language: lang,
+              contentLanguage: resumeModel.resume.contentLanguage
+            ) {
               // Re-fetch fresh instance by id before opening editor
               let id = lang.id
               if let fresh = model.items.first(where: { $0.id == id }) {
@@ -76,12 +79,18 @@ struct LanguagesListView: View {
       .sheet(item: $editorContext) { context in
         LanguageEditorView(
           language: context.language,
-          onSave: { newLang in
+          onSave: { newLang, language in
             if let existing = context.language {
-              existing.name = newLang.name
-              existing.proficiency = newLang.proficiency
+              existing.setName(newLang.name, for: language)
+              existing.setProficiency(newLang.proficiency, for: language)
               existing.isVisible = true
             } else {
+              if language == .english {
+                newLang.name_en = newLang.name
+                newLang.proficiency_en = newLang.proficiency
+                newLang.name = ""
+                newLang.proficiency = ""
+              }
               model.add(newLang)
             }
             editorContext = nil
@@ -96,19 +105,23 @@ struct LanguagesListView: View {
 
 struct LanguageRowView: View {
   let language: Language
+  let contentLanguage: ResumeLanguage
   let onTap: () -> Void
 
   var body: some View {
     Button(action: onTap) {
+      let fallback = contentLanguage.fallback
+      let name = language.name(for: contentLanguage, fallback: fallback)
+      let proficiency = language.proficiency(for: contentLanguage, fallback: fallback)
       HStack {
-        Text(language.name).font(.headline)
+        Text(name).font(.headline)
         Spacer()
-        Text(language.proficiency)
+        Text(proficiency)
           .font(.subheadline)
           .foregroundStyle(.secondary)
       }
       .accessibilityElement(children: .combine)
-      .accessibilityLabel("\(language.name), \(language.proficiency)")
+      .accessibilityLabel("\(name), \(proficiency)")
     }
   }
 }

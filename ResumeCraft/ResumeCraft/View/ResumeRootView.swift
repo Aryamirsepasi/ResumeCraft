@@ -35,6 +35,8 @@ struct ResumeRootView: View {
   @State private var importError: String?
   @State private var showError = false
   @State private var errorMessage = ""
+  @State private var showImportLanguageDialog = false
+  @State private var importLanguage: ResumeLanguage = .defaultContent
 
   @State private var aiReviewModel: AIReviewViewModel?
 
@@ -70,6 +72,22 @@ struct ResumeRootView: View {
           .task { await loadOrCreateResume() }
       }
     }
+    .confirmationDialog(
+      "Importsprache wählen",
+      isPresented: $showImportLanguageDialog
+    ) {
+      Button(ResumeLanguage.german.displayName) {
+        importLanguage = .german
+        showPDFPicker = true
+      }
+      Button(ResumeLanguage.english.displayName) {
+        importLanguage = .english
+        showPDFPicker = true
+      }
+      Button("Abbrechen", role: .cancel) {}
+    } message: {
+      Text("Wähle die Sprache des PDFs, damit die Inhalte korrekt zugeordnet werden.")
+    }
     .onAppear(perform: setupAIIfNeeded)
   }
 
@@ -87,7 +105,7 @@ struct ResumeRootView: View {
   private func homeTab(_ model: ResumeEditorModel) -> some View {
     HomeView(
       openPreview: { presentPreview() },
-      importPDF: { showPDFPicker = true },
+      importPDF: { requestImport() },
       openSettings: { showSettings = true }
     )
   }
@@ -117,6 +135,11 @@ struct ResumeRootView: View {
     }
   }
 
+  private func requestImport() {
+    importLanguage = resumeModel?.resume.contentLanguage ?? .defaultContent
+    showImportLanguageDialog = true
+  }
+
   // MARK: - Data bootstrap
 
   @MainActor
@@ -126,12 +149,14 @@ struct ResumeRootView: View {
     )
     let found = (try? context.fetch(descriptor)) ?? []
     if let primary = found.first {
+      primary.ensureLanguageDefaults()
       let merged = mergeResumesIfNeeded(primary: primary, others: Array(found.dropFirst()))
       migrateGermanFieldsIfNeeded(for: merged)
       resumeModel = ResumeEditorModel(resume: merged, context: context)
       scheduleMergeCheck()
     } else {
       let newResume = Resume()
+      newResume.ensureLanguageDefaults()
       context.insert(newResume)
       try? context.save()
       resumeModel = ResumeEditorModel(resume: newResume, context: context)
@@ -141,13 +166,14 @@ struct ResumeRootView: View {
   @MainActor
   private func scheduleMergeCheck() {
     Task { @MainActor in
-      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      try? await Task.sleep(for: .seconds(2))
       let descriptor = FetchDescriptor<Resume>(
         sortBy: [SortDescriptor(\.updated, order: .reverse)]
       )
       let refreshed = (try? context.fetch(descriptor)) ?? []
       guard let primary = refreshed.first, refreshed.count > 1 else { return }
       let merged = mergeResumesIfNeeded(primary: primary, others: Array(refreshed.dropFirst()))
+      merged.ensureLanguageDefaults()
       migrateGermanFieldsIfNeeded(for: merged)
       if resumeModel?.resume.id != merged.id {
         resumeModel = ResumeEditorModel(resume: merged, context: context)
@@ -173,6 +199,13 @@ struct ResumeRootView: View {
   }
 
   private func mergeResumeData(from source: Resume, into target: Resume) {
+    if target.contentLanguageCode.isEmpty {
+      target.contentLanguageCode = source.contentLanguageCode
+    }
+    if target.outputLanguageCode.isEmpty {
+      target.outputLanguageCode = source.outputLanguageCode
+    }
+
     if let sourcePersonal = source.personal {
       if let targetPersonal = target.personal {
         if targetPersonal.firstName.isEmpty { targetPersonal.firstName = sourcePersonal.firstName }
@@ -180,6 +213,7 @@ struct ResumeRootView: View {
         if targetPersonal.email.isEmpty { targetPersonal.email = sourcePersonal.email }
         if targetPersonal.phone.isEmpty { targetPersonal.phone = sourcePersonal.phone }
         if targetPersonal.address.isEmpty { targetPersonal.address = sourcePersonal.address }
+        if targetPersonal.address_en == nil { targetPersonal.address_en = sourcePersonal.address_en }
         if targetPersonal.linkedIn == nil { targetPersonal.linkedIn = sourcePersonal.linkedIn }
         if targetPersonal.website == nil { targetPersonal.website = sourcePersonal.website }
         if targetPersonal.github == nil { targetPersonal.github = sourcePersonal.github }
@@ -192,6 +226,7 @@ struct ResumeRootView: View {
     if let sourceSummary = source.summary {
       if let targetSummary = target.summary {
         if targetSummary.text.isEmpty { targetSummary.text = sourceSummary.text }
+        if targetSummary.text_en == nil { targetSummary.text_en = sourceSummary.text_en }
         targetSummary.isVisible = targetSummary.isVisible || sourceSummary.isVisible
       } else {
         sourceSummary.resume = target
@@ -205,6 +240,15 @@ struct ResumeRootView: View {
       let targetMisc = target.miscellaneous?.trimmingCharacters(in: .whitespacesAndNewlines)
       if targetMisc == nil || targetMisc?.isEmpty == true {
         target.miscellaneous = sourceMisc
+      }
+    }
+
+    if let sourceMiscEn = source.miscellaneous_en?.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    ), !sourceMiscEn.isEmpty {
+      let targetMiscEn = target.miscellaneous_en?.trimmingCharacters(in: .whitespacesAndNewlines)
+      if targetMiscEn == nil || targetMiscEn?.isEmpty == true {
+        target.miscellaneous_en = sourceMiscEn
       }
     }
 
@@ -266,6 +310,15 @@ struct ResumeRootView: View {
   @MainActor
   private func migrateGermanFieldsIfNeeded(for resume: Resume) {
     var didChange = false
+
+    if resume.contentLanguageCode.isEmpty {
+      resume.contentLanguageCode = ResumeLanguage.defaultContent.rawValue
+      didChange = true
+    }
+    if resume.outputLanguageCode.isEmpty {
+      resume.outputLanguageCode = ResumeLanguage.defaultOutput.rawValue
+      didChange = true
+    }
 
     if let summary = resume.summary {
       if let textDe = summary.text_de, !textDe.isEmpty {
@@ -383,7 +436,7 @@ struct ResumeRootView: View {
         lang.proficiency_de = nil
         didChange = true
       }
-      lang.proficiency = normalizeProficiency(lang.proficiency)
+      lang.proficiency = normalizeProficiency(lang.proficiency, language: .german)
     }
 
     if didChange {
@@ -392,21 +445,39 @@ struct ResumeRootView: View {
     }
   }
 
-  private func normalizeProficiency(_ value: String) -> String {
+  private func normalizeProficiency(_ value: String, language: ResumeLanguage) -> String {
     let normalized = norm(value)
-    switch normalized {
-    case "native":
-      return "Muttersprache"
-    case "fluent":
-      return "Fließend"
-    case "professional":
-      return "Beruflich"
-    case "intermediate":
-      return "Fortgeschritten"
-    case "basic":
-      return "Grundkenntnisse"
-    default:
-      return value
+    switch language {
+    case .german:
+      switch normalized {
+      case "native":
+        return "Muttersprache"
+      case "fluent":
+        return "Fließend"
+      case "professional":
+        return "Beruflich"
+      case "intermediate":
+        return "Fortgeschritten"
+      case "basic":
+        return "Grundkenntnisse"
+      default:
+        return value
+      }
+    case .english:
+      switch normalized {
+      case "muttersprache":
+        return "Native"
+      case "fließend", "fliessend":
+        return "Fluent"
+      case "beruflich":
+        return "Professional"
+      case "fortgeschritten":
+        return "Intermediate"
+      case "grundkenntnisse", "grundkenntnis":
+        return "Basic"
+      default:
+        return value
+      }
     }
   }
 
@@ -459,7 +530,11 @@ struct ResumeRootView: View {
         }
 
         await MainActor.run {
-          importStructuredData(structuredText: structuredText, model: model)
+          importStructuredData(
+            structuredText: structuredText,
+            model: model,
+            language: importLanguage
+          )
         }
         await Task.yield()
       } catch {
@@ -505,10 +580,14 @@ struct ResumeRootView: View {
   @MainActor
   private func importStructuredData(
     structuredText: String,
-    model: ResumeEditorModel
+    model: ResumeEditorModel,
+    language: ResumeLanguage
   ) {
     let context = model.context
     let resume = model.resume
+
+    resume.contentLanguage = language
+    resume.outputLanguage = language
 
     let sections = parsingService.splitSections(from: structuredText)
 
@@ -532,7 +611,9 @@ struct ResumeRootView: View {
       }
       personalInfo.email = contact.email ?? personalInfo.email
       personalInfo.phone = contact.phone ?? personalInfo.phone
-      personalInfo.address = contact.location ?? personalInfo.address
+      if let location = contact.location {
+        personalInfo.setAddress(location, for: language)
+      }
       personalInfo.linkedIn = contact.linkedIn ?? personalInfo.linkedIn
       personalInfo.website = contact.website ?? personalInfo.website
       personalInfo.github = contact.github ?? personalInfo.github
@@ -545,12 +626,13 @@ struct ResumeRootView: View {
       summarySection.trimmingCharacters(in: .whitespacesAndNewlines)
     if !summaryText.isEmpty {
       if resume.summary == nil {
-        let s = Summary(text: summaryText, isVisible: true)
+        let s = Summary(text: "", isVisible: true)
+        s.setText(summaryText, for: language)
         s.resume = resume
         context.insert(s)
         resume.summary = s
       } else {
-        resume.summary?.text = summaryText
+        resume.summary?.setText(summaryText, for: language)
         resume.summary?.isVisible = true
       }
     }
@@ -559,7 +641,8 @@ struct ResumeRootView: View {
     let skillsSection = sections["skills"] ?? sections["technical skills"] ?? ""
     let skillsArray = parsingService.extractSkills(from: skillsSection)
     for skillName in skillsArray where !skillName.isEmpty {
-      let skill = Skill(name: skillName, category: "")
+      let skill = Skill(name: "", category: "")
+      skill.setName(skillName, for: language)
       skill.isVisible = true
       context.insert(skill)
       skill.resume = resume
@@ -571,14 +654,17 @@ struct ResumeRootView: View {
     let jobs = parsingService.extractExperience(from: expSection)
     for job in jobs where !job.title.isEmpty && !job.company.isEmpty {
       let experience = WorkExperience(
-        title: job.title,
-        company: job.company,
+        title: "",
+        company: "",
         location: "",
         startDate: parseDate(job.startDate),
         endDate: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current" ? nil : parseDate(job.endDate),
         isCurrent: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current",
-        details: job.details
+        details: ""
       )
+      experience.setTitle(job.title, for: language)
+      experience.setCompany(job.company, for: language)
+      experience.setDetails(job.details, for: language)
       experience.isVisible = true
       context.insert(experience)
       experience.resume = resume
@@ -590,14 +676,16 @@ struct ResumeRootView: View {
     let educations = parsingService.extractEducation(from: eduSection)
     for educ in educations where !educ.institution.isEmpty && !educ.degree.isEmpty {
       let education = Education(
-        school: educ.institution,
-        degree: educ.degree,
+        school: "",
+        degree: "",
         field: "",
         startDate: parseDate(educ.startDate),
         endDate: parseDate(educ.endDate),
         grade: "",
         details: ""
       )
+      education.setSchool(educ.institution, for: language)
+      education.setDegree(educ.degree, for: language)
       education.isVisible = true
       context.insert(education)
       education.resume = resume
@@ -609,11 +697,14 @@ struct ResumeRootView: View {
     let projects = parsingService.extractProjects(from: projSection)
     for proj in projects where !proj.name.isEmpty {
       let project = Project(
-        name: proj.name,
-        details: proj.details,
-        technologies: proj.technologies,
+        name: "",
+        details: "",
+        technologies: "",
         link: proj.link
       )
+      project.setName(proj.name, for: language)
+      project.setDetails(proj.details, for: language)
+      project.setTechnologies(proj.technologies, for: language)
       project.isVisible = true
       context.insert(project)
       project.resume = resume
@@ -625,10 +716,13 @@ struct ResumeRootView: View {
     let extras = parsingService.extractExtracurriculars(from: extraSection)
     for extra in extras where !extra.title.isEmpty {
       let extracurricular = Extracurricular(
-        title: extra.title,
-        organization: extra.organization,
-        details: extra.details
+        title: "",
+        organization: "",
+        details: ""
       )
+      extracurricular.setTitle(extra.title, for: language)
+      extracurricular.setOrganization(extra.organization, for: language)
+      extracurricular.setDetails(extra.details, for: language)
       extracurricular.isVisible = true
       context.insert(extracurricular)
       extracurricular.resume = resume
@@ -639,20 +733,24 @@ struct ResumeRootView: View {
     let langSection = sections["languages"] ?? ""
     let languages = parsingService.extractLanguages(from: langSection)
     for lang in languages where !lang.name.isEmpty {
-      let language = Language(
-        name: lang.name,
-        proficiency: lang.proficiency.isEmpty ? "Fließend" : lang.proficiency
+      let fallbackProficiency = language == .german ? "Fließend" : "Fluent"
+      let languageEntry = Language(
+        name: "",
+        proficiency: ""
       )
-      language.isVisible = true
-      context.insert(language)
-      language.resume = resume
-      resume.languages = (resume.languages ?? []) + [language]
+      languageEntry.setName(lang.name, for: language)
+      let rawProficiency = lang.proficiency.isEmpty ? fallbackProficiency : lang.proficiency
+      languageEntry.setProficiency(normalizeProficiency(rawProficiency, language: language), for: language)
+      languageEntry.isVisible = true
+      context.insert(languageEntry)
+      languageEntry.resume = resume
+      resume.languages = (resume.languages ?? []) + [languageEntry]
     }
 
     let miscSection = sections["miscellaneous"] ?? sections["sonstiges"] ?? ""
     let miscText = miscSection.trimmingCharacters(in: .whitespacesAndNewlines)
     if !miscText.isEmpty {
-      resume.miscellaneous = miscText
+      resume.setMiscellaneous(miscText, for: language)
     }
 
     // Update timestamp and dedupe
@@ -774,9 +872,16 @@ struct ResumeRootView: View {
       )
   }
 
+  private func canonical(_ german: String, _ english: String?) -> String {
+    if !german.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      return german
+    }
+    return english ?? ""
+  }
+
   private func safeDateKey(_ date: Date?) -> String {
     guard let date else { return "-" }
-    return DateFormatter.resumeMonthYear.string(from: date)
+    return DateFormatter.resumeMonthYear(for: .german).string(from: date)
   }
 
   private func joinUniqueLines(_ a: String, _ b: String) -> String {
@@ -792,9 +897,14 @@ struct ResumeRootView: View {
     var seen: [String: Skill] = [:]
     var ordered: [Skill] = []
     for item in items {
-      let key = norm(item.name) + "|" + norm(item.category)
+      let key = norm(canonical(item.name, item.name_en))
+        + "|" + norm(canonical(item.category, item.category_en))
       if let existing = seen[key] {
         existing.isVisible = existing.isVisible || item.isVisible
+        if existing.name.isEmpty { existing.name = item.name }
+        if existing.name_en == nil || existing.name_en?.isEmpty == true { existing.name_en = item.name_en }
+        if existing.category.isEmpty { existing.category = item.category }
+        if existing.category_en == nil || existing.category_en?.isEmpty == true { existing.category_en = item.category_en }
       } else {
         seen[key] = item
         ordered.append(item)
@@ -808,15 +918,22 @@ struct ResumeRootView: View {
     var ordered: [WorkExperience] = []
     for item in items {
       let key = [
-        norm(item.title),
-        norm(item.company),
+        norm(canonical(item.title, item.title_en)),
+        norm(canonical(item.company, item.company_en)),
         safeDateKey(item.startDate),
       ].joined(separator: "|")
 
       if let existing = seen[key] {
         existing.isVisible = existing.isVisible || item.isVisible
         existing.details = joinUniqueLines(existing.details, item.details)
+        let mergedDetailsEn = joinUniqueLines(existing.details_en ?? "", item.details_en ?? "")
+        if !mergedDetailsEn.isEmpty { existing.details_en = mergedDetailsEn }
         if existing.location.isEmpty { existing.location = item.location }
+        if existing.location_en == nil || existing.location_en?.isEmpty == true { existing.location_en = item.location_en }
+        if existing.title.isEmpty { existing.title = item.title }
+        if existing.title_en == nil || existing.title_en?.isEmpty == true { existing.title_en = item.title_en }
+        if existing.company.isEmpty { existing.company = item.company }
+        if existing.company_en == nil || existing.company_en?.isEmpty == true { existing.company_en = item.company_en }
         existing.isCurrent = existing.isCurrent || item.isCurrent
         if let e1 = existing.endDate, let e2 = item.endDate {
           existing.endDate = max(e1, e2)
@@ -835,10 +952,12 @@ struct ResumeRootView: View {
     var seen: [String: Project] = [:]
     var ordered: [Project] = []
     for item in items {
-      let key = norm(item.name)
+      let key = norm(canonical(item.name, item.name_en))
       if let existing = seen[key] {
         existing.isVisible = existing.isVisible || item.isVisible
         existing.details = joinUniqueLines(existing.details, item.details)
+        let mergedDetailsEn = joinUniqueLines(existing.details_en ?? "", item.details_en ?? "")
+        if !mergedDetailsEn.isEmpty { existing.details_en = mergedDetailsEn }
         let techA = Set(
           existing.technologies.split(separator: ",").map {
             norm(String($0))
@@ -852,9 +971,24 @@ struct ResumeRootView: View {
         let mergedTech = Array(techA.union(techB)).sorted()
           .joined(separator: ", ")
         if !mergedTech.isEmpty { existing.technologies = mergedTech }
+        let techAEn = Set(
+          (existing.technologies_en ?? "").split(separator: ",").map {
+            norm(String($0))
+          }.filter { !$0.isEmpty }
+        )
+        let techBEn = Set(
+          (item.technologies_en ?? "").split(separator: ",").map {
+            norm(String($0))
+          }.filter { !$0.isEmpty }
+        )
+        let mergedTechEn = Array(techAEn.union(techBEn)).sorted()
+          .joined(separator: ", ")
+        if !mergedTechEn.isEmpty { existing.technologies_en = mergedTechEn }
         if (existing.link ?? "").isEmpty, let link = item.link, !link.isEmpty {
           existing.link = link
         }
+        if existing.name.isEmpty { existing.name = item.name }
+        if existing.name_en == nil || existing.name_en?.isEmpty == true { existing.name_en = item.name_en }
       } else {
         seen[key] = item
         ordered.append(item)
@@ -868,16 +1002,24 @@ struct ResumeRootView: View {
     var ordered: [Education] = []
     for item in items {
       let key = [
-        norm(item.school),
-        norm(item.degree),
+        norm(canonical(item.school, item.school_en)),
+        norm(canonical(item.degree, item.degree_en)),
         safeDateKey(item.startDate),
       ].joined(separator: "|")
 
       if let existing = seen[key] {
         existing.isVisible = existing.isVisible || item.isVisible
         existing.details = joinUniqueLines(existing.details, item.details)
+        let mergedDetailsEn = joinUniqueLines(existing.details_en ?? "", item.details_en ?? "")
+        if !mergedDetailsEn.isEmpty { existing.details_en = mergedDetailsEn }
         if existing.field.isEmpty { existing.field = item.field }
+        if existing.field_en == nil || existing.field_en?.isEmpty == true { existing.field_en = item.field_en }
         if existing.grade.isEmpty { existing.grade = item.grade }
+        if existing.grade_en == nil || existing.grade_en?.isEmpty == true { existing.grade_en = item.grade_en }
+        if existing.school.isEmpty { existing.school = item.school }
+        if existing.school_en == nil || existing.school_en?.isEmpty == true { existing.school_en = item.school_en }
+        if existing.degree.isEmpty { existing.degree = item.degree }
+        if existing.degree_en == nil || existing.degree_en?.isEmpty == true { existing.degree_en = item.degree_en }
         if let e1 = existing.endDate, let e2 = item.endDate {
           existing.endDate = max(e1, e2)
         } else if existing.endDate == nil {
@@ -895,10 +1037,17 @@ struct ResumeRootView: View {
     var seen: [String: Extracurricular] = [:]
     var ordered: [Extracurricular] = []
     for item in items {
-      let key = norm(item.title) + "|" + norm(item.organization)
+      let key = norm(canonical(item.title, item.title_en))
+        + "|" + norm(canonical(item.organization, item.organization_en))
       if let existing = seen[key] {
         existing.isVisible = existing.isVisible || item.isVisible
         existing.details = joinUniqueLines(existing.details, item.details)
+        let mergedDetailsEn = joinUniqueLines(existing.details_en ?? "", item.details_en ?? "")
+        if !mergedDetailsEn.isEmpty { existing.details_en = mergedDetailsEn }
+        if existing.title.isEmpty { existing.title = item.title }
+        if existing.title_en == nil || existing.title_en?.isEmpty == true { existing.title_en = item.title_en }
+        if existing.organization.isEmpty { existing.organization = item.organization }
+        if existing.organization_en == nil || existing.organization_en?.isEmpty == true { existing.organization_en = item.organization_en }
       } else {
         seen[key] = item
         ordered.append(item)
@@ -928,12 +1077,19 @@ struct ResumeRootView: View {
     func score(_ s: String) -> Int { rank[norm(s)] ?? 0 }
 
     for item in items {
-      let key = norm(item.name)
+      let key = norm(canonical(item.name, item.name_en))
       if let existing = seen[key] {
         existing.isVisible = existing.isVisible || item.isVisible
         if score(item.proficiency) > score(existing.proficiency) {
           existing.proficiency = item.proficiency
         }
+        let englishScore = score(item.proficiency_en ?? "")
+        let existingEnglishScore = score(existing.proficiency_en ?? "")
+        if englishScore > existingEnglishScore {
+          existing.proficiency_en = item.proficiency_en
+        }
+        if existing.name.isEmpty { existing.name = item.name }
+        if existing.name_en == nil || existing.name_en?.isEmpty == true { existing.name_en = item.name_en }
       } else {
         seen[key] = item
         ordered.append(item)
@@ -1012,17 +1168,6 @@ extension CGPDFPage {
     if let cg = img.cgImage { images.append(cg) }
     return images
   }
-}
-
-// MARK: - DateFormatter Extension
-
-extension DateFormatter {
-    static let resumeMonthYear: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yyyy"
-        formatter.locale = Locale(identifier: "de_DE")
-        return formatter
-    }()
 }
 
 // Mapping Extensions

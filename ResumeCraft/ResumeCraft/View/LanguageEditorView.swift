@@ -8,23 +8,22 @@
 import SwiftUI
 
 struct LanguageEditorView: View {
-  @State private var name: String
-  @State private var proficiency: String
+  @Environment(ResumeEditorModel.self) private var resumeModel
 
-  private let proficiencies = [
-    "Muttersprache", "Fließend", "Beruflich", "Fortgeschritten", "Grundkenntnisse",
-  ]
+  @State private var name: String = ""
+  @State private var proficiency: String = ""
+  @State private var selectedLanguage: ResumeLanguage = .defaultContent
 
-  var onSave: (Language) -> Void
+  var onSave: (Language, ResumeLanguage) -> Void
   var onCancel: () -> Void
+  private let initialLanguage: Language?
 
   init(
     language: Language?,
-    onSave: @escaping (Language) -> Void,
+    onSave: @escaping (Language, ResumeLanguage) -> Void,
     onCancel: @escaping () -> Void
   ) {
-    _name = State(initialValue: language?.name ?? "")
-    _proficiency = State(initialValue: language?.proficiency ?? "Fließend")
+    self.initialLanguage = language
     self.onSave = onSave
     self.onCancel = onCancel
   }
@@ -32,12 +31,18 @@ struct LanguageEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Section("Bearbeitungssprache") {
+          ResumeLanguagePicker(
+            titleKey: "Bearbeitungssprache",
+            selection: $selectedLanguage
+          )
+        }
         Section("Sprache") {
           TextField("Sprache", text: $name)
         }
         Section("Kenntnisstand") {
           Picker("Kenntnisstand", selection: $proficiency) {
-            ForEach(proficiencies, id: \.self) { level in
+            ForEach(proficiencies(for: selectedLanguage), id: \.self) { level in
               Text(level)
             }
           }
@@ -52,11 +57,43 @@ struct LanguageEditorView: View {
         ToolbarItem(placement: .confirmationAction) {
           Button("Speichern") {
             let lang = Language(name: name, proficiency: proficiency)
-            onSave(lang)
+            onSave(lang, selectedLanguage)
           }
           .disabled(name.isEmpty)
         }
       }
+      .onAppear {
+        selectedLanguage = resumeModel.resume.contentLanguage
+        loadFields(for: selectedLanguage)
+      }
+      .onChange(of: selectedLanguage) { _, newValue in
+        resumeModel.resume.contentLanguage = newValue
+        try? resumeModel.save()
+        loadFields(for: newValue)
+      }
+    }
+  }
+
+  private func proficiencies(for language: ResumeLanguage) -> [String] {
+    switch language {
+    case .german:
+      return ["Muttersprache", "Fließend", "Beruflich", "Fortgeschritten", "Grundkenntnisse"]
+    case .english:
+      return ["Native", "Fluent", "Professional", "Intermediate", "Basic"]
+    }
+  }
+
+  private func loadFields(for language: ResumeLanguage) {
+    guard let lang = initialLanguage else {
+      name = ""
+      proficiency = language == .english ? "Fluent" : "Fließend"
+      return
+    }
+    let fallback: ResumeLanguage? = nil
+    name = lang.name(for: language, fallback: fallback)
+    proficiency = lang.proficiency(for: language, fallback: fallback)
+    if proficiency.isEmpty {
+      proficiency = language == .english ? "Fluent" : "Fließend"
     }
   }
 }

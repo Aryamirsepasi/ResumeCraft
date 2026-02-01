@@ -6,6 +6,7 @@
 //
 import SwiftUI
 
+@MainActor
 @Observable
 final class PersonalInfoModel {
     var personal: PersonalInfo

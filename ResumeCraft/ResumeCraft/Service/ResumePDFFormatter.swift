@@ -12,12 +12,24 @@ struct ResumePDFFormatter {
     for resume: Resume,
     pageWidth: CGFloat
   ) -> NSAttributedString {
+    attributedString(for: resume, pageWidth: pageWidth, language: resume.outputLanguage)
+  }
+
+  static func attributedString(
+    for resume: Resume,
+    pageWidth: CGFloat,
+    language: ResumeLanguage
+  ) -> NSAttributedString {
     let result = NSMutableAttributedString()
     let headerFont = UIFont.boldSystemFont(ofSize: 22)
     let sectionFont = UIFont.boldSystemFont(ofSize: 14)
     let bodyFont = UIFont.systemFont(ofSize: 10)
     let subFont = UIFont.systemFont(ofSize: 9)
     let gray = UIColor.gray
+    let fallback = language.fallback
+    let atWord = String(localized: "resume.label.at", locale: language.locale)
+    let technologiesLabel = String(localized: "resume.label.technologies", locale: language.locale)
+    let gradeLabel = String(localized: "resume.label.grade", locale: language.locale)
 
     // Name Header
     if let personal = resume.personal {
@@ -27,7 +39,7 @@ struct ResumePDFFormatter {
           string: name,
           attributes: [
             .font: headerFont,
-            .accessibilitySpeechLanguage: "de",
+            .accessibilitySpeechLanguage: language.rawValue,
           ]
         )
       )
@@ -35,10 +47,11 @@ struct ResumePDFFormatter {
 
       // Contact Info
       if let personal = resume.personal {
+        let address = personal.address(for: language, fallback: fallback)
         let mainContactItems: [String?] = [
           personal.email,
           personal.phone,
-          personal.address,
+          address,
         ]
         let mainContact = mainContactItems
           .compactMap { $0 }
@@ -81,22 +94,25 @@ struct ResumePDFFormatter {
 
     // Summary
     if let summary = resume.summary, summary.isVisible {
-      let paragraphStyle = NSMutableParagraphStyle()
-      paragraphStyle.lineSpacing = 2
-      paragraphStyle.paragraphSpacing = 4
-      result.append(
-        NSAttributedString(
-          string: "Zusammenfassung\n",
-          attributes: [.font: sectionFont]
+      let summaryText = summary.text(for: language, fallback: fallback)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+      if !summaryText.isEmpty {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 2
+        paragraphStyle.paragraphSpacing = 4
+        result.append(
+          NSAttributedString(
+            string: "\(ResumeSection.summary.title(for: language))\n",
+            attributes: [.font: sectionFont]
+          )
         )
-      )
-      result.append(
-        NSAttributedString(
-          string: summary.text
-            .trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n",
-          attributes: [.font: subFont, .paragraphStyle: paragraphStyle]
+        result.append(
+          NSAttributedString(
+            string: summaryText + "\n\n",
+            attributes: [.font: subFont, .paragraphStyle: paragraphStyle]
+          )
         )
-      )
+      }
     }
 
     // MARK: - Work Experience
@@ -106,21 +122,24 @@ struct ResumePDFFormatter {
     if !visibleExperiences.isEmpty {
       result.append(
         NSAttributedString(
-          string: "Berufserfahrung\n",
+          string: "\(ResumeSection.experience.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
       for exp in visibleExperiences {
+        let title = exp.title(for: language, fallback: fallback)
+        let company = exp.company(for: language, fallback: fallback)
         let titleLine =
-          "\(exp.title) bei \(exp.company)\n"
+          "\(title) \(atWord) \(company)\n"
         result.append(
           NSAttributedString(
             string: titleLine,
             attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
           )
         )
-        let dateLoc =
-          "\(exp.location) | \(dateRange(exp.startDate, exp.endDate, exp.isCurrent))\n"
+        let location = exp.location(for: language, fallback: fallback)
+        let dateRangeText = dateRange(exp.startDate, exp.endDate, exp.isCurrent, language: language)
+        let dateLoc = location.isEmpty ? "\(dateRangeText)\n" : "\(location) | \(dateRangeText)\n"
         result.append(
           NSAttributedString(
             string: dateLoc,
@@ -130,10 +149,11 @@ struct ResumePDFFormatter {
             ]
           )
         )
-        if !exp.details.isEmpty {
+        let details = exp.details(for: language, fallback: fallback)
+        if !details.isEmpty {
           result.append(
             NSAttributedString(
-              string: exp.details + "\n",
+              string: details + "\n",
               attributes: [.font: bodyFont]
             )
           )
@@ -149,21 +169,23 @@ struct ResumePDFFormatter {
     if !visibleEducations.isEmpty {
       result.append(
         NSAttributedString(
-          string: "Ausbildung\n",
+          string: "\(ResumeSection.education.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
       for edu in visibleEducations {
-        let titleLine =
-          "\(edu.degree) in \(edu.field)\n"
+        let degree = edu.degree(for: language, fallback: fallback)
+        let field = edu.field(for: language, fallback: fallback)
+        let titleLine = field.isEmpty ? "\(degree)\n" : "\(degree) in \(field)\n"
         result.append(
           NSAttributedString(
             string: titleLine,
             attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
           )
         )
+        let school = edu.school(for: language, fallback: fallback)
         let schoolLine =
-          "\(edu.school) | \(dateRange(edu.startDate, edu.endDate, false))\n"
+          "\(school) | \(dateRange(edu.startDate, edu.endDate, false, language: language))\n"
         result.append(
           NSAttributedString(
             string: schoolLine,
@@ -173,11 +195,12 @@ struct ResumePDFFormatter {
             ]
           )
         )
-        if !edu.grade.isEmpty {
+        let grade = edu.grade(for: language, fallback: fallback)
+        if !grade.isEmpty {
           result.append(
             NSAttributedString(
               string:
-                "Note: \(edu.grade)\n",
+                "\(gradeLabel): \(grade)\n",
               attributes: [
                 .font: subFont,
                 .foregroundColor: gray,
@@ -185,10 +208,11 @@ struct ResumePDFFormatter {
             )
           )
         }
-        if !edu.details.isEmpty {
+        let details = edu.details(for: language, fallback: fallback)
+        if !details.isEmpty {
           result.append(
             NSAttributedString(
-              string: edu.details + "\n",
+              string: details + "\n",
               attributes: [.font: bodyFont]
             )
           )
@@ -205,12 +229,12 @@ struct ResumePDFFormatter {
     if !visibleSkills.isEmpty {
       result.append(
         NSAttributedString(
-          string: "Fähigkeiten\n",
+          string: "\(ResumeSection.skills.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
       let grouped = Dictionary(grouping: visibleSkills) {
-        $0.category
+        $0.category(for: language, fallback: fallback)
       }
       for (category, skills) in grouped.sorted(by: { $0.key < $1.key }) {
         if !category.isEmpty {
@@ -223,7 +247,7 @@ struct ResumePDFFormatter {
         }
         let names = skills
           .sorted(by: { $0.orderIndex < $1.orderIndex })
-          .map { $0.name }
+          .map { $0.name(for: language, fallback: fallback) }
           .joined(separator: ", ")
         result.append(
           NSAttributedString(string: names + "\n", attributes: [.font: bodyFont])
@@ -239,12 +263,13 @@ struct ResumePDFFormatter {
     if !visibleProjects.isEmpty {
       result.append(
         NSAttributedString(
-          string: "Projekte\n",
+          string: "\(ResumeSection.projects.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
       for proj in visibleProjects {
-        var projectLine = proj.name
+        let name = proj.name(for: language, fallback: fallback)
+        var projectLine = name
         if let link = proj.link, !link.isEmpty {
           projectLine += " (\(link))"
         }
@@ -255,10 +280,11 @@ struct ResumePDFFormatter {
             attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
           )
         )
-        if !proj.technologies.isEmpty {
+        let technologies = proj.technologies(for: language, fallback: fallback)
+        if !technologies.isEmpty {
           result.append(
             NSAttributedString(
-              string: proj.technologies + "\n",
+              string: "\(technologiesLabel): \(technologies)\n",
               attributes: [
                 .font: subFont,
                 .foregroundColor: gray,
@@ -266,10 +292,11 @@ struct ResumePDFFormatter {
             )
           )
         }
-        if !proj.details.isEmpty {
+        let details = proj.details(for: language, fallback: fallback)
+        if !details.isEmpty {
           result.append(
             NSAttributedString(
-              string: proj.details + "\n",
+              string: details + "\n",
               attributes: [.font: bodyFont]
             )
           )
@@ -285,13 +312,15 @@ struct ResumePDFFormatter {
     if !visibleLanguages.isEmpty {
       result.append(
         NSAttributedString(
-          string: "Sprachen\n",
+          string: "\(ResumeSection.languages.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
       let langs = visibleLanguages
         .map {
-          "\($0.name) (\($0.proficiency))"
+          let name = $0.name(for: language, fallback: fallback)
+          let proficiency = $0.proficiency(for: language, fallback: fallback)
+          return "\(name) (\(proficiency))"
         }
         .joined(separator: ", ")
       result.append(
@@ -307,23 +336,27 @@ struct ResumePDFFormatter {
       result.append(
         NSAttributedString(
           string:
-            "Aktivitäten\n",
+            "\(ResumeSection.extracurricular.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
       for ext in visibleExtracurriculars {
-        let titleLine =
-          "\(ext.title) bei \(ext.organization)\n"
+        let title = ext.title(for: language, fallback: fallback)
+        let organization = ext.organization(for: language, fallback: fallback)
+        let titleLine = organization.isEmpty
+          ? "\(title)\n"
+          : "\(title) \(atWord) \(organization)\n"
         result.append(
           NSAttributedString(
             string: titleLine,
             attributes: [.font: UIFont.boldSystemFont(ofSize: 11)]
           )
         )
-        if !ext.details.isEmpty {
+        let details = ext.details(for: language, fallback: fallback)
+        if !details.isEmpty {
           result.append(
             NSAttributedString(
-              string: ext.details + "\n",
+              string: details + "\n",
               attributes: [.font: bodyFont]
             )
           )
@@ -332,15 +365,15 @@ struct ResumePDFFormatter {
       }
     }
 
-    if let miscText = resume.miscellaneous?.trimmingCharacters(
-      in: .whitespacesAndNewlines
-    ), !miscText.isEmpty {
+    let miscText = resume.miscellaneous(for: language, fallback: fallback)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if !miscText.isEmpty {
       let paragraphStyle = NSMutableParagraphStyle()
       paragraphStyle.lineSpacing = 2
       paragraphStyle.paragraphSpacing = 4
       result.append(
         NSAttributedString(
-          string: "Sonstiges\n",
+          string: "\(ResumeSection.miscellaneous.title(for: language))\n",
           attributes: [.font: sectionFont]
         )
       )
@@ -358,17 +391,18 @@ struct ResumePDFFormatter {
   private static func dateRange(
     _ start: Date,
     _ end: Date?,
-    _ isCurrent: Bool
+    _ isCurrent: Bool,
+    language: ResumeLanguage
   ) -> String {
-    let present = "Heute"
+    let present = String(localized: "resume.label.today", locale: language.locale)
     if isCurrent {
       return
-        "\(DateFormatter.resumeMonthYear.string(from: start)) – \(present)"
+        "\(DateFormatter.resumeMonthYear(for: language).string(from: start)) – \(present)"
     } else if let end = end {
       return
-        "\(DateFormatter.resumeMonthYear.string(from: start)) – \(DateFormatter.resumeMonthYear.string(from: end))"
+        "\(DateFormatter.resumeMonthYear(for: language).string(from: start)) – \(DateFormatter.resumeMonthYear(for: language).string(from: end))"
     } else {
-      return "\(DateFormatter.resumeMonthYear.string(from: start))"
+      return "\(DateFormatter.resumeMonthYear(for: language).string(from: start))"
     }
   }
 }

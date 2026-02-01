@@ -16,7 +16,10 @@ struct PersonalInfoView: View {
     var body: some View {
         NavigationStack {
             Form {
-                PersonalInfoSectionView(personal: model.personal)
+                PersonalInfoSectionView(
+                    personal: model.personal,
+                    language: resumeModel.resume.contentLanguage
+                )
             }
             .navigationTitle("Persönliche Daten")
             .toolbar {
@@ -31,12 +34,12 @@ struct PersonalInfoView: View {
             .sheet(item: $editingInfo) { info in
                 PersonalInfoEditorView(
                     info: info,
-                    onSave: { updated in
+                    onSave: { updated, language in
                         model.personal.firstName = updated.firstName
                         model.personal.lastName = updated.lastName
                         model.personal.email = updated.email
                         model.personal.phone = updated.phone
-                        model.personal.address = updated.address
+                        model.personal.setAddress(updated.address, for: language)
                         model.personal.linkedIn = updated.linkedIn
                         model.personal.website = updated.website
                         model.personal.github = updated.github
@@ -56,6 +59,7 @@ struct PersonalInfoView: View {
 
 struct PersonalInfoSectionView: View {
     let personal: PersonalInfo
+    let language: ResumeLanguage
 
     var body: some View {
         Section("Name") {
@@ -69,7 +73,7 @@ struct PersonalInfoSectionView: View {
                 .accessibilityLabel("E-Mail")
             Text(personal.phone)
                 .accessibilityLabel("Telefon")
-            Text(personal.address)
+            Text(personal.address(for: language, fallback: language.fallback))
                 .accessibilityLabel("Adresse")
         }
         Section("Links") {

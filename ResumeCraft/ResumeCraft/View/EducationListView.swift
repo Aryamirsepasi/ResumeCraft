@@ -22,7 +22,10 @@ struct EducationListView: View {
       List {
         ForEach(model.items) { edu in
           HStack {
-            EducationRowView(education: edu) {
+            EducationRowView(
+              education: edu,
+              language: resumeModel.resume.contentLanguage
+            ) {
               // Re-fetch fresh instance by id before opening editor
               let id = edu.id
               if let fresh = model.items.first(where: { $0.id == id }) {
@@ -76,17 +79,29 @@ struct EducationListView: View {
       .sheet(item: $editorContext) { context in
         EducationEditorView(
           education: context.education,
-          onSave: { newEdu in
+          onSave: { newEdu, language in
             if let existing = context.education {
-              existing.school = newEdu.school
-              existing.degree = newEdu.degree
-              existing.field = newEdu.field
+              existing.setSchool(newEdu.school, for: language)
+              existing.setDegree(newEdu.degree, for: language)
+              existing.setField(newEdu.field, for: language)
               existing.startDate = newEdu.startDate
               existing.endDate = newEdu.endDate
-              existing.grade = newEdu.grade
-              existing.details = newEdu.details
+              existing.setGrade(newEdu.grade, for: language)
+              existing.setDetails(newEdu.details, for: language)
               existing.isVisible = true
             } else {
+              if language == .english {
+                newEdu.school_en = newEdu.school
+                newEdu.degree_en = newEdu.degree
+                newEdu.field_en = newEdu.field
+                newEdu.grade_en = newEdu.grade
+                newEdu.details_en = newEdu.details
+                newEdu.school = ""
+                newEdu.degree = ""
+                newEdu.field = ""
+                newEdu.grade = ""
+                newEdu.details = ""
+              }
               model.add(newEdu)
             }
             editorContext = nil
@@ -101,14 +116,22 @@ struct EducationListView: View {
 
 struct EducationRowView: View {
   let education: Education
+  let language: ResumeLanguage
   let onTap: () -> Void
 
   var body: some View {
     Button(action: onTap) {
+      let fallback = language.fallback
+      let degree = education.degree(for: language, fallback: fallback)
+      let field = education.field(for: language, fallback: fallback)
+      let school = education.school(for: language, fallback: fallback)
+      let grade = education.grade(for: language, fallback: fallback)
+      let gradeLabel = String(localized: "resume.label.grade", locale: language.locale)
+      let titleLine = field.isEmpty ? degree : "\(degree) in \(field)"
       VStack(alignment: .leading, spacing: 4) {
-        Text("\(education.degree) in \(education.field)")
+        Text(titleLine)
           .font(.headline)
-        Text(education.school)
+        Text(school)
           .font(.subheadline)
           .foregroundStyle(.secondary)
         HStack {
@@ -117,8 +140,8 @@ struct EducationRowView: View {
           )
           .font(.caption)
           .foregroundStyle(.tertiary)
-          if !education.grade.isEmpty {
-            Text("Note: \(education.grade)")
+          if !grade.isEmpty {
+            Text("\(gradeLabel): \(grade)")
               .font(.caption2)
               .foregroundStyle(.gray)
           }
@@ -126,13 +149,13 @@ struct EducationRowView: View {
       }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(
-        "\(education.degree) in \(education.field) an \(education.school), \(formattedDate(education.startDate)) bis \(formattedDate(education.endDate)), Note: \(education.grade)"
+        "\(titleLine) an \(school), \(formattedDate(education.startDate)) bis \(formattedDate(education.endDate)), \(gradeLabel): \(grade)"
       )
     }
   }
 
   private func formattedDate(_ date: Date?) -> String {
     guard let date else { return "-" }
-    return DateFormatter.resumeMonthYear.string(from: date)
+    return DateFormatter.resumeMonthYear(for: language).string(from: date)
   }
 }

@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct ExperienceEditorView: View {
+    @Environment(ResumeEditorModel.self) private var resumeModel
+
     @State private var title: String = ""
     @State private var company: String = ""
     @State private var location: String = ""
@@ -14,15 +16,16 @@ struct ExperienceEditorView: View {
     @State private var endDate: Date = Date()
     @State private var isCurrent: Bool = false
     @State private var details: String = ""
+    @State private var selectedLanguage: ResumeLanguage = .defaultContent
 
-    var onSave: (WorkExperience) -> Void
+    var onSave: (WorkExperience, ResumeLanguage) -> Void
     var onCancel: () -> Void
 
     private let initialExperience: WorkExperience?
 
     init(
         experience: WorkExperience?,
-        onSave: @escaping (WorkExperience) -> Void,
+        onSave: @escaping (WorkExperience, ResumeLanguage) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.initialExperience = experience
@@ -33,6 +36,12 @@ struct ExperienceEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Sprache") {
+                    ResumeLanguagePicker(
+                        titleKey: "Bearbeitungssprache",
+                        selection: $selectedLanguage
+                    )
+                }
                 Section("Position") {
                     TextField("Titel", text: $title)
                         .autocapitalization(.words)
@@ -70,22 +79,40 @@ struct ExperienceEditorView: View {
                             isCurrent: isCurrent,
                             details: details
                         )
-                        onSave(exp)
+                        onSave(exp, selectedLanguage)
                     }
                     .disabled(title.isEmpty || company.isEmpty)
                 }
             }
             .onAppear {
+                selectedLanguage = resumeModel.resume.contentLanguage
                 if let e = initialExperience {
-                    title = e.title
-                    company = e.company
-                    location = e.location
                     startDate = e.startDate
                     endDate = e.endDate ?? e.startDate
                     isCurrent = e.isCurrent
-                    details = e.details
                 }
+                loadFields(for: selectedLanguage)
+            }
+            .onChange(of: selectedLanguage) { _, newValue in
+                resumeModel.resume.contentLanguage = newValue
+                try? resumeModel.save()
+                loadFields(for: newValue)
             }
         }
+    }
+
+    private func loadFields(for language: ResumeLanguage) {
+        guard let e = initialExperience else {
+            title = ""
+            company = ""
+            location = ""
+            details = ""
+            return
+        }
+        let fallback: ResumeLanguage? = nil
+        title = e.title(for: language, fallback: fallback)
+        company = e.company(for: language, fallback: fallback)
+        location = e.location(for: language, fallback: fallback)
+        details = e.details(for: language, fallback: fallback)
     }
 }

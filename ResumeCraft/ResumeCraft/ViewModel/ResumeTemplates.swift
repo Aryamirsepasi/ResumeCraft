@@ -85,6 +85,48 @@ enum ResumeSection: String, CaseIterable {
     case languages = "Sprachen"
     case extracurricular = "Aktivitäten"
     case miscellaneous = "Sonstiges"
+
+    var displayName: String {
+        switch self {
+        case .summary:
+            return String(localized: "resume.section.summary")
+        case .experience:
+            return String(localized: "resume.section.experience")
+        case .education:
+            return String(localized: "resume.section.education")
+        case .skills:
+            return String(localized: "resume.section.skills")
+        case .projects:
+            return String(localized: "resume.section.projects")
+        case .languages:
+            return String(localized: "resume.section.languages")
+        case .extracurricular:
+            return String(localized: "resume.section.extracurricular")
+        case .miscellaneous:
+            return String(localized: "resume.section.miscellaneous")
+        }
+    }
+
+    func title(for language: ResumeLanguage) -> String {
+        switch self {
+        case .summary:
+            return String(localized: "resume.section.summary", locale: language.locale)
+        case .experience:
+            return String(localized: "resume.section.experience", locale: language.locale)
+        case .education:
+            return String(localized: "resume.section.education", locale: language.locale)
+        case .skills:
+            return String(localized: "resume.section.skills", locale: language.locale)
+        case .projects:
+            return String(localized: "resume.section.projects", locale: language.locale)
+        case .languages:
+            return String(localized: "resume.section.languages", locale: language.locale)
+        case .extracurricular:
+            return String(localized: "resume.section.extracurricular", locale: language.locale)
+        case .miscellaneous:
+            return String(localized: "resume.section.miscellaneous", locale: language.locale)
+        }
+    }
 }
 
 // MARK: - Template Recommendations

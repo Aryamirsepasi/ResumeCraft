@@ -8,21 +8,23 @@
 import SwiftUI
 
 struct ExtracurricularEditorView: View {
-  @State private var title: String
-  @State private var organization: String
-  @State private var details: String
+  @Environment(ResumeEditorModel.self) private var resumeModel
 
-  var onSave: (Extracurricular) -> Void
+  @State private var title: String = ""
+  @State private var organization: String = ""
+  @State private var details: String = ""
+  @State private var selectedLanguage: ResumeLanguage = .defaultContent
+
+  var onSave: (Extracurricular, ResumeLanguage) -> Void
   var onCancel: () -> Void
+  private let initialActivity: Extracurricular?
 
   init(
     activity: Extracurricular?,
-    onSave: @escaping (Extracurricular) -> Void,
+    onSave: @escaping (Extracurricular, ResumeLanguage) -> Void,
     onCancel: @escaping () -> Void
   ) {
-    _title = State(initialValue: activity?.title ?? "")
-    _organization = State(initialValue: activity?.organization ?? "")
-    _details = State(initialValue: activity?.details ?? "")
+    self.initialActivity = activity
     self.onSave = onSave
     self.onCancel = onCancel
   }
@@ -30,6 +32,12 @@ struct ExtracurricularEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Section("Sprache") {
+          ResumeLanguagePicker(
+            titleKey: "Bearbeitungssprache",
+            selection: $selectedLanguage
+          )
+        }
         Section("Aktivität") {
           TextField("Titel", text: $title)
           TextField("Organisation", text: $organization)
@@ -52,11 +60,33 @@ struct ExtracurricularEditorView: View {
               organization: organization,
               details: details
             )
-            onSave(activity)
+            onSave(activity, selectedLanguage)
           }
           .disabled(title.isEmpty || organization.isEmpty)
         }
       }
+      .onAppear {
+        selectedLanguage = resumeModel.resume.contentLanguage
+        loadFields(for: selectedLanguage)
+      }
+      .onChange(of: selectedLanguage) { _, newValue in
+        resumeModel.resume.contentLanguage = newValue
+        try? resumeModel.save()
+        loadFields(for: newValue)
+      }
     }
+  }
+
+  private func loadFields(for language: ResumeLanguage) {
+    guard let activity = initialActivity else {
+      title = ""
+      organization = ""
+      details = ""
+      return
+    }
+    let fallback: ResumeLanguage? = nil
+    title = activity.title(for: language, fallback: fallback)
+    organization = activity.organization(for: language, fallback: fallback)
+    details = activity.details(for: language, fallback: fallback)
   }
 }

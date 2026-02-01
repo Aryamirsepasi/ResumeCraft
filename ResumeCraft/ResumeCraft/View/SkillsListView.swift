@@ -31,7 +31,9 @@ struct SkillsListView: View {
                 editorContext = SkillEditorContext(skill: skill)
               }
             } label: {
-              Text(skill.name).font(.headline)
+              let language = resumeModel.resume.contentLanguage
+              let fallback = language.fallback
+              Text(skill.name(for: language, fallback: fallback)).font(.headline)
             }
             Spacer()
             Toggle(
@@ -78,12 +80,18 @@ struct SkillsListView: View {
       .sheet(item: $editorContext) { context in
         SkillEditorView(
           skill: context.skill,
-          onSave: { newSkill in
+          onSave: { newSkill, language in
             if let existing = context.skill {
-              existing.name = newSkill.name
-              existing.category = newSkill.category
+              existing.setName(newSkill.name, for: language)
+              existing.setCategory(newSkill.category, for: language)
               existing.isVisible = true
             } else {
+              if language == .english {
+                newSkill.name_en = newSkill.name
+                newSkill.category_en = newSkill.category
+                newSkill.name = ""
+                newSkill.category = ""
+              }
               model.add(newSkill)
             }
             editorContext = nil

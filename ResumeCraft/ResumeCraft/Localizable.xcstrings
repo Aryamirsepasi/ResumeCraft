@@ -1,0 +1,1152 @@
+{
+  "sourceLanguage" : "de",
+  "strings" : {
+    ".%@" : {
+
+    },
+    "%@ - %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ - %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@ %@, %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ %3$@, %4$@"
+          }
+        }
+      }
+    },
+    "%@ %@ %@, %@, %@ bis %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ %3$@, %4$@, %5$@ bis %6$@"
+          }
+        }
+      }
+    },
+    "%@ an %@, %@ bis %@, %@: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ an %2$@, %3$@ bis %4$@, %5$@: %6$@"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@, %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld Einträge" : {
+
+    },
+    "%lld Wörter" : {
+
+    },
+    "%lld Zeichen • ~%lld Wörter" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld Zeichen • ~%2$lld Wörter"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld/20" : {
+
+    },
+    "%lld/600" : {
+
+    },
+    "•" : {
+
+    },
+    "© 2025 Arya Mirsepasi" : {
+
+    },
+    "Abbrechen" : {
+
+    },
+    "Abschluss" : {
+
+    },
+    "Abschlüsse, Daten, Details" : {
+
+    },
+    "Abschnitte automatisch extrahieren und ausfüllen" : {
+
+    },
+    "Abschnittsübersicht" : {
+
+    },
+    "Adresse" : {
+
+    },
+    "Aktivität" : {
+
+    },
+    "Aktivität bearbeiten" : {
+
+    },
+    "Aktivitäten" : {
+
+    },
+    "Aktivitätsbeschreibung" : {
+
+    },
+    "Aktuell" : {
+
+    },
+    "Aktuelle" : {
+
+    },
+    "Aktuelle Position" : {
+
+    },
+    "Aktuelle Version" : {
+
+    },
+    "Aktuelle Version speichern" : {
+
+    },
+    "Alle Prioritäten" : {
+
+    },
+    "Alle Typen" : {
+
+    },
+    "Als erledigt markieren" : {
+
+    },
+    "Änderungen" : {
+
+    },
+    "Änderungen im Zeitverlauf verfolgen" : {
+
+    },
+    "App-Symbol" : {
+
+    },
+    "Apple Intelligence: Aktiviert" : {
+
+    },
+    "Apple Intelligence: Nicht verfügbar" : {
+
+    },
+    "Aus PDF importieren" : {
+
+    },
+    "Ausbildung" : {
+
+    },
+    "Ausbildung bearbeiten" : {
+
+    },
+    "Ausgabesprache" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausgabesprache"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output language"
+          }
+        }
+      }
+    },
+    "Ausgeblendet" : {
+
+    },
+    "Bearbeiten" : {
+
+    },
+    "Bearbeitungssprache" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bearbeitungssprache"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editing language"
+          }
+        }
+      }
+    },
+    "Beruflich" : {
+
+    },
+    "Berufserfahrung" : {
+
+    },
+    "Berufserfahrung bearbeiten" : {
+
+    },
+    "Beschreibung" : {
+
+    },
+    "Bewertung wird berechnet..." : {
+
+    },
+    "Breit" : {
+
+    },
+    "Bundle-ID: %@" : {
+
+    },
+    "CloudKit-Diagnose" : {
+
+    },
+    "CloudKit-Diagnose ausführen" : {
+
+    },
+    "Container: %@" : {
+
+    },
+    "Dateiname" : {
+
+    },
+    "Datenschutz & Verarbeitung" : {
+
+    },
+    "Datenschutz zuerst" : {
+
+    },
+    "Dein aktueller Lebenslauf wurde im Versionsverlauf gespeichert." : {
+
+    },
+    "Dein gesamter Lebenslauf wird analysiert..." : {
+
+    },
+    "Details" : {
+
+    },
+    "Details zu %@" : {
+
+    },
+    "Diagnose ausführen" : {
+
+    },
+    "Diagnose läuft..." : {
+
+    },
+    "Diagnose-Ergebnisse" : {
+
+    },
+    "Die KI liefert Vorschläge, keine Vorgaben. Nutze dein Urteil, welche Empfehlungen zu deiner Situation und deinen Zielen passen." : {
+
+    },
+    "Die Verarbeitung erfolgt auf deinem Gerät. Deine Daten verlassen dein iPhone nicht und werden nicht an externe Server gesendet." : {
+
+    },
+    "Diese Auswahl steuert, in welcher Sprache du Inhalte bearbeitest und exportierst." : {
+
+    },
+    "Diese KI-gestützte Prüfung analysiert deinen gesamten Lebenslauf und liefert umfassendes Feedback zur Zielstelle." : {
+
+    },
+    "Diese umfassende Prüfung kann einen Moment dauern" : {
+
+    },
+    "E-Mail" : {
+
+    },
+    "Eine kurze Übersicht von 2–4 Sätzen, die Ihre Rolle, Stärken und Ziele hervorhebt." : {
+
+    },
+    "Einstellungen" : {
+
+    },
+    "Einstellungen öffnen" : {
+
+    },
+    "Einstellungen öffnen, um Apple Intelligence zu aktivieren" : {
+
+    },
+    "Empfehlungen" : {
+
+    },
+    "Enddatum" : {
+
+    },
+    "Erfordert iOS 26 oder neuer" : {
+
+    },
+    "Erhalte umfassendes KI-Feedback zu deinem gesamten Lebenslauf" : {
+
+    },
+    "Erledigte zurücksetzen" : {
+
+    },
+    "Erneut versuchen" : {
+
+    },
+    "Erstelle einen jobbereiten Lebenslauf mit datenschutzfreundlicher KI." : {
+
+    },
+    "Es werden bis zu 20 Momentaufnahmen gespeichert. Ältere Versionen werden automatisch entfernt." : {
+
+    },
+    "Export abgeschlossen" : {
+
+    },
+    "Export erfolgreich!" : {
+
+    },
+    "Export fehlgeschlagen" : {
+
+    },
+    "Export läuft..." : {
+
+    },
+    "Exportformat" : {
+
+    },
+    "Exportieren" : {
+
+    },
+    "Exportieren %@" : {
+
+    },
+    "Exportoptionen..." : {
+
+    },
+    "Fachrichtung" : {
+
+    },
+    "Fähigkeit" : {
+
+    },
+    "Fähigkeit bearbeiten" : {
+
+    },
+    "Fähigkeiten" : {
+
+    },
+    "Feedback verstehen" : {
+
+    },
+    "Fehler" : {
+
+    },
+    "Fertig" : {
+
+    },
+    "Filter zurücksetzen" : {
+
+    },
+    "Fokusbereiche (optional)" : {
+
+    },
+    "Fortschritt" : {
+
+    },
+    "Füge die Stellenanzeige ein für gezielte Vorschläge" : {
+
+    },
+    "Fügt Autor, Titel und Erstellungsdatum zu den PDF-Dateieigenschaften hinzu." : {
+
+    },
+    "GitHub" : {
+
+    },
+    "GitHub (optional)" : {
+
+    },
+    "Grund: %@" : {
+
+    },
+    "Grundinformationen" : {
+
+    },
+    "Häufige Lösungen" : {
+
+    },
+    "Hinweis" : {
+
+    },
+    "Hinweis: CloudKit synchronisiert nicht zwischen Debug/TestFlight/App-Store-Builds (verschiedene Umgebungen). Stelle sicher, dass beide Geräte denselben Build-Kanal nutzen." : {
+
+    },
+    "Hinzufügen" : {
+
+    },
+    "iCloud eingeschränkt (nur lokal)" : {
+
+    },
+    "iCloud vorübergehend nicht verfügbar" : {
+
+    },
+    "iCloud wird geprüft…" : {
+
+    },
+    "iCloud-Initialisierungsfehler: %@" : {
+
+    },
+    "iCloud-Status" : {
+
+    },
+    "iCloud-Status konnte nicht ermittelt werden" : {
+
+    },
+    "Im Lebenslauf anzeigen" : {
+
+    },
+    "Importiere deinen Lebenslauf als PDF und fülle Abschnitte automatisch aus." : {
+
+    },
+    "Importsprache wählen" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importsprache wählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose import language"
+          }
+        }
+      }
+    },
+    "Kategorie" : {
+
+    },
+    "Kein Versionsverlauf" : {
+
+    },
+    "Keine Vorschläge" : {
+
+    },
+    "Keine Vorschläge passen zu deinen Filtern." : {
+
+    },
+    "Kenntnisstand" : {
+
+    },
+    "KI auf dem Gerät" : {
+
+    },
+    "KI-Bewertung" : {
+
+    },
+    "KI-gestützte Verbesserungstipps" : {
+
+    },
+    "KI-Lebenslaufprüfung" : {
+
+    },
+    "KI-Review erstellen" : {
+
+    },
+    "KI-Vorschläge" : {
+
+    },
+    "Komplette Lebenslaufprüfung" : {
+
+    },
+    "Kontakt" : {
+
+    },
+    "Kurze Einführung unter persönlichen Daten" : {
+
+    },
+    "language.english" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Englisch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "English"
+          }
+        }
+      }
+    },
+    "language.german" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deutsch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "German"
+          }
+        }
+      }
+    },
+    "Lebenslauf" : {
+
+    },
+    "Lebenslauf exportieren" : {
+
+    },
+    "Lebenslauf wird analysiert..." : {
+
+    },
+    "Lebenslauf wird geladen…" : {
+
+    },
+    "Lebenslauf zu lang" : {
+
+    },
+    "Lebenslauf-Status" : {
+
+    },
+    "Lebenslauf-Übersicht" : {
+
+    },
+    "Lebenslauf-Vorschau" : {
+
+    },
+    "Lebenslauf-Vorschau (Papier)" : {
+
+    },
+    "Lebenslaufbewertung" : {
+
+    },
+    "Lebensläufe sollten nicht länger als zwei Seiten sein." : {
+
+    },
+    "Link" : {
+
+    },
+    "LinkedIn" : {
+
+    },
+    "LinkedIn (optional)" : {
+
+    },
+    "Links" : {
+
+    },
+    "Lokaler Speicherfehler: %@" : {
+
+    },
+    "Loslegen" : {
+
+    },
+    "Mit iCloud verbunden" : {
+
+    },
+    "Mit vorheriger vergleichen" : {
+
+    },
+    "Momentaufnahme gespeichert" : {
+
+    },
+    "Momentaufnahme speichern" : {
+
+    },
+    "Nachname" : {
+
+    },
+    "Name" : {
+
+    },
+    "Name, Kontakt, Links" : {
+
+    },
+    "Neue Aktivität hinzufügen" : {
+
+    },
+    "Neue Ausbildung hinzufügen" : {
+
+    },
+    "Neue Berufserfahrung hinzufügen" : {
+
+    },
+    "Neue Fähigkeit hinzufügen" : {
+
+    },
+    "Neue Sprache hinzufügen" : {
+
+    },
+    "Neues Projekt hinzufügen" : {
+
+    },
+    "Nicht bei iCloud angemeldet (nur lokal)" : {
+
+    },
+    "Noch keine Zusammenfassung." : {
+
+    },
+    "Note" : {
+
+    },
+    "Note: %@" : {
+
+    },
+    "OK" : {
+
+    },
+    "On-Device-KI (Apple Intelligence)" : {
+
+    },
+    "On-Device-KI ist nicht verfügbar (%@). Aktiviere Apple Intelligence in den Einstellungen." : {
+
+    },
+    "On-Device-Verarbeitung • Deine Daten bleiben privat" : {
+
+    },
+    "Organisation" : {
+
+    },
+    "Ort" : {
+
+    },
+    "PDF wird importiert…" : {
+
+    },
+    "PDF-Metadaten einschließen" : {
+
+    },
+    "Persönliche Daten" : {
+
+    },
+    "Persönliche Daten bearbeiten" : {
+
+    },
+    "Position" : {
+
+    },
+    "Positionen und Aufgaben" : {
+
+    },
+    "Priorität" : {
+
+    },
+    "Private und berufliche Projekte" : {
+
+    },
+    "Projekt" : {
+
+    },
+    "Projekt bearbeiten" : {
+
+    },
+    "Projektbeschreibung" : {
+
+    },
+    "Projekte" : {
+
+    },
+    "Punkteübersicht" : {
+
+    },
+    "Ränder" : {
+
+    },
+    "resume.export.subject" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lebenslauf"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume"
+          }
+        }
+      }
+    },
+    "resume.label.at" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bei"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "at"
+          }
+        }
+      }
+    },
+    "resume.label.grade" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grade"
+          }
+        }
+      }
+    },
+    "resume.label.technologies" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Technologien"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Technologies"
+          }
+        }
+      }
+    },
+    "resume.label.today" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Present"
+          }
+        }
+      }
+    },
+    "resume.section.education" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausbildung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Education"
+          }
+        }
+      }
+    },
+    "resume.section.experience" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berufserfahrung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experience"
+          }
+        }
+      }
+    },
+    "resume.section.extracurricular" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivitäten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activities"
+          }
+        }
+      }
+    },
+    "resume.section.languages" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprachen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Languages"
+          }
+        }
+      }
+    },
+    "resume.section.miscellaneous" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonstiges"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miscellaneous"
+          }
+        }
+      }
+    },
+    "resume.section.projects" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projekte"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects"
+          }
+        }
+      }
+    },
+    "resume.section.skills" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fähigkeiten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skills"
+          }
+        }
+      }
+    },
+    "resume.section.summary" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zusammenfassung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summary"
+          }
+        }
+      }
+    },
+    "ResumeCraft" : {
+
+    },
+    "ResumeCraft nutzt das On-Device-Sprachmodell, um deinen Lebenslauf zu prüfen. Deine Daten verlassen das Gerät nicht." : {
+
+    },
+    "Review konnte nicht erstellt werden" : {
+
+    },
+    "Schließen" : {
+
+    },
+    "Schmal" : {
+
+    },
+    "Schnell-Export PDF" : {
+
+    },
+    "Schnellaktionen" : {
+
+    },
+    "Schule" : {
+
+    },
+    "Seiteneinstellungen" : {
+
+    },
+    "Seitengröße" : {
+
+    },
+    "Sichtbar" : {
+
+    },
+    "Smarte Vorschläge" : {
+
+    },
+    "So funktioniert es" : {
+
+    },
+    "So funktioniert KI in ResumeCraft" : {
+
+    },
+    "Sonstiges" : {
+
+    },
+    "Speichere Momentaufnahmen deines Lebenslaufs, um Änderungen nachzuverfolgen." : {
+
+    },
+    "Speichern" : {
+
+    },
+    "Sprache" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprache"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        }
+      }
+    },
+    "Sprache bearbeiten" : {
+
+    },
+    "Sprachen" : {
+
+    },
+    "Sprachen und Kenntnisstand" : {
+
+    },
+    "Standard" : {
+
+    },
+    "Stark! Dein Lebenslauf wirkt gut optimiert." : {
+
+    },
+    "Start" : {
+
+    },
+    "Startdatum" : {
+
+    },
+    "Stellenbeschreibung" : {
+
+    },
+    "Stellenbeschreibung hier einfügen…" : {
+
+    },
+    "Technische und soziale Fähigkeiten" : {
+
+    },
+    "Technologien" : {
+
+    },
+    "Teilen" : {
+
+    },
+    "Telefon" : {
+
+    },
+    "Tippe auf „Diagnose ausführen“, um den CloudKit-Sync-Status zu prüfen" : {
+
+    },
+    "Tippen, um diese Aktivität zu bearbeiten" : {
+
+    },
+    "Titel" : {
+
+    },
+    "Top-Empfehlungen" : {
+
+    },
+    "Typ" : {
+
+    },
+    "Über die KI-Review" : {
+
+    },
+    "Übersicht" : {
+
+    },
+    "Unbekannter iCloud-Status" : {
+
+    },
+    "Unternehmen" : {
+
+    },
+    "URL" : {
+
+    },
+    "Vereine, Ehrenamt, mehr" : {
+
+    },
+    "Version 1.0.0" : {
+
+    },
+    "Versionsvergleich" : {
+
+    },
+    "Versionsverlauf" : {
+
+    },
+    "Vorherige" : {
+
+    },
+    "Vorherige Versionen" : {
+
+    },
+    "Vorname" : {
+
+    },
+    "Vorschau" : {
+
+    },
+    "Vorschau schließen" : {
+
+    },
+    "Wähle Bereiche für eine tiefere Analyse" : {
+
+    },
+    "Wähle die Sprache des PDFs, damit die Inhalte korrekt zugeordnet werden." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle die Sprache des PDFs, damit die Inhalte korrekt zugeordnet werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the PDF language so content is mapped correctly."
+          }
+        }
+      }
+    },
+    "Was ResumeCraft kann" : {
+
+    },
+    "Webseite" : {
+
+    },
+    "Website (optional)" : {
+
+    },
+    "Weiter" : {
+
+    },
+    "Weitere Informationen und Hinweise" : {
+
+    },
+    "Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein." : {
+
+    },
+    "Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät." : {
+
+    },
+    "Werkzeuge" : {
+
+    },
+    "Willkommen bei ResumeCraft" : {
+
+    },
+    "Zeitraum" : {
+
+    },
+    "Zuletzt aktualisiert %@" : {
+
+    },
+    "Zusammenfassung" : {
+
+    },
+    "Zusammenfassung (Vorschau)" : {
+
+    },
+    "Zusätzliches" : {
+
+    }
+  },
+  "version" : "1.0"
+}

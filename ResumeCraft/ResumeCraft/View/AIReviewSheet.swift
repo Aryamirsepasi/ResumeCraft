@@ -151,7 +151,7 @@ struct AIReviewSheet: View {
             }
             
             // Character count
-            let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume)
+            let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume, language: resumeModel.resume.contentLanguage)
             Text("\(resumeText.count) Zeichen • ~\(resumeText.split(separator: " ").count) Wörter")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -488,7 +488,7 @@ struct AIReviewSheet: View {
     }
     
     private func performAnalysis() {
-        let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume)
+        let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume, language: resumeModel.resume.contentLanguage)
         Task { 
             await viewModel.requestFeedback(resumeText: resumeText)
         }

@@ -30,7 +30,7 @@ extension ResumeSnapshot {
     /// Create a snapshot from the current resume state
     static func capture(from resume: Resume) -> ResumeSnapshot {
         let personalText = "\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "")"
-        let summaryText = resume.summary?.text ?? ""
+        let summaryText = resume.summary?.text(for: resume.contentLanguage, fallback: resume.contentLanguage.fallback) ?? ""
         
         let counts = SectionCounts(
             experiences: (resume.experiences ?? []).filter(\.isVisible).count,
@@ -41,7 +41,7 @@ extension ResumeSnapshot {
             extracurriculars: (resume.extracurriculars ?? []).filter(\.isVisible).count
         )
         
-        let fullText = ResumeTextFormatter.plainText(for: resume)
+        let fullText = ResumeTextFormatter.plainText(for: resume, language: resume.contentLanguage)
         let wordCount = fullText.split(separator: " ").count
         
         return ResumeSnapshot(

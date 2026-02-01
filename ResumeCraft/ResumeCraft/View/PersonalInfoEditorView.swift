@@ -8,27 +8,25 @@
 import SwiftUI
 
 struct PersonalInfoEditorView: View {
-    @State private var firstName: String
-    @State private var lastName: String
-    @State private var email: String
-    @State private var phone: String
-    @State private var address: String
-    @State private var linkedIn: String
-    @State private var website: String
-    @State private var github: String
+    @Environment(ResumeEditorModel.self) private var resumeModel
 
-    var onSave: (PersonalInfo) -> Void
+    @State private var firstName: String = ""
+    @State private var lastName: String = ""
+    @State private var email: String = ""
+    @State private var phone: String = ""
+    @State private var address: String = ""
+    @State private var linkedIn: String = ""
+    @State private var website: String = ""
+    @State private var github: String = ""
+    @State private var selectedLanguage: ResumeLanguage = .defaultContent
+
+    let info: PersonalInfo
+
+    var onSave: (PersonalInfo, ResumeLanguage) -> Void
     var onCancel: () -> Void
 
-    init(info: PersonalInfo, onSave: @escaping (PersonalInfo) -> Void, onCancel: @escaping () -> Void) {
-        _firstName = State(initialValue: info.firstName)
-        _lastName = State(initialValue: info.lastName)
-        _email = State(initialValue: info.email)
-        _phone = State(initialValue: info.phone)
-        _address = State(initialValue: info.address)
-        _linkedIn = State(initialValue: info.linkedIn ?? "")
-        _website = State(initialValue: info.website ?? "")
-        _github = State(initialValue: info.github ?? "")
+    init(info: PersonalInfo, onSave: @escaping (PersonalInfo, ResumeLanguage) -> Void, onCancel: @escaping () -> Void) {
+        self.info = info
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -36,6 +34,12 @@ struct PersonalInfoEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Sprache") {
+                    ResumeLanguagePicker(
+                        titleKey: "Bearbeitungssprache",
+                        selection: $selectedLanguage
+                    )
+                }
                 Section("Name") {
                     TextField("Vorname", text: $firstName)
                     TextField("Nachname", text: $lastName)
@@ -70,11 +74,31 @@ struct PersonalInfoEditorView: View {
                             website: website.isEmpty ? nil : website,
                             github: github.isEmpty ? nil : github
                         )
-                        onSave(updated)
+                        onSave(updated, selectedLanguage)
                     }
                     .disabled(firstName.isEmpty || lastName.isEmpty)
                 }
             }
+            .onAppear {
+                selectedLanguage = resumeModel.resume.contentLanguage
+                firstName = info.firstName
+                lastName = info.lastName
+                email = info.email
+                phone = info.phone
+                linkedIn = info.linkedIn ?? ""
+                website = info.website ?? ""
+                github = info.github ?? ""
+                loadAddress(for: selectedLanguage)
+            }
+            .onChange(of: selectedLanguage) { _, newValue in
+                resumeModel.resume.contentLanguage = newValue
+                try? resumeModel.save()
+                loadAddress(for: newValue)
+            }
         }
+    }
+
+    private func loadAddress(for language: ResumeLanguage) {
+        address = info.address(for: language, fallback: nil)
     }
 }

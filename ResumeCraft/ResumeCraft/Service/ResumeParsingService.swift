@@ -53,6 +53,7 @@ struct LanguageEntry {
     var proficiency: String
 }
 
+@MainActor
 @Observable
 final class ResumeParsingService {
     private let sectionHeaders: [String] = [
@@ -66,22 +67,29 @@ final class ResumeParsingService {
     ]
 
     // Main entry point for parsing a resume PDF
-    func parseResume(from url: URL, completion: @escaping (String) -> Void) {
+    nonisolated func parseResume(from url: URL, completion: @escaping (String) -> Void) {
+        Task.detached {
+            let text = await Self.parseResume(from: url)
+            await MainActor.run {
+                completion(text)
+            }
+        }
+    }
+
+    nonisolated static func parseResume(from url: URL) async -> String {
         guard let pdf = PDFDocument(url: url) else {
-            completion("")
-            return
+            return ""
         }
         // Try native PDF extraction first
         let text = extractTextFromPDF(pdf)
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             // Fallback to OCR if empty (e.g., scanned images)
-            extractTextUsingVision(pdf: pdf, completion: completion)
-        } else {
-            completion(text)
+            return await extractTextUsingVision(pdf: pdf)
         }
+        return text
     }
 
-    private func extractTextFromPDF(_ pdf: PDFDocument) -> String {
+    private nonisolated static func extractTextFromPDF(_ pdf: PDFDocument) -> String {
         var fullText = ""
         for pageIndex in 0 ..< pdf.pageCount {
             if let page = pdf.page(at: pageIndex),
@@ -93,36 +101,39 @@ final class ResumeParsingService {
         return fullText
     }
 
-    private func extractTextUsingVision(pdf: PDFDocument, completion: @escaping (String) -> Void) {
-        let dispatchGroup = DispatchGroup()
-        var fullText = ""
-        for pageIndex in 0 ..< pdf.pageCount {
-            if let page = pdf.page(at: pageIndex),
-               let pageImage = page
-                   .thumbnail(of: CGSize(width: 2000, height: 2800), for: .mediaBox)
-                   .cgImage
-            {
-                dispatchGroup.enter()
-                let request = VNRecognizeTextRequest { req, _ in
-                    defer { dispatchGroup.leave() }
-                    guard let results = req.results as? [VNRecognizedTextObservation] else {
-                        return
+    private nonisolated static func extractTextUsingVision(pdf: PDFDocument) async -> String {
+        await withTaskGroup(of: String.self) { group in
+            for pageIndex in 0 ..< pdf.pageCount {
+                guard let page = pdf.page(at: pageIndex),
+                      let pageImage = page
+                        .thumbnail(of: CGSize(width: 2000, height: 2800), for: .mediaBox)
+                        .cgImage
+                else { continue }
+
+                group.addTask {
+                    let request = VNRecognizeTextRequest()
+                    request.recognitionLevel = .accurate
+                    request.usesLanguageCorrection = true
+                    request.recognitionLanguages = ["de-DE", "en-US"]
+                    let handler = VNImageRequestHandler(cgImage: pageImage, options: [:])
+                    try? handler.perform([request])
+                    guard let results = request.results as? [VNRecognizedTextObservation] else {
+                        return ""
                     }
-                    let pageText = results
+                    return results
                         .compactMap { $0.topCandidates(1).first?.string }
                         .joined(separator: "\n")
+                }
+            }
+
+            var fullText = ""
+            for await pageText in group {
+                if !pageText.isEmpty {
                     fullText.append(pageText)
                     fullText.append("\n")
                 }
-                request.recognitionLevel = .accurate
-                request.usesLanguageCorrection = true
-                request.recognitionLanguages = ["de-DE", "en-US"]
-                let handler = VNImageRequestHandler(cgImage: pageImage, options: [:])
-                try? handler.perform([request])
             }
-        }
-        dispatchGroup.notify(queue: .main) {
-            completion(fullText)
+            return fullText
         }
     }
 
@@ -626,7 +637,7 @@ final class ResumeParsingService {
         return entries
     }
 
-    func canonicalize(text: String, ai: any AIProvider) async throws -> String {
+    nonisolated func canonicalize(text: String, ai: any AIProvider) async throws -> String {
       let systemPrompt = """
       You are a résumé parser. Reorganize résumé text into this EXACT format with these EXACT headers:
       
@@ -704,7 +715,7 @@ final class ResumeParsingService {
       return cleanCanonicalizedText(response)
     }
 
-    private func cleanCanonicalizedText(_ text: String) -> String {
+    private nonisolated func cleanCanonicalizedText(_ text: String) -> String {
         var cleaned = text
 
         // Remove bold markdown formatting

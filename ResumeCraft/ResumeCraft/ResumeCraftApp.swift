@@ -142,7 +142,6 @@ struct ResumeCraftApp: App {
       .environment(openRouterSettings)
       .environment(openRouterProvider)
       .environment(persistenceStatus)
-      .environment(\.locale, Locale(identifier: "de_DE"))
       .overlay(AppleIntelligenceGate())
     }
     .modelContainer(modelContainer)

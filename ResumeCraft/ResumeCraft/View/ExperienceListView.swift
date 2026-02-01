@@ -22,7 +22,10 @@ struct ExperienceListView: View {
       List {
         ForEach(model.items) { exp in
           HStack {
-            ExperienceRowView(experience: exp) {
+            ExperienceRowView(
+              experience: exp,
+              language: resumeModel.resume.contentLanguage
+            ) {
               // Re-fetch fresh instance by id before opening editor
               let id = exp.id
               if let fresh = model.items.first(where: { $0.id == id }) {
@@ -76,17 +79,27 @@ struct ExperienceListView: View {
       .sheet(item: $editorContext) { context in
         ExperienceEditorView(
           experience: context.experience,
-          onSave: { newExp in
+          onSave: { newExp, language in
             if let existing = context.experience {
-              existing.title = newExp.title
-              existing.company = newExp.company
-              existing.location = newExp.location
+              existing.setTitle(newExp.title, for: language)
+              existing.setCompany(newExp.company, for: language)
+              existing.setLocation(newExp.location, for: language)
               existing.startDate = newExp.startDate
               existing.endDate = newExp.endDate
               existing.isCurrent = newExp.isCurrent
-              existing.details = newExp.details
+              existing.setDetails(newExp.details, for: language)
               existing.isVisible = true
             } else {
+              if language == .english {
+                newExp.title_en = newExp.title
+                newExp.company_en = newExp.company
+                newExp.location_en = newExp.location
+                newExp.details_en = newExp.details
+                newExp.title = ""
+                newExp.company = ""
+                newExp.location = ""
+                newExp.details = ""
+              }
               model.add(newExp)
             }
             editorContext = nil
@@ -101,20 +114,26 @@ struct ExperienceListView: View {
 
 struct ExperienceRowView: View {
   let experience: WorkExperience
+  let language: ResumeLanguage
   let onTap: () -> Void
 
   var body: some View {
     Button(action: onTap) {
+      let fallback = language.fallback
+      let title = experience.title(for: language, fallback: fallback)
+      let company = experience.company(for: language, fallback: fallback)
+      let location = experience.location(for: language, fallback: fallback)
+      let today = String(localized: "resume.label.today", locale: language.locale)
       VStack(alignment: .leading, spacing: 4) {
-        Text("\(experience.title), \(experience.company)")
+        Text("\(title), \(company)")
           .font(.headline)
         HStack {
-          Text(experience.location)
+          Text(location)
             .font(.subheadline)
             .foregroundStyle(.secondary)
           Spacer()
           Text(
-            "\(formattedDate(experience.startDate)) - \(experience.isCurrent ? "Heute" : formattedDate(experience.endDate))"
+            "\(formattedDate(experience.startDate)) - \(experience.isCurrent ? today : formattedDate(experience.endDate))"
           )
           .font(.caption)
           .foregroundStyle(.tertiary)
@@ -122,13 +141,13 @@ struct ExperienceRowView: View {
       }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(
-        "\(experience.title) bei \(experience.company), \(experience.location), \(formattedDate(experience.startDate)) bis \(experience.isCurrent ? "heute" : formattedDate(experience.endDate))"
+        "\(title) \(String(localized: "resume.label.at", locale: language.locale)) \(company), \(location), \(formattedDate(experience.startDate)) bis \(experience.isCurrent ? today : formattedDate(experience.endDate))"
       )
     }
   }
 
   private func formattedDate(_ date: Date?) -> String {
     guard let date else { return "-" }
-    return DateFormatter.resumeMonthYear.string(from: date)
+    return DateFormatter.resumeMonthYear(for: language).string(from: date)
   }
 }

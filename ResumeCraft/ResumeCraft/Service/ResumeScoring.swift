@@ -572,7 +572,7 @@ final class ResumeScoringEngine {
     }
     
     private static func scoreKeywords(_ resume: Resume) -> ResumeScore.ScoreDetail {
-        let fullText = ResumeTextFormatter.plainText(for: resume).lowercased()
+        let fullText = ResumeTextFormatter.plainText(for: resume, language: resume.contentLanguage).lowercased()
         
         // Common ATS keywords by category
         let technicalKeywords = [
@@ -677,7 +677,7 @@ final class ResumeScoringEngine {
     }
     
     private static func scoreCleanContent(_ resume: Resume) -> ResumeScore.ScoreDetail {
-        let fullText = ResumeTextFormatter.plainText(for: resume)
+        let fullText = ResumeTextFormatter.plainText(for: resume, language: resume.contentLanguage)
         var points = 30
         var feedback: String? = nil
         
@@ -768,7 +768,7 @@ final class ResumeScoringEngine {
     }
     
     private static func scoreLength(_ resume: Resume) -> ResumeScore.ScoreDetail {
-        let fullText = ResumeTextFormatter.plainText(for: resume)
+        let fullText = ResumeTextFormatter.plainText(for: resume, language: resume.contentLanguage)
         let wordCount = fullText.split(separator: " ").count
         var points = 0
         var feedback: String? = nil

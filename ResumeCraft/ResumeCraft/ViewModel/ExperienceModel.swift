@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 
+@MainActor
 @Observable
 final class ExperienceModel {
   private weak var resume: Resume?

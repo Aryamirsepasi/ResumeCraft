@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct EducationEditorView: View {
+  @Environment(ResumeEditorModel.self) private var resumeModel
+
   @State private var school: String = ""
   @State private var degree: String = ""
   @State private var field: String = ""
@@ -15,15 +17,16 @@ struct EducationEditorView: View {
   @State private var endDate: Date = Date()
   @State private var grade: String = ""
   @State private var details: String = ""
+  @State private var selectedLanguage: ResumeLanguage = .defaultContent
 
-  var onSave: (Education) -> Void
+  var onSave: (Education, ResumeLanguage) -> Void
   var onCancel: () -> Void
 
   private let initialEducation: Education?
 
   init(
     education: Education?,
-    onSave: @escaping (Education) -> Void,
+    onSave: @escaping (Education, ResumeLanguage) -> Void,
     onCancel: @escaping () -> Void
   ) {
     self.initialEducation = education
@@ -35,6 +38,12 @@ struct EducationEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Section("Sprache") {
+          ResumeLanguagePicker(
+            titleKey: "Bearbeitungssprache",
+            selection: $selectedLanguage
+          )
+        }
         Section("Schule") {
           TextField("Schule", text: $school)
             .autocapitalization(.words)
@@ -77,21 +86,41 @@ struct EducationEditorView: View {
               grade: grade,
               details: details
             )
-            onSave(edu)
+            onSave(edu, selectedLanguage)
           }
           .disabled(school.isEmpty || degree.isEmpty)
         }
       }
       .onAppear {
-        guard let e = initialEducation else { return }
-        school = e.school
-        degree = e.degree
-        field = e.field
-        startDate = e.startDate
-        endDate = e.endDate ?? e.startDate
-        grade = e.grade
-        details = e.details
+        selectedLanguage = resumeModel.resume.contentLanguage
+        if let e = initialEducation {
+          startDate = e.startDate
+          endDate = e.endDate ?? e.startDate
+        }
+        loadFields(for: selectedLanguage)
+      }
+      .onChange(of: selectedLanguage) { _, newValue in
+        resumeModel.resume.contentLanguage = newValue
+        try? resumeModel.save()
+        loadFields(for: newValue)
       }
     }
+  }
+
+  private func loadFields(for language: ResumeLanguage) {
+    guard let e = initialEducation else {
+      school = ""
+      degree = ""
+      field = ""
+      grade = ""
+      details = ""
+      return
+    }
+    let fallback: ResumeLanguage? = nil
+    school = e.school(for: language, fallback: fallback)
+    degree = e.degree(for: language, fallback: fallback)
+    field = e.field(for: language, fallback: fallback)
+    grade = e.grade(for: language, fallback: fallback)
+    details = e.details(for: language, fallback: fallback)
   }
 }

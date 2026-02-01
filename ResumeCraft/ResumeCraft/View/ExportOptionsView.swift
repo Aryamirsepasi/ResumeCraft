@@ -10,6 +10,7 @@ import SwiftUI
 struct ExportOptionsView: View {
     let resume: Resume
     @Environment(\.dismiss) private var dismiss
+    @Environment(ResumeEditorModel.self) private var resumeModel
     
     @State private var options = ExportOptions()
     @State private var isExporting = false
@@ -17,10 +18,18 @@ struct ExportOptionsView: View {
     @State private var exportError: String?
     @State private var showShareSheet = false
     @State private var showError = false
+    @State private var isFileNameCustom = false
     
     var body: some View {
         NavigationStack {
             Form {
+                Section("Sprache") {
+                    ResumeLanguagePicker(
+                        titleKey: "Ausgabesprache",
+                        selection: $options.outputLanguage
+                    )
+                }
+
                 // Format Selection
                 Section {
                     ForEach(ExportOptions.ExportFormat.allCases) { format in
@@ -39,8 +48,17 @@ struct ExportOptionsView: View {
                 // File Name
                 Section("Dateiname") {
                     HStack {
-                        TextField("Lebenslauf", text: $options.fileName)
-                            .textInputAutocapitalization(.words)
+                        TextField(
+                            "Lebenslauf",
+                            text: Binding(
+                                get: { options.fileName },
+                                set: { newValue in
+                                    options.fileName = newValue
+                                    isFileNameCustom = true
+                                }
+                            )
+                        )
+                        .textInputAutocapitalization(.words)
                         
                         Text(".\(options.format.fileExtension)")
                             .foregroundStyle(.secondary)
@@ -75,7 +93,7 @@ struct ExportOptionsView: View {
                 
                 // Export Preview
                 Section {
-                    ExportPreviewCard(resume: resume, format: options.format)
+                    ExportPreviewCard(resume: resume, format: options.format, language: options.outputLanguage)
                 } header: {
                     Text("Vorschau")
                 }
@@ -121,6 +139,19 @@ struct ExportOptionsView: View {
                 Text(exportError ?? "Ein unbekannter Fehler ist aufgetreten.")
             }
         }
+        .onAppear {
+            options.outputLanguage = resume.outputLanguage
+            if !isFileNameCustom {
+                options.fileName = defaultFileName(for: options.outputLanguage)
+            }
+        }
+        .onChange(of: options.outputLanguage) { _, newValue in
+            resumeModel.resume.outputLanguage = newValue
+            try? resumeModel.save()
+            if !isFileNameCustom {
+                options.fileName = defaultFileName(for: newValue)
+            }
+        }
     }
     
     // MARK: - Helpers
@@ -142,24 +173,28 @@ struct ExportOptionsView: View {
     private func performExport() {
         isExporting = true
         exportError = nil
-        
-        DispatchQueue.global(qos: .userInitiated).async {
+        let resumeToExport = resume
+        let exportOptions = options
+        Task.detached(priority: .userInitiated) {
             do {
-                let result = try PDFExportService.export(resume: resume, options: options)
-                
-                DispatchQueue.main.async {
+                let result = try PDFExportService.export(resume: resumeToExport, options: exportOptions)
+                await MainActor.run {
                     exportResult = result
                     showShareSheet = true
                     isExporting = false
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     exportError = error.localizedDescription
                     showError = true
                     isExporting = false
                 }
             }
         }
+    }
+
+    private func defaultFileName(for language: ResumeLanguage) -> String {
+        language == .english ? "Resume" : "Lebenslauf"
     }
 }
 
@@ -210,6 +245,7 @@ private struct FormatOptionRow: View {
 private struct ExportPreviewCard: View {
     let resume: Resume
     let format: ExportOptions.ExportFormat
+    let language: ResumeLanguage
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -258,7 +294,8 @@ private struct ExportPreviewCard: View {
     }
     
     private var wordCount: Int {
-        ResumeTextFormatter.plainText(for: resume).split(separator: " ").count
+        ResumeTextFormatter.plainText(for: resume, language: language)
+            .split(separator: " ").count
     }
     
     private var formatInfo: String {

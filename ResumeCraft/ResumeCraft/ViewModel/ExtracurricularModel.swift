@@ -9,6 +9,7 @@ import Foundation
 import Observation
 import SwiftData
 
+@MainActor
 @Observable
 final class ExtracurricularModel {
   private weak var resume: Resume?

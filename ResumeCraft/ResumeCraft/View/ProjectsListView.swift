@@ -22,7 +22,10 @@ struct ProjectsListView: View {
       List {
         ForEach(model.items) { project in
           HStack {
-            ProjectRowView(project: project) {
+            ProjectRowView(
+              project: project,
+              language: resumeModel.resume.contentLanguage
+            ) {
               // Re-fetch fresh instance by id before opening editor
               let id = project.id
               if let fresh = model.items.first(where: { $0.id == id }) {
@@ -76,14 +79,22 @@ struct ProjectsListView: View {
       .sheet(item: $editorContext) { context in
         ProjectEditorView(
           project: context.project,
-          onSave: { newProj in
+          onSave: { newProj, language in
             if let existing = context.project {
-              existing.name = newProj.name
-              existing.details = newProj.details
-              existing.technologies = newProj.technologies
+              existing.setName(newProj.name, for: language)
+              existing.setDetails(newProj.details, for: language)
+              existing.setTechnologies(newProj.technologies, for: language)
               existing.link = newProj.link
               existing.isVisible = true
             } else {
+              if language == .english {
+                newProj.name_en = newProj.name
+                newProj.details_en = newProj.details
+                newProj.technologies_en = newProj.technologies
+                newProj.name = ""
+                newProj.details = ""
+                newProj.technologies = ""
+              }
               model.add(newProj)
             }
             editorContext = nil
@@ -98,14 +109,18 @@ struct ProjectsListView: View {
 
 struct ProjectRowView: View {
   let project: Project
+  let language: ResumeLanguage
   let onTap: () -> Void
 
   var body: some View {
     Button(action: onTap) {
+      let fallback = language.fallback
+      let name = project.name(for: language, fallback: fallback)
+      let technologies = project.technologies(for: language, fallback: fallback)
       VStack(alignment: .leading) {
-        Text(project.name).font(.headline)
-        if !project.technologies.isEmpty {
-          Text(project.technologies)
+        Text(name).font(.headline)
+        if !technologies.isEmpty {
+          Text(technologies)
             .font(.caption)
             .foregroundStyle(.secondary)
         }
@@ -115,7 +130,7 @@ struct ProjectRowView: View {
       }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(
-        "\(project.name), \(project.technologies), \(project.link ?? "")"
+        "\(name), \(technologies), \(project.link ?? "")"
       )
     }
   }

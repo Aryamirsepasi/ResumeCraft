@@ -22,7 +22,10 @@ struct ExtracurricularListView: View {
       List {
         ForEach(model.items) { activity in
           HStack {
-            ExtracurricularRowView(activity: activity) {
+            ExtracurricularRowView(
+              activity: activity,
+              language: resumeModel.resume.contentLanguage
+            ) {
               // Re-fetch fresh instance by id before opening editor
               let id = activity.id
               if let fresh = model.items.first(where: { $0.id == id }) {
@@ -76,13 +79,21 @@ struct ExtracurricularListView: View {
       .sheet(item: $editorContext) { context in
         ExtracurricularEditorView(
           activity: context.activity,
-          onSave: { newActivity in
+          onSave: { newActivity, language in
             if let existing = context.activity {
-              existing.title = newActivity.title
-              existing.organization = newActivity.organization
-              existing.details = newActivity.details
+              existing.setTitle(newActivity.title, for: language)
+              existing.setOrganization(newActivity.organization, for: language)
+              existing.setDetails(newActivity.details, for: language)
               existing.isVisible = true
             } else {
+              if language == .english {
+                newActivity.title_en = newActivity.title
+                newActivity.organization_en = newActivity.organization
+                newActivity.details_en = newActivity.details
+                newActivity.title = ""
+                newActivity.organization = ""
+                newActivity.details = ""
+              }
               model.add(newActivity)
             }
             editorContext = nil
@@ -97,24 +108,29 @@ struct ExtracurricularListView: View {
 
 struct ExtracurricularRowView: View {
   let activity: Extracurricular
+  let language: ResumeLanguage
   let onTap: () -> Void
 
   var body: some View {
     Button(action: onTap) {
+      let fallback = language.fallback
+      let title = activity.title(for: language, fallback: fallback)
+      let organization = activity.organization(for: language, fallback: fallback)
+      let details = activity.details(for: language, fallback: fallback)
       VStack(alignment: .leading) {
-        Text(activity.title)
+        Text(title)
           .font(.headline)
           .accessibilityAddTraits(.isHeader)
-        Text(activity.organization)
+        Text(organization)
           .font(.caption)
           .foregroundStyle(.secondary)
-        Text(activity.details)
+        Text(details)
           .font(.body)
           .lineLimit(2)
       }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(
-        "\(activity.title) bei \(activity.organization), \(activity.details)"
+        "\(title) \(String(localized: "resume.label.at", locale: language.locale)) \(organization), \(details)"
       )
       .accessibilityHint("Tippen, um diese Aktivität zu bearbeiten")
     }

@@ -8,19 +8,22 @@
 import SwiftUI
 
 struct ProjectEditorView: View {
+    @Environment(ResumeEditorModel.self) private var resumeModel
+
     @State private var name: String = ""
     @State private var details: String = ""
     @State private var technologies: String = ""
     @State private var link: String = ""
+    @State private var selectedLanguage: ResumeLanguage = .defaultContent
 
-    var onSave: (Project) -> Void
+    var onSave: (Project, ResumeLanguage) -> Void
     var onCancel: () -> Void
 
     private let initialProject: Project?
 
     init(
         project: Project?,
-        onSave: @escaping (Project) -> Void,
+        onSave: @escaping (Project, ResumeLanguage) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.initialProject = project
@@ -31,6 +34,12 @@ struct ProjectEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Sprache") {
+                    ResumeLanguagePicker(
+                        titleKey: "Bearbeitungssprache",
+                        selection: $selectedLanguage
+                    )
+                }
                 Section("Projekt") {
                     TextField("Name", text: $name)
                     TextField("Technologien", text: $technologies)
@@ -61,19 +70,36 @@ struct ProjectEditorView: View {
                             technologies: technologies,
                             link: link.isEmpty ? nil : link
                         )
-                        onSave(proj)
+                        onSave(proj, selectedLanguage)
                     }
                     .disabled(name.isEmpty)
                 }
             }
             .onAppear {
+                selectedLanguage = resumeModel.resume.contentLanguage
                 if let p = initialProject {
-                    name = p.name
-                    details = p.details
-                    technologies = p.technologies
                     link = p.link ?? ""
                 }
+                loadFields(for: selectedLanguage)
+            }
+            .onChange(of: selectedLanguage) { _, newValue in
+                resumeModel.resume.contentLanguage = newValue
+                try? resumeModel.save()
+                loadFields(for: newValue)
             }
         }
+    }
+
+    private func loadFields(for language: ResumeLanguage) {
+        guard let p = initialProject else {
+            name = ""
+            details = ""
+            technologies = ""
+            return
+        }
+        let fallback: ResumeLanguage? = nil
+        name = p.name(for: language, fallback: fallback)
+        details = p.details(for: language, fallback: fallback)
+        technologies = p.technologies(for: language, fallback: fallback)
     }
 }

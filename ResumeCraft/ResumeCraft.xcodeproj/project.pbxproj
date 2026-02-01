@@ -7,11 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		420B4C792E359EF2006DD68B /* MLXEmbedders in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C782E359EF2006DD68B /* MLXEmbedders */; };
-		420B4C7B2E359EF2006DD68B /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C7A2E359EF2006DD68B /* MLXLLM */; };
-		420B4C7D2E359EF2006DD68B /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C7C2E359EF2006DD68B /* MLXLMCommon */; };
-		420B4C7F2E359EF2006DD68B /* MLXMNIST in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C7E2E359EF2006DD68B /* MLXMNIST */; };
-		420B4C812E359EF2006DD68B /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 420B4C802E359EF2006DD68B /* MLXVLM */; };
 		42273DBD2E36291F008B39AE /* TPPDF in Frameworks */ = {isa = PBXBuildFile; productRef = 42273DBC2E36291F008B39AE /* TPPDF */; };
 		4249BA0A2E35C5FE003B1CB5 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4249BA092E35C5FE003B1CB5 /* MarkdownUI */; };
 		42B76F192E44051C000085D5 /* AIProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 42B76F182E44051C000085D5 /* AIProxy */; };
@@ -47,14 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				420B4C812E359EF2006DD68B /* MLXVLM in Frameworks */,
-				420B4C7F2E359EF2006DD68B /* MLXMNIST in Frameworks */,
-				420B4C7B2E359EF2006DD68B /* MLXLLM in Frameworks */,
 				42B76F192E44051C000085D5 /* AIProxy in Frameworks */,
 				4249BA0A2E35C5FE003B1CB5 /* MarkdownUI in Frameworks */,
 				42273DBD2E36291F008B39AE /* TPPDF in Frameworks */,
-				420B4C7D2E359EF2006DD68B /* MLXLMCommon in Frameworks */,
-				420B4C792E359EF2006DD68B /* MLXEmbedders in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,11 +87,6 @@
 			);
 			name = ResumeCraft;
 			packageProductDependencies = (
-				420B4C782E359EF2006DD68B /* MLXEmbedders */,
-				420B4C7A2E359EF2006DD68B /* MLXLLM */,
-				420B4C7C2E359EF2006DD68B /* MLXLMCommon */,
-				420B4C7E2E359EF2006DD68B /* MLXMNIST */,
-				420B4C802E359EF2006DD68B /* MLXVLM */,
 				4249BA092E35C5FE003B1CB5 /* MarkdownUI */,
 				42273DBC2E36291F008B39AE /* TPPDF */,
 				42B76F182E44051C000085D5 /* AIProxy */,
@@ -131,11 +116,11 @@
 			knownRegions = (
 				Base,
 				de,
+				en,
 			);
 			mainGroup = 420B4BC02E359240006DD68B;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */,
 				4249BA082E35C5FE003B1CB5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */,
 				42B76F172E44051C000085D5 /* XCRemoteSwiftPackageReference "aiproxyswift" */,
@@ -179,7 +164,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ResumeCraft/ResumeCraft.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 22;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = MK2V998W66;
 				ENABLE_APP_SANDBOX = YES;
@@ -204,7 +189,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aryamirsepasi.AryaResumeCraft;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -227,7 +212,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ResumeCraft/ResumeCraft.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 22;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = MK2V998W66;
 				ENABLE_APP_SANDBOX = YES;
@@ -252,7 +237,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aryamirsepasi.AryaResumeCraft;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -416,14 +401,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ml-explore/mlx-swift-examples/";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/techprimate/tppdf.git";
@@ -451,31 +428,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		420B4C782E359EF2006DD68B /* MLXEmbedders */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */;
-			productName = MLXEmbedders;
-		};
-		420B4C7A2E359EF2006DD68B /* MLXLLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */;
-			productName = MLXLLM;
-		};
-		420B4C7C2E359EF2006DD68B /* MLXLMCommon */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */;
-			productName = MLXLMCommon;
-		};
-		420B4C7E2E359EF2006DD68B /* MLXMNIST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */;
-			productName = MLXMNIST;
-		};
-		420B4C802E359EF2006DD68B /* MLXVLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 420B4C772E359EF2006DD68B /* XCRemoteSwiftPackageReference "mlx-swift-examples" */;
-			productName = MLXVLM;
-		};
 		42273DBC2E36291F008B39AE /* TPPDF */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */;

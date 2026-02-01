@@ -364,7 +364,7 @@ final class SmartSuggestionsEngine {
         var suggestions: [SmartSuggestion] = []
         
         // Check overall length
-        let fullText = ResumeTextFormatter.plainText(for: resume)
+        let fullText = ResumeTextFormatter.plainText(for: resume, language: resume.contentLanguage)
         let wordCount = fullText.split(separator: " ").count
         
         if wordCount < 200 {

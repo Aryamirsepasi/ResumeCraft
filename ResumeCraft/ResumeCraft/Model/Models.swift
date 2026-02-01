@@ -4,6 +4,8 @@ import Foundation
 @Model
 final class Resume {
     var updated: Date = Date()
+    var contentLanguageCode: String = ResumeLanguage.defaultContent.rawValue
+    var outputLanguageCode: String = ResumeLanguage.defaultOutput.rawValue
 
     // One-to-one relationships
     @Relationship(deleteRule: .cascade, inverse: \PersonalInfo.resume)
@@ -13,6 +15,7 @@ final class Resume {
     var summary: Summary?
 
     var miscellaneous: String? = nil
+    var miscellaneous_en: String? = nil
 
     // One-to-many relationships (must be optional for CloudKit)
     @Relationship(deleteRule: .cascade, inverse: \WorkExperience.resume)
@@ -45,6 +48,7 @@ final class PersonalInfo {
   var email: String = ""
   var phone: String = ""
   var address: String = ""
+  var address_en: String? = nil
   var linkedIn: String? = nil
   var website: String? = nil
   var github: String? = nil
@@ -77,6 +81,7 @@ final class PersonalInfo {
 @Model
 final class Summary {
   var text: String = ""
+  var text_en: String? = nil
   var text_de: String? = nil
   var isVisible: Bool = true
   @Relationship
@@ -102,6 +107,12 @@ final class WorkExperience {
   var isCurrent: Bool = false
   var details: String = ""
   var isVisible: Bool = true
+
+  // English translation fields
+  var title_en: String? = nil
+  var company_en: String? = nil
+  var location_en: String? = nil
+  var details_en: String? = nil
 
   // Legacy translation fields (deprecated; kept for migration)
   var title_de: String? = nil
@@ -144,6 +155,11 @@ final class Project {
   var link: String? = nil
   var isVisible: Bool = true
 
+  // English translation fields
+  var name_en: String? = nil
+  var details_en: String? = nil
+  var technologies_en: String? = nil
+
   // Legacy translation fields (deprecated; kept for migration)
   var name_de: String? = nil
   var details_de: String? = nil
@@ -175,6 +191,10 @@ final class Skill {
   var category: String = ""
   var isVisible: Bool = true
 
+  // English translation fields
+  var name_en: String? = nil
+  var category_en: String? = nil
+
   // Legacy translation fields (deprecated; kept for migration)
   var name_de: String? = nil
   var category_de: String? = nil
@@ -202,6 +222,13 @@ final class Education {
   var grade: String = ""
   var details: String = ""
   var isVisible: Bool = true
+
+  // English translation fields
+  var school_en: String? = nil
+  var degree_en: String? = nil
+  var field_en: String? = nil
+  var grade_en: String? = nil
+  var details_en: String? = nil
 
   // Legacy translation fields (deprecated; kept for migration)
   var school_de: String? = nil
@@ -242,6 +269,11 @@ final class Extracurricular {
   var details: String = ""
   var isVisible: Bool = true
 
+  // English translation fields
+  var title_en: String? = nil
+  var organization_en: String? = nil
+  var details_en: String? = nil
+
   // Legacy translation fields (deprecated; kept for migration)
   var title_de: String? = nil
   var organization_de: String? = nil
@@ -266,6 +298,10 @@ final class Language {
   var name: String = ""
   var proficiency: String = ""
   var isVisible: Bool = true
+
+  // English translation fields
+  var name_en: String? = nil
+  var proficiency_en: String? = nil
 
   // Legacy translation fields (deprecated; kept for migration)
   var name_de: String? = nil

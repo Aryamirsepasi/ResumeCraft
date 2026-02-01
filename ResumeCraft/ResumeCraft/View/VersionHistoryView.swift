@@ -210,7 +210,7 @@ private struct CurrentStateRow: View {
     }
     
     private var wordCount: Int {
-        let text = ResumeTextFormatter.plainText(for: resume)
+        let text = ResumeTextFormatter.plainText(for: resume, language: resume.contentLanguage)
         return text.split(separator: " ").count
     }
 }

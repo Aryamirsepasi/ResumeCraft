@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 
+@MainActor
 @Observable
 final class EducationModel {
   private weak var resume: Resume?

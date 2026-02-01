@@ -36,6 +36,7 @@ struct ExportOptions {
     var includeMetadata: Bool = true
     var pageSize: PageSize = .a4
     var margins: Margins = .standard
+    var outputLanguage: ResumeLanguage = .defaultOutput
     
     enum ExportFormat: String, CaseIterable, Identifiable {
         case pdf = "PDF"
@@ -137,6 +138,7 @@ final class PDFExportService {
     static func export(resume: Resume, fileName: String = "Lebenslauf.pdf") throws -> URL {
         var options = ExportOptions()
         options.fileName = fileName.replacingOccurrences(of: ".pdf", with: "")
+        options.outputLanguage = resume.outputLanguage
         let result = try export(resume: resume, options: options)
         return result.url
     }
@@ -159,7 +161,11 @@ final class PDFExportService {
         )
         let maxPages = 2
 
-        let attributedResume = ResumePDFFormatter.attributedString(for: resume, pageWidth: pageSize.width)
+        let attributedResume = ResumePDFFormatter.attributedString(
+            for: resume,
+            pageWidth: pageSize.width,
+            language: options.outputLanguage
+        )
 
         // Use NSLayoutManager to paginate the attributed string
         let textStorage = NSTextStorage(attributedString: attributedResume)
@@ -187,11 +193,12 @@ final class PDFExportService {
         // Create PDF with metadata
         var documentInfo: [String: Any] = [:]
         if options.includeMetadata {
+            let subject = String(localized: "resume.export.subject", locale: options.outputLanguage.locale)
             documentInfo = [
                 kCGPDFContextTitle as String: options.fileName,
                 kCGPDFContextAuthor as String: "\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "")",
                 kCGPDFContextCreator as String: "ResumeCraft",
-                kCGPDFContextSubject as String: "Lebenslauf"
+                kCGPDFContextSubject as String: subject,
             ]
         }
         
@@ -227,7 +234,7 @@ final class PDFExportService {
         let fileName = sanitizeFileName(options.fileName) + ".txt"
         let url = tempDir.appendingPathComponent(fileName)
         
-        let text = ResumeTextFormatter.plainText(for: resume)
+        let text = ResumeTextFormatter.plainText(for: resume, language: options.outputLanguage)
         
         try text.write(to: url, atomically: true, encoding: .utf8)
         
@@ -249,7 +256,7 @@ final class PDFExportService {
         let fileName = sanitizeFileName(options.fileName) + ".md"
         let url = tempDir.appendingPathComponent(fileName)
         
-        let markdown = generateMarkdown(for: resume)
+        let markdown = generateMarkdown(for: resume, language: options.outputLanguage)
         
         try markdown.write(to: url, atomically: true, encoding: .utf8)
         
@@ -271,7 +278,7 @@ final class PDFExportService {
         let fileName = sanitizeFileName(options.fileName) + ".html"
         let url = tempDir.appendingPathComponent(fileName)
         
-        let html = generateHTML(for: resume)
+        let html = generateHTML(for: resume, language: options.outputLanguage)
         
         try html.write(to: url, atomically: true, encoding: .utf8)
         
@@ -288,8 +295,12 @@ final class PDFExportService {
     
     // MARK: - Markdown Generator
     
-    private static func generateMarkdown(for resume: Resume) -> String {
+    private static func generateMarkdown(for resume: Resume, language: ResumeLanguage) -> String {
         var md = ""
+        let fallback = language.fallback
+        let atWord = String(localized: "resume.label.at", locale: language.locale)
+        let technologiesLabel = String(localized: "resume.label.technologies", locale: language.locale)
+        let gradeLabel = String(localized: "resume.label.grade", locale: language.locale)
         
         // Header
         if let personal = resume.personal {
@@ -298,7 +309,8 @@ final class PDFExportService {
             var contact: [String] = []
             if !personal.email.isEmpty { contact.append("📧 \(personal.email)") }
             if !personal.phone.isEmpty { contact.append("📱 \(personal.phone)") }
-            if !personal.address.isEmpty { contact.append("📍 \(personal.address)") }
+            let address = personal.address(for: language, fallback: fallback)
+            if !address.isEmpty { contact.append("📍 \(address)") }
             
             if !contact.isEmpty {
                 md += contact.joined(separator: " | ") + "\n\n"
@@ -321,33 +333,42 @@ final class PDFExportService {
         }
         
         // Summary
-        if let summary = resume.summary, summary.isVisible, !summary.text.isEmpty {
-            md += "## Zusammenfassung\n\n"
-            md += summary.text + "\n\n"
+        if let summary = resume.summary, summary.isVisible {
+            let summaryText = summary.text(for: language, fallback: fallback)
+            if !summaryText.isEmpty {
+                md += "## \(ResumeSection.summary.title(for: language))\n\n"
+                md += summaryText + "\n\n"
+            }
         }
         
         // Skills
         let skills = (resume.skills ?? []).filter(\.isVisible)
         if !skills.isEmpty {
-            md += "## Fähigkeiten\n\n"
-            let grouped = Dictionary(grouping: skills) { $0.category }
+            md += "## \(ResumeSection.skills.title(for: language))\n\n"
+            let grouped = Dictionary(grouping: skills) { $0.category(for: language, fallback: fallback) }
             for (category, categorySkills) in grouped.sorted(by: { $0.key < $1.key }) {
                 if !category.isEmpty {
                     md += "**\(category):** "
                 }
-                md += categorySkills.map(\.name).joined(separator: ", ") + "\n\n"
+                md += categorySkills.map { $0.name(for: language, fallback: fallback) }.joined(separator: ", ") + "\n\n"
             }
         }
         
         // Experience
         let experiences = (resume.experiences ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !experiences.isEmpty {
-            md += "## Berufserfahrung\n\n"
+            md += "## \(ResumeSection.experience.title(for: language))\n\n"
             for exp in experiences {
-                md += "### \(exp.title) bei \(exp.company)\n"
-                md += "*\(formatDateRange(exp.startDate, exp.endDate, exp.isCurrent))* | \(exp.location)\n\n"
+                let title = exp.title(for: language, fallback: fallback)
+                let company = exp.company(for: language, fallback: fallback)
+                let location = exp.location(for: language, fallback: fallback)
+                let dateRange = formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, language: language)
+                let locationLine = location.isEmpty ? dateRange : "\(dateRange) | \(location)"
+                md += "### \(title) \(atWord) \(company)\n"
+                md += "*\(locationLine)*\n\n"
                 
-                let bullets = exp.details.components(separatedBy: "\n").filter { !$0.isEmpty }
+                let details = exp.details(for: language, fallback: fallback)
+                let bullets = details.components(separatedBy: "\n").filter { !$0.isEmpty }
                 for bullet in bullets {
                     md += "- \(bullet.trimmingCharacters(in: .whitespaces))\n"
                 }
@@ -358,13 +379,16 @@ final class PDFExportService {
         // Projects
         let projects = (resume.projects ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !projects.isEmpty {
-            md += "## Projekte\n\n"
+            md += "## \(ResumeSection.projects.title(for: language))\n\n"
             for proj in projects {
-                md += "### \(proj.name)\n"
-                if !proj.technologies.isEmpty {
-                    md += "*Technologien: \(proj.technologies)*\n\n"
+                let name = proj.name(for: language, fallback: fallback)
+                let technologies = proj.technologies(for: language, fallback: fallback)
+                let details = proj.details(for: language, fallback: fallback)
+                md += "### \(name)\n"
+                if !technologies.isEmpty {
+                    md += "*\(technologiesLabel): \(technologies)*\n\n"
                 }
-                md += proj.details + "\n"
+                md += details + "\n"
                 if let link = proj.link, !link.isEmpty {
                     md += "\n🔗 [\(link)](\(link))\n"
                 }
@@ -375,12 +399,18 @@ final class PDFExportService {
         // Education
         let educations = (resume.educations ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !educations.isEmpty {
-            md += "## Ausbildung\n\n"
+            md += "## \(ResumeSection.education.title(for: language))\n\n"
             for edu in educations {
-                md += "### \(edu.degree) in \(edu.field)\n"
-                md += "**\(edu.school)** | *\(formatDateRange(edu.startDate, edu.endDate, false))*\n"
-                if !edu.grade.isEmpty {
-                    md += "Note: \(edu.grade)\n"
+                let degree = edu.degree(for: language, fallback: fallback)
+                let field = edu.field(for: language, fallback: fallback)
+                let school = edu.school(for: language, fallback: fallback)
+                let grade = edu.grade(for: language, fallback: fallback)
+                let dateRange = formatDateRange(edu.startDate, edu.endDate, false, language: language)
+                let titleLine = field.isEmpty ? degree : "\(degree) in \(field)"
+                md += "### \(titleLine)\n"
+                md += "**\(school)** | *\(dateRange)*\n"
+                if !grade.isEmpty {
+                    md += "\(gradeLabel): \(grade)\n"
                 }
                 md += "\n"
             }
@@ -389,14 +419,18 @@ final class PDFExportService {
         // Languages
         let languages = (resume.languages ?? []).filter(\.isVisible)
         if !languages.isEmpty {
-            md += "## Sprachen\n\n"
-            md += languages.map { "\($0.name) (\($0.proficiency))" }.joined(separator: " | ") + "\n"
+            md += "## \(ResumeSection.languages.title(for: language))\n\n"
+            md += languages.map {
+                let name = $0.name(for: language, fallback: fallback)
+                let proficiency = $0.proficiency(for: language, fallback: fallback)
+                return "\(name) (\(proficiency))"
+            }.joined(separator: " | ") + "\n"
         }
 
-        if let miscText = resume.miscellaneous?.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        ), !miscText.isEmpty {
-            md += "\n## Sonstiges\n\n"
+        let miscText = resume.miscellaneous(for: language, fallback: fallback)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !miscText.isEmpty {
+            md += "\n## \(ResumeSection.miscellaneous.title(for: language))\n\n"
             md += miscText + "\n"
         }
         
@@ -405,14 +439,19 @@ final class PDFExportService {
     
     // MARK: - HTML Generator
     
-    private static func generateHTML(for resume: Resume) -> String {
+    private static func generateHTML(for resume: Resume, language: ResumeLanguage) -> String {
+        let fallback = language.fallback
+        let atWord = String(localized: "resume.label.at", locale: language.locale)
+        let technologiesLabel = String(localized: "resume.label.technologies", locale: language.locale)
+        let gradeLabel = String(localized: "resume.label.grade", locale: language.locale)
+        let titleLabel = String(localized: "resume.export.subject", locale: language.locale)
         var html = """
         <!DOCTYPE html>
-        <html lang="de">
+        <html lang="\(language.rawValue)">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "") - Lebenslauf</title>
+            <title>\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "") - \(titleLabel)</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
@@ -442,7 +481,8 @@ final class PDFExportService {
             var contact: [String] = []
             if !personal.email.isEmpty { contact.append("<a href=\"mailto:\(personal.email)\">\(personal.email)</a>") }
             if !personal.phone.isEmpty { contact.append(personal.phone) }
-            if !personal.address.isEmpty { contact.append(personal.address) }
+            let address = personal.address(for: language, fallback: fallback)
+            if !address.isEmpty { contact.append(address) }
             
             html += contact.joined(separator: " • ") + "\n"
             
@@ -464,17 +504,21 @@ final class PDFExportService {
         }
         
         // Summary
-        if let summary = resume.summary, summary.isVisible, !summary.text.isEmpty {
-            html += "<h2>Zusammenfassung</h2>\n"
-            html += "<p class=\"summary\">\(summary.text)</p>\n"
+        if let summary = resume.summary, summary.isVisible {
+            let summaryText = summary.text(for: language, fallback: fallback)
+            if !summaryText.isEmpty {
+                html += "<h2>\(ResumeSection.summary.title(for: language))</h2>\n"
+                html += "<p class=\"summary\">\(summaryText)</p>\n"
+            }
         }
         
         // Skills
         let skills = (resume.skills ?? []).filter(\.isVisible)
         if !skills.isEmpty {
-            html += "<h2>Fähigkeiten</h2>\n<div class=\"skills\">\n"
+            html += "<h2>\(ResumeSection.skills.title(for: language))</h2>\n<div class=\"skills\">\n"
             for skill in skills {
-                html += "<span class=\"skill\">\(skill.name)</span>\n"
+                let name = skill.name(for: language, fallback: fallback)
+                html += "<span class=\"skill\">\(name)</span>\n"
             }
             html += "</div>\n"
         }
@@ -482,13 +526,19 @@ final class PDFExportService {
         // Experience
         let experiences = (resume.experiences ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !experiences.isEmpty {
-            html += "<h2>Berufserfahrung</h2>\n"
+            html += "<h2>\(ResumeSection.experience.title(for: language))</h2>\n"
             for exp in experiences {
+                let title = exp.title(for: language, fallback: fallback)
+                let company = exp.company(for: language, fallback: fallback)
+                let location = exp.location(for: language, fallback: fallback)
+                let dateRange = formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, language: language)
+                let locationLine = location.isEmpty ? dateRange : "\(dateRange) • \(location)"
                 html += "<div class=\"experience-item\">\n"
-                html += "<h3>\(exp.title) bei \(exp.company)</h3>\n"
-                html += "<p class=\"date\">\(formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)) • \(exp.location)</p>\n"
+                html += "<h3>\(title) \(atWord) \(company)</h3>\n"
+                html += "<p class=\"date\">\(locationLine)</p>\n"
                 
-                let bullets = exp.details.components(separatedBy: "\n").filter { !$0.isEmpty }
+                let details = exp.details(for: language, fallback: fallback)
+                let bullets = details.components(separatedBy: "\n").filter { !$0.isEmpty }
                 if !bullets.isEmpty {
                     html += "<ul>\n"
                     for bullet in bullets {
@@ -503,14 +553,17 @@ final class PDFExportService {
         // Projects
         let projects = (resume.projects ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !projects.isEmpty {
-            html += "<h2>Projekte</h2>\n"
+            html += "<h2>\(ResumeSection.projects.title(for: language))</h2>\n"
             for proj in projects {
+                let name = proj.name(for: language, fallback: fallback)
+                let technologies = proj.technologies(for: language, fallback: fallback)
+                let details = proj.details(for: language, fallback: fallback)
                 html += "<div class=\"project-item\">\n"
-                html += "<h3>\(proj.name)</h3>\n"
-                if !proj.technologies.isEmpty {
-                    html += "<p class=\"tech\">\(proj.technologies)</p>\n"
+                html += "<h3>\(name)</h3>\n"
+                if !technologies.isEmpty {
+                    html += "<p class=\"tech\">\(technologiesLabel): \(technologies)</p>\n"
                 }
-                html += "<p>\(proj.details)</p>\n"
+                html += "<p>\(details)</p>\n"
                 if let link = proj.link, !link.isEmpty {
                     html += "<p><a href=\"\(link)\">\(link)</a></p>\n"
                 }
@@ -521,14 +574,20 @@ final class PDFExportService {
         // Education
         let educations = (resume.educations ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !educations.isEmpty {
-            html += "<h2>Ausbildung</h2>\n"
+            html += "<h2>\(ResumeSection.education.title(for: language))</h2>\n"
             for edu in educations {
+                let degree = edu.degree(for: language, fallback: fallback)
+                let field = edu.field(for: language, fallback: fallback)
+                let school = edu.school(for: language, fallback: fallback)
+                let grade = edu.grade(for: language, fallback: fallback)
+                let dateRange = formatDateRange(edu.startDate, edu.endDate, false, language: language)
+                let titleLine = field.isEmpty ? degree : "\(degree) in \(field)"
                 html += "<div class=\"education-item\">\n"
-                html += "<h3>\(edu.degree) in \(edu.field)</h3>\n"
-                html += "<p><strong>\(edu.school)</strong></p>\n"
-                html += "<p class=\"date\">\(formatDateRange(edu.startDate, edu.endDate, false))</p>\n"
-                if !edu.grade.isEmpty {
-                    html += "<p>Note: \(edu.grade)</p>\n"
+                html += "<h3>\(titleLine)</h3>\n"
+                html += "<p><strong>\(school)</strong></p>\n"
+                html += "<p class=\"date\">\(dateRange)</p>\n"
+                if !grade.isEmpty {
+                    html += "<p>\(gradeLabel): \(grade)</p>\n"
                 }
                 html += "</div>\n"
             }
@@ -537,15 +596,19 @@ final class PDFExportService {
         // Languages
         let languages = (resume.languages ?? []).filter(\.isVisible)
         if !languages.isEmpty {
-            html += "<h2>Sprachen</h2>\n<p>"
-            html += languages.map { "\($0.name) (\($0.proficiency))" }.joined(separator: " • ")
+            html += "<h2>\(ResumeSection.languages.title(for: language))</h2>\n<p>"
+            html += languages.map {
+                let name = $0.name(for: language, fallback: fallback)
+                let proficiency = $0.proficiency(for: language, fallback: fallback)
+                return "\(name) (\(proficiency))"
+            }.joined(separator: " • ")
             html += "</p>\n"
         }
 
-        if let miscText = resume.miscellaneous?.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        ), !miscText.isEmpty {
-            html += "<h2>Sonstiges</h2>\n"
+        let miscText = resume.miscellaneous(for: language, fallback: fallback)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !miscText.isEmpty {
+            html += "<h2>\(ResumeSection.miscellaneous.title(for: language))</h2>\n"
             html += "<p>\(miscText)</p>\n"
         }
         
@@ -561,15 +624,18 @@ final class PDFExportService {
         return name.components(separatedBy: invalidChars).joined(separator: "_")
     }
     
-    private static func formatDateRange(_ start: Date, _ end: Date?, _ isCurrent: Bool) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yyyy"
-        formatter.locale = Locale(identifier: "de_DE")
-        
+    private static func formatDateRange(
+        _ start: Date,
+        _ end: Date?,
+        _ isCurrent: Bool,
+        language: ResumeLanguage
+    ) -> String {
+        let formatter = DateFormatter.resumeMonthYear(for: language)
         let startStr = formatter.string(from: start)
+        let present = String(localized: "resume.label.today", locale: language.locale)
         
         if isCurrent {
-            return "\(startStr) – Heute"
+            return "\(startStr) – \(present)"
         } else if let end = end {
             return "\(startStr) – \(formatter.string(from: end))"
         } else {

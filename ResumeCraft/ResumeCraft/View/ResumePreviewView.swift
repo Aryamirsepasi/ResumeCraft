@@ -10,6 +10,7 @@ import UIKit
 
 struct ResumePreviewView: View {
     let resume: Resume
+    let language: ResumeLanguage
 
     var body: some View {
         GeometryReader { geometry in
@@ -18,7 +19,7 @@ struct ResumePreviewView: View {
                 HStack {
                     Spacer(minLength: 0)
                     A4PaperView {
-                        ResumeA4PreviewView(resume: resume)
+                        ResumeA4PreviewView(resume: resume, language: language)
                             .frame(width: 595, height: 842)
                     }
                     .scaleEffect(0.85)
@@ -45,6 +46,7 @@ struct ResumePreviewView: View {
 
 struct ResumeA4PreviewView: UIViewRepresentable {
     let resume: Resume
+    let language: ResumeLanguage
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -62,6 +64,10 @@ struct ResumeA4PreviewView: UIViewRepresentable {
 
     func updateUIView(_ uiView: UITextView, context: Context) {
         let pageWidth: CGFloat = 595
-        uiView.attributedText = ResumePDFFormatter.attributedString(for: resume, pageWidth: pageWidth)
+        uiView.attributedText = ResumePDFFormatter.attributedString(
+            for: resume,
+            pageWidth: pageWidth,
+            language: language
+        )
     }
 }

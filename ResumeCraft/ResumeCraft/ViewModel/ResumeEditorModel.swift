@@ -9,6 +9,7 @@ import Foundation
 import Observation
 import SwiftData
 
+@MainActor
 @Observable
 final class ResumeEditorModel {
     private(set) var resume: Resume
