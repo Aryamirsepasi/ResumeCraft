@@ -565,6 +565,9 @@ struct ResumeRootView: View {
         for image in images {
           let handler = VNImageRequestHandler(cgImage: image, options: [:])
           let request = VNRecognizeTextRequest()
+          request.recognitionLevel = .accurate
+          request.usesLanguageCorrection = true
+          request.recognitionLanguages = recognitionLanguages(for: importLanguage)
           try handler.perform([request])
           let recognized =
             (request.results)?
@@ -575,6 +578,22 @@ struct ResumeRootView: View {
       }
     }
     return fullText
+  }
+
+  private func recognitionLanguages(for language: ResumeLanguage) -> [String] {
+    var languages = [language == .german ? "de-DE" : "en-US"]
+    for preferred in Locale.preferredLanguages {
+      let normalized = preferred.lowercased()
+      if normalized.hasPrefix("de") {
+        languages.append("de-DE")
+      } else if normalized.hasPrefix("en") {
+        languages.append("en-US")
+      }
+    }
+    languages.append(contentsOf: ["de-DE", "en-US"])
+
+    var seen = Set<String>()
+    return languages.filter { seen.insert($0).inserted }
   }
 
   @MainActor
@@ -590,6 +609,7 @@ struct ResumeRootView: View {
     resume.outputLanguage = language
 
     let sections = parsingService.splitSections(from: structuredText)
+    var dateParseFailures: [String] = []
 
     // Personal Info
     let contactSection =
@@ -653,13 +673,22 @@ struct ResumeRootView: View {
     let expSection = sections["experience"] ?? sections["work experience"] ?? sections["employment"] ?? ""
     let jobs = parsingService.extractExperience(from: expSection)
     for job in jobs where !job.title.isEmpty && !job.company.isEmpty {
+      let parsedStartDate = parseDate(job.startDate)
+      if parsedStartDate == nil, let rawStartDate = job.startDate, !rawStartDate.isEmpty {
+        dateParseFailures.append("\(job.title): \(rawStartDate)")
+      }
+      let isCurrent = job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current"
+      let parsedEndDate = isCurrent ? nil : parseDate(job.endDate)
+      if parsedEndDate == nil, let rawEndDate = job.endDate, !rawEndDate.isEmpty, !isCurrent {
+        dateParseFailures.append("\(job.title): \(rawEndDate)")
+      }
       let experience = WorkExperience(
         title: "",
         company: "",
         location: "",
-        startDate: parseDate(job.startDate),
-        endDate: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current" ? nil : parseDate(job.endDate),
-        isCurrent: job.endDate?.lowercased() == "present" || job.endDate?.lowercased() == "current",
+        startDate: parsedStartDate ?? .distantPast,
+        endDate: parsedEndDate,
+        isCurrent: isCurrent,
         details: ""
       )
       experience.setTitle(job.title, for: language)
@@ -675,12 +704,20 @@ struct ResumeRootView: View {
     let eduSection = sections["education"] ?? sections["academic background"] ?? ""
     let educations = parsingService.extractEducation(from: eduSection)
     for educ in educations where !educ.institution.isEmpty && !educ.degree.isEmpty {
+      let parsedStartDate = parseDate(educ.startDate)
+      if parsedStartDate == nil, let rawStartDate = educ.startDate, !rawStartDate.isEmpty {
+        dateParseFailures.append("\(educ.degree): \(rawStartDate)")
+      }
+      let parsedEndDate = parseDate(educ.endDate)
+      if parsedEndDate == nil, let rawEndDate = educ.endDate, !rawEndDate.isEmpty {
+        dateParseFailures.append("\(educ.degree): \(rawEndDate)")
+      }
       let education = Education(
         school: "",
         degree: "",
         field: "",
-        startDate: parseDate(educ.startDate),
-        endDate: parseDate(educ.endDate),
+        startDate: parsedStartDate ?? .distantPast,
+        endDate: parsedEndDate,
         grade: "",
         details: ""
       )
@@ -760,14 +797,17 @@ struct ResumeRootView: View {
     do {
       try context.save()
       model.refreshAllModels()
+      if !dateParseFailures.isEmpty {
+        importError = "Einige Datumsangaben konnten nicht erkannt werden und bleiben leer: \(dateParseFailures.joined(separator: ", "))"
+      }
     } catch {
       importError = "Importierte Daten konnten nicht gespeichert werden: \(error.localizedDescription)"
     }
   }
 
-  // Helper: Parse string date (month year / year) to Date, fallback to .now
-  private func parseDate(_ string: String?) -> Date {
-    guard let string = string, !string.isEmpty else { return Date() }
+  // Helper: Parse string date (month year / year) to Date.
+  private func parseDate(_ string: String?) -> Date? {
+    guard let string = string, !string.isEmpty else { return nil }
 
     // Clean up the date string
     let cleaned = string
@@ -783,7 +823,7 @@ struct ResumeRootView: View {
       || lowered.contains("heute")
       || lowered.contains("aktuell")
     {
-      return Date()
+      return nil
     }
 
     let formats = [
@@ -824,11 +864,11 @@ struct ResumeRootView: View {
         components.year = year
         components.month = 1
         components.day = 1
-        return Calendar.current.date(from: components) ?? Date()
+        return Calendar.current.date(from: components)
       }
     }
 
-    return Date()
+    return nil
   }
 
   // MARK: - Deduplication

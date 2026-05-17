@@ -111,7 +111,7 @@ struct ExportOptionsView: View {
                                 Text("Export läuft...")
                             } else {
                                 Image(systemName: "square.and.arrow.up")
-                                Text("Exportieren \(options.format.rawValue)")
+                                Text("Exportieren \(options.format.displayName)")
                             }
                             Spacer()
                         }
@@ -173,11 +173,67 @@ struct ExportOptionsView: View {
     private func performExport() {
         isExporting = true
         exportError = nil
-        let resumeToExport = resume
         let exportOptions = options
+
+        // Build attributed string on the main actor for PDF format
+        // (SwiftData @Model objects are not Sendable)
+        let attributedString: NSAttributedString?
+        let plainText: String?
+        if exportOptions.format == .pdf {
+            attributedString = ResumePDFFormatter.attributedString(
+                for: resume,
+                pageWidth: exportOptions.pageSize.size.width,
+                language: exportOptions.outputLanguage
+            )
+            plainText = nil
+        } else {
+            attributedString = nil
+            plainText = ResumeTextFormatter.plainText(for: resume, language: exportOptions.outputLanguage)
+        }
+
+        // Also capture any resume data needed for non-PDF formats on main actor
+        let markdownText: String? = exportOptions.format == .markdown
+            ? PDFExportService.generateMarkdownOnMainActor(for: resume, language: exportOptions.outputLanguage) : nil
+        let htmlText: String? = exportOptions.format == .html
+            ? PDFExportService.generateHTMLOnMainActor(for: resume, language: exportOptions.outputLanguage) : nil
+
         Task.detached(priority: .userInitiated) {
             do {
-                let result = try PDFExportService.export(resume: resumeToExport, options: exportOptions)
+                let result: ExportResult
+                switch exportOptions.format {
+                case .pdf:
+                    guard let attrString = attributedString else {
+                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "PDF-Inhalt konnte nicht erstellt werden."])
+                    }
+                    result = try PDFExportService.exportPDFFromAttributedString(
+                        attrString,
+                        options: exportOptions
+                    )
+                case .text:
+                    guard let text = plainText else {
+                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "Textinhalt konnte nicht erstellt werden."])
+                    }
+                    result = try PDFExportService.exportPrebuiltText(
+                        text,
+                        options: exportOptions
+                    )
+                case .markdown:
+                    guard let md = markdownText else {
+                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "Markdown-Inhalt konnte nicht erstellt werden."])
+                    }
+                    result = try PDFExportService.exportPrebuiltText(
+                        md,
+                        options: exportOptions
+                    )
+                case .html:
+                    guard let html = htmlText else {
+                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "HTML-Inhalt konnte nicht erstellt werden."])
+                    }
+                    result = try PDFExportService.exportPrebuiltText(
+                        html,
+                        options: exportOptions
+                    )
+                }
                 await MainActor.run {
                     exportResult = result
                     showShareSheet = true
@@ -219,7 +275,7 @@ private struct FormatOptionRow: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(format.rawValue)
+                    Text(format.displayName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                     

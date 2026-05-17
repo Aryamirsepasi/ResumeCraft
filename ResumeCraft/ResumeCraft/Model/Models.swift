@@ -3,6 +3,7 @@ import Foundation
 
 @Model
 final class Resume {
+    var stableID: UUID = UUID()
     var updated: Date = Date()
     var contentLanguageCode: String = ResumeLanguage.defaultContent.rawValue
     var outputLanguageCode: String = ResumeLanguage.defaultOutput.rawValue
@@ -82,6 +83,7 @@ final class PersonalInfo {
 final class Summary {
   var text: String = ""
   var text_en: String? = nil
+  // Legacy German translation field (deprecated; kept for migration)
   var text_de: String? = nil
   var isVisible: Bool = true
   @Relationship

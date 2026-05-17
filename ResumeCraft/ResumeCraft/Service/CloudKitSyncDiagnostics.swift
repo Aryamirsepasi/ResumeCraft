@@ -10,98 +10,117 @@ import SwiftData
 import CloudKit
 
 @MainActor
-class CloudKitSyncDiagnostics: ObservableObject {
-    @Published var diagnosticMessages: [String] = []
-    @Published var isChecking = false
-    
+@Observable
+class CloudKitSyncDiagnostics {
+    struct DiagnosticMessage: Identifiable {
+        enum Status {
+            case success
+            case warning
+            case error
+            case info
+        }
+
+        let id = UUID()
+        let text: String
+        let status: Status
+    }
+
+    var diagnosticMessages: [DiagnosticMessage] = []
+    var isChecking = false
+
     func runDiagnostics(modelContext: ModelContext) async {
         isChecking = true
         diagnosticMessages.removeAll()
-        
-        // Check 1: iCloud Account Status
+
         await checkICloudAccountStatus()
-        
-        // Check 2: Container Access
         await checkContainerAccess()
-        
-        // Check 3: Verify Model Container Configuration
         checkModelContainerSetup()
-        
-        // Check 4: Check for pending sync operations
         await checkSyncStatus()
-        
+
         isChecking = false
     }
-    
+
+    private func append(_ key: String.LocalizationValue, status: DiagnosticMessage.Status = .info) {
+        diagnosticMessages.append(DiagnosticMessage(text: String(localized: key), status: status))
+    }
+
+    private func appendFormatted(
+        _ key: String.LocalizationValue,
+        status: DiagnosticMessage.Status = .info,
+        _ args: CVarArg...
+    ) {
+        let template = String(localized: key)
+        diagnosticMessages.append(
+            DiagnosticMessage(text: String(format: template, arguments: args), status: status)
+        )
+    }
+
     private func checkICloudAccountStatus() async {
         do {
             let container = CKContainer(identifier: CloudKitConfiguration.containerIdentifier)
             let status = try await container.accountStatus()
-            
+
             switch status {
             case .available:
-                diagnosticMessages.append("✅ iCloud-Konto: Verfügbar")
+                append("cloudkit.diag.account.available", status: .success)
             case .noAccount:
-                diagnosticMessages.append("❌ iCloud-Konto: Nicht angemeldet – bitte in den iCloud-Einstellungen anmelden")
+                append("cloudkit.diag.account.noAccount", status: .warning)
             case .restricted:
-                diagnosticMessages.append("❌ iCloud-Konto: Durch Elternkontrolle oder Geräteverwaltung eingeschränkt")
+                append("cloudkit.diag.account.restricted", status: .warning)
             case .couldNotDetermine:
-                diagnosticMessages.append("⚠️ iCloud-Konto: Status konnte nicht ermittelt werden")
+                append("cloudkit.diag.account.couldNotDetermine", status: .warning)
             case .temporarilyUnavailable:
-                diagnosticMessages.append("⚠️ iCloud-Konto: Vorübergehend nicht verfügbar")
+                append("cloudkit.diag.account.temporarilyUnavailable", status: .warning)
             @unknown default:
-                diagnosticMessages.append("⚠️ iCloud-Konto: Unbekannter Status")
+                append("cloudkit.diag.account.unknown", status: .warning)
             }
         } catch {
-            diagnosticMessages.append("❌ Fehler beim Prüfen des iCloud-Status: \(error.localizedDescription)")
+            appendFormatted("cloudkit.diag.account.error", status: .error, error.localizedDescription)
         }
     }
-    
+
     private func checkContainerAccess() async {
         do {
             let container = CKContainer(identifier: CloudKitConfiguration.containerIdentifier)
             let database = container.privateCloudDatabase
-            
-            // Try to fetch a record type to verify permissions
+
             let query = CKQuery(recordType: "CD_Resume", predicate: NSPredicate(value: true))
             query.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-            
+
             _ = try await database.records(matching: query, resultsLimit: 1)
-            diagnosticMessages.append("✅ CloudKit-Container: Zugriff möglich")
+            append("cloudkit.diag.container.ok", status: .success)
         } catch let error as CKError {
             switch error.code {
             case .networkUnavailable, .networkFailure:
-                diagnosticMessages.append("⚠️ CloudKit-Container: Netzwerkproblem – \(error.localizedDescription)")
+                appendFormatted("cloudkit.diag.container.network", status: .warning, error.localizedDescription)
             case .notAuthenticated:
-                diagnosticMessages.append("❌ CloudKit-Container: Nicht authentifiziert – iCloud-Anmeldung prüfen")
+                append("cloudkit.diag.container.notAuthenticated", status: .warning)
             case .permissionFailure:
-                diagnosticMessages.append("❌ CloudKit-Container: Berechtigung verweigert – App-Berechtigungen prüfen")
+                append("cloudkit.diag.container.permission", status: .error)
             default:
-                diagnosticMessages.append("⚠️ CloudKit-Container: \(error.localizedDescription)")
+                appendFormatted("cloudkit.diag.container.other", status: .error, error.localizedDescription)
             }
         } catch {
-            diagnosticMessages.append("⚠️ CloudKit-Container: \(error.localizedDescription)")
+            appendFormatted("cloudkit.diag.container.other", status: .error, error.localizedDescription)
         }
     }
-    
+
     private func checkModelContainerSetup() {
-        diagnosticMessages.append("ℹ️ Model-Container: Verwende Container '\(CloudKitConfiguration.containerIdentifier)'")
-        diagnosticMessages.append("ℹ️ Bundle-ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
-        
-        // Verify build configuration
+        appendFormatted("cloudkit.diag.modelContainer", CloudKitConfiguration.containerIdentifier)
+        appendFormatted("cloudkit.diag.bundleId", Bundle.main.bundleIdentifier ?? "unknown")
+
         #if DEBUG
-        diagnosticMessages.append("⚠️ Build-Konfiguration: DEBUG – CloudKit verwendet die Entwicklungsumgebung")
+        append("cloudkit.diag.buildConfig.debug")
         #else
-        diagnosticMessages.append("ℹ️ Build-Konfiguration: RELEASE – CloudKit verwendet die Produktionsumgebung")
+        append("cloudkit.diag.buildConfig.release")
         #endif
-        
-        diagnosticMessages.append("⚠️ Wichtig: Debug- und Release-Builds nutzen unterschiedliche CloudKit-Umgebungen und synchronisieren nicht miteinander")
+
+        append("cloudkit.diag.envWarning")
     }
-    
+
     private func checkSyncStatus() async {
-        // Check for network connectivity
-        diagnosticMessages.append("ℹ️ Sync-Status: SwiftData synchronisiert automatisch, wenn das Netzwerk verfügbar ist")
-        diagnosticMessages.append("ℹ️ Tipp: Änderungen brauchen ggf. etwas Zeit. Ziehe zum Aktualisieren auf dem anderen Gerät nach unten.")
+        append("cloudkit.diag.syncInfo")
+        append("cloudkit.diag.syncTip")
     }
 }
 
@@ -109,8 +128,8 @@ class CloudKitSyncDiagnostics: ObservableObject {
 struct CloudKitDiagnosticsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var diagnostics = CloudKitSyncDiagnostics()
-    
+    @State private var diagnostics = CloudKitSyncDiagnostics()
+
     var body: some View {
         NavigationStack {
             List {
@@ -118,70 +137,70 @@ struct CloudKitDiagnosticsView: View {
                     Section {
                         HStack {
                             ProgressView()
-                            Text("Diagnose läuft...")
+                            Text("cloudkit.diag.running")
                                 .foregroundStyle(.secondary)
                         }
                     }
                 } else if diagnostics.diagnosticMessages.isEmpty {
                     Section {
-                        Text("Tippe auf „Diagnose ausführen“, um den CloudKit-Sync-Status zu prüfen")
+                        Text("cloudkit.diag.tapPrompt")
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    Section("Diagnose-Ergebnisse") {
-                        ForEach(diagnostics.diagnosticMessages, id: \.self) { message in
-                            Text(message)
+                    Section("cloudkit.diag.results") {
+                        ForEach(diagnostics.diagnosticMessages) { message in
+                            Text(message.text)
                                 .font(.footnote)
-                                .foregroundStyle(messageColor(for: message))
+                                .foregroundStyle(messageColor(for: message.status))
                         }
                     }
-                    
-                    Section("Häufige Lösungen") {
+
+                    Section("cloudkit.diag.commonFixes") {
                         VStack(alignment: .leading, spacing: 12) {
                             DiagnosticTip(
                                 icon: "person.fill.checkmark",
-                                title: "Bei iCloud anmelden",
-                                description: "Gehe zu Einstellungen > [Dein Name] und melde dich auf beiden Geräten mit deiner Apple ID an"
+                                title: String(localized: "cloudkit.tip.signIn.title"),
+                                description: String(localized: "cloudkit.tip.signIn.body")
                             )
-                            
+
                             DiagnosticTip(
                                 icon: "arrow.triangle.2.circlepath",
-                                title: "iCloud Drive prüfen",
-                                description: "Gehe zu Einstellungen > [Dein Name] > iCloud und stelle sicher, dass iCloud Drive aktiviert ist"
+                                title: String(localized: "cloudkit.tip.iCloudDrive.title"),
+                                description: String(localized: "cloudkit.tip.iCloudDrive.body")
                             )
-                            
+
                             DiagnosticTip(
                                 icon: "wifi",
-                                title: "Netzwerkverbindung",
-                                description: "Stelle sicher, dass beide Geräte eine stabile Internetverbindung haben"
+                                title: String(localized: "cloudkit.tip.network.title"),
+                                description: String(localized: "cloudkit.tip.network.body")
                             )
-                            
+
                             DiagnosticTip(
                                 icon: "hammer.fill",
-                                title: "Gleicher Build-Typ",
-                                description: "Beide Geräte müssen denselben Build-Typ verwenden (beide Debug oder beide Release/TestFlight/App Store)"
+                                title: String(localized: "cloudkit.tip.buildType.title"),
+                                description: String(localized: "cloudkit.tip.buildType.body")
                             )
-                            
+
                             DiagnosticTip(
                                 icon: "clock.arrow.circlepath",
-                                title: "Auf Synchronisierung warten",
-                                description: "CloudKit-Sync kann ein paar Minuten dauern. Beende die App und öffne sie auf beiden Geräten neu"
+                                title: String(localized: "cloudkit.tip.waitForSync.title"),
+                                description: String(localized: "cloudkit.tip.waitForSync.body")
                             )
                         }
                         .padding(.vertical, 4)
                     }
                 }
             }
-            .navigationTitle("CloudKit-Diagnose")
+            .navigationTitle("cloudkit.diag.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fertig") {
+                    Button("common.done") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Diagnose ausführen") {
+                    Button("cloudkit.diag.run") {
                         Task {
                             await diagnostics.runDiagnostics(modelContext: modelContext)
                         }
@@ -191,15 +210,16 @@ struct CloudKitDiagnosticsView: View {
             }
         }
     }
-    
-    private func messageColor(for message: String) -> Color {
-        if message.starts(with: "✅") {
+
+    private func messageColor(for status: CloudKitSyncDiagnostics.DiagnosticMessage.Status) -> Color {
+        switch status {
+        case .success:
             return .green
-        } else if message.starts(with: "❌") {
-            return .red
-        } else if message.starts(with: "⚠️") {
+        case .warning:
             return .orange
-        } else {
+        case .error:
+            return .red
+        case .info:
             return .primary
         }
     }
@@ -209,14 +229,14 @@ struct DiagnosticTip: View {
     let icon: String
     let title: String
     let description: String
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(.blue)
                 .frame(width: 24)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline)

@@ -7,6 +7,9 @@
 
 import SwiftUI
 import Observation
+import os
+
+private let personalInfoLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "PersonalInfo")
 
 struct PersonalInfoView: View {
     @Environment(ResumeEditorModel.self) private var resumeModel
@@ -47,7 +50,7 @@ struct PersonalInfoView: View {
                         do {
                             try resumeModel.save()
                         } catch {
-                            print("Error saving: \(error.localizedDescription)")
+                            personalInfoLogger.error("Error saving personal info: \(error.localizedDescription, privacy: .public)")
                         }
                     },
                     onCancel: { editingInfo = nil }

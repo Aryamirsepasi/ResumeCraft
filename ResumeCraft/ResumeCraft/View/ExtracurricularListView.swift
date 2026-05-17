@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os
+
+private let extracurricularListLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "ExtracurricularList")
 
 struct ExtracurricularListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
@@ -60,7 +63,7 @@ struct ExtracurricularListView: View {
           do {
             try resumeModel.save()
           } catch {
-            print("Error saving: \(error.localizedDescription)")
+            extracurricularListLogger.error("Error saving extracurricular list: \(error.localizedDescription, privacy: .public)")
           }
         }
       }
@@ -90,9 +93,6 @@ struct ExtracurricularListView: View {
                 newActivity.title_en = newActivity.title
                 newActivity.organization_en = newActivity.organization
                 newActivity.details_en = newActivity.details
-                newActivity.title = ""
-                newActivity.organization = ""
-                newActivity.details = ""
               }
               model.add(newActivity)
             }

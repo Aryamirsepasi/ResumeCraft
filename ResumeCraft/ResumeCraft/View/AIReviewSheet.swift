@@ -19,50 +19,43 @@ struct AIReviewSheet: View {
     
     // Focus tags that can be toggled
     @State private var selectedFocusTags: Set<String> = []
-    private let availableFocusTags = [
-        "Wirkung & Kennzahlen",
-        "Klarheit & Prägnanz",
-        "ATS-Optimierung",
-        "Aktionsverben",
-        "Schlüsselwörter",
-        "Professioneller Ton",
-        "Formatierung",
-        "Gesamteindruck"
-    ]
+    private let availableFocusTags = AIReviewFocusArea.allCases
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Hero Section with Context
-                    heroSection
-                    
-                    // Resume Overview
-                    resumeOverviewSection
-                    
-                    // Job Description Input
-                    jobDescriptionSection
-                    
-                    // Focus Areas
-                    focusAreasSection
-                    
-                    // Action Button
-                    analyzeButton
-                    
-                    // Results Display
-                    resultsSection
-                }
-                .padding()
+        ScrollView {
+            VStack(spacing: 20) {
+                // Hero Section with Context
+                heroSection
+                
+                // Resume Overview
+                resumeOverviewSection
+                
+                // Job Description Input
+                jobDescriptionSection
+                
+                // Focus Areas
+                focusAreasSection
+                
+                // Action Button
+                analyzeButton
+                
+                // Results Display
+                resultsSection
             }
-            .navigationTitle("KI-Lebenslaufprüfung")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbarContent }
-            .sheet(isPresented: $showingInfoSheet) { infoSheet }
-            .onAppear { 
-                startGradientAnimation()
-            }
-            .sensoryFeedback(.impact(flexibility: .soft), trigger: viewModel.isGenerating)
+            .padding()
         }
+        .navigationTitle("KI-Lebenslaufprüfung")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbarContent }
+        .sheet(isPresented: $showingInfoSheet) { infoSheet }
+        .onAppear { 
+            selectedFocusTags = Set(viewModel.focusTags)
+            startGradientAnimation()
+        }
+        .onDisappear {
+            viewModel.cancelFeedback()
+        }
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: viewModel.isGenerating)
     }
 
     // MARK: - Hero Section
@@ -223,17 +216,17 @@ struct AIReviewSheet: View {
             
             GlassEffectContainer(spacing: 4) {
                 TagFlowLayout(hSpacing: 8, vSpacing: 8) {
-                    ForEach(availableFocusTags, id: \.self) { tag in
+                    ForEach(availableFocusTags) { area in
                         FocusTagChip(
-                            title: tag,
-                            isSelected: selectedFocusTags.contains(tag),
+                            title: area.title(for: resumeModel.resume.contentLanguage),
+                            isSelected: selectedFocusTags.contains(area.rawValue),
                             action: {
-                                if selectedFocusTags.contains(tag) {
-                                    selectedFocusTags.remove(tag)
-                                    viewModel.removeFocus(tag)
+                                if selectedFocusTags.contains(area.rawValue) {
+                                    selectedFocusTags.remove(area.rawValue)
+                                    viewModel.removeFocus(area.rawValue)
                                 } else {
-                                    selectedFocusTags.insert(tag)
-                                    viewModel.appendFocus(tag)
+                                    selectedFocusTags.insert(area.rawValue)
+                                    viewModel.appendFocus(area.rawValue)
                                 }
                             }
                         )
@@ -406,7 +399,10 @@ struct AIReviewSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
-            Button("Fertig") { dismiss() }
+            Button("Fertig") {
+                viewModel.cancelFeedback()
+                dismiss()
+            }
         }
         
         ToolbarItem(placement: .navigationBarTrailing) {
@@ -488,10 +484,9 @@ struct AIReviewSheet: View {
     }
     
     private func performAnalysis() {
-        let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume, language: resumeModel.resume.contentLanguage)
-        Task { 
-            await viewModel.requestFeedback(resumeText: resumeText)
-        }
+        let language = resumeModel.resume.contentLanguage
+        let resumeText = ResumeTextFormatter.plainText(for: resumeModel.resume, language: language)
+        viewModel.startFeedback(resumeText: resumeText, language: language)
     }
     
     private func copyFeedback() {

@@ -7,8 +7,21 @@ enum ResumeLanguage: String, CaseIterable, Identifiable, Hashable {
 
   var id: String { rawValue }
 
-  static let defaultContent: ResumeLanguage = .german
-  static let defaultOutput: ResumeLanguage = .german
+  static var defaultContent: ResumeLanguage {
+    preferred(for: .current)
+  }
+
+  static var defaultOutput: ResumeLanguage {
+    preferred(for: .current)
+  }
+
+  static func preferred(for locale: Locale) -> ResumeLanguage {
+    if let languageCode = locale.language.languageCode?.identifier,
+       let language = ResumeLanguage(code: languageCode) {
+      return language
+    }
+    return ResumeLanguage(code: locale.identifier) ?? .german
+  }
 
   init?(code: String) {
     let normalized = code.lowercased()

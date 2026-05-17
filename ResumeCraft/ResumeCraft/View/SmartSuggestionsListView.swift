@@ -84,7 +84,7 @@ struct SmartSuggestionsListView: View {
             summarySection
             
             // Grouped suggestions by section
-            ForEach(groupedSuggestions.keys.sorted(), id: \.self) { section in
+            ForEach(orderedSections, id: \.self) { section in
                 Section {
                     ForEach(groupedSuggestions[section] ?? []) { suggestion in
                         SuggestionRow(
@@ -170,7 +170,7 @@ struct SmartSuggestionsListView: View {
         Menu {
             Section("Priorität") {
                 Button {
-                    filterPriority = filterPriority == nil ? nil : nil
+                    filterPriority = nil
                 } label: {
                     Label("Alle Prioritäten", systemImage: filterPriority == nil ? "checkmark" : "")
                 }
@@ -241,6 +241,17 @@ struct SmartSuggestionsListView: View {
             suggestion.section ?? "Allgemein"
         }
     }
+
+    private var orderedSections: [String] {
+        groupedSuggestions.keys.sorted { lhs, rhs in
+            let lhsPriority = groupedSuggestions[lhs]?.map(\.priority.rawValue).max() ?? 0
+            let rhsPriority = groupedSuggestions[rhs]?.map(\.priority.rawValue).max() ?? 0
+            if lhsPriority == rhsPriority {
+                return lhs.localizedStandardCompare(rhs) == .orderedAscending
+            }
+            return lhsPriority > rhsPriority
+        }
+    }
     
     private func countByPriority(_ priority: SmartSuggestion.Priority) -> Int {
         filteredSuggestions.filter { $0.priority == priority }.count
@@ -254,7 +265,7 @@ struct SmartSuggestionsListView: View {
     @MainActor
     private func loadSuggestions() async {
         // Small delay to show loading state
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        try? await Task.sleep(for: .milliseconds(300))
         
         let analyzedSuggestions = SmartSuggestionsEngine.analyze(resumeModel.resume)
         

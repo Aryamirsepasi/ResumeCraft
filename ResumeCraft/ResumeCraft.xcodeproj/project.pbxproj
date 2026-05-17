@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		42273DBD2E36291F008B39AE /* TPPDF in Frameworks */ = {isa = PBXBuildFile; productRef = 42273DBC2E36291F008B39AE /* TPPDF */; };
 		4249BA0A2E35C5FE003B1CB5 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4249BA092E35C5FE003B1CB5 /* MarkdownUI */; };
 		42B76F192E44051C000085D5 /* AIProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 42B76F182E44051C000085D5 /* AIProxy */; };
 /* End PBXBuildFile section */
@@ -44,7 +43,6 @@
 			files = (
 				42B76F192E44051C000085D5 /* AIProxy in Frameworks */,
 				4249BA0A2E35C5FE003B1CB5 /* MarkdownUI in Frameworks */,
-				42273DBD2E36291F008B39AE /* TPPDF in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,7 +86,6 @@
 			name = ResumeCraft;
 			packageProductDependencies = (
 				4249BA092E35C5FE003B1CB5 /* MarkdownUI */,
-				42273DBC2E36291F008B39AE /* TPPDF */,
 				42B76F182E44051C000085D5 /* AIProxy */,
 			);
 			productName = ResumeCraft;
@@ -103,7 +100,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					420B4BC82E359240006DD68B = {
 						CreatedOnToolsVersion = 16.4;
@@ -122,7 +119,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4249BA082E35C5FE003B1CB5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
-				42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */,
 				42B76F172E44051C000085D5 /* XCRemoteSwiftPackageReference "aiproxyswift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -164,7 +160,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ResumeCraft/ResumeCraft.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 27;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = MK2V998W66;
 				ENABLE_APP_SANDBOX = YES;
@@ -189,7 +185,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.6;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aryamirsepasi.AryaResumeCraft;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -212,7 +208,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ResumeCraft/ResumeCraft.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 27;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = MK2V998W66;
 				ENABLE_APP_SANDBOX = YES;
@@ -237,7 +233,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.6;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aryamirsepasi.AryaResumeCraft;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -310,7 +306,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -401,14 +397,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/techprimate/tppdf.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		4249BA082E35C5FE003B1CB5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
@@ -428,11 +416,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		42273DBC2E36291F008B39AE /* TPPDF */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 42273DBB2E36291F008B39AE /* XCRemoteSwiftPackageReference "tppdf" */;
-			productName = TPPDF;
-		};
 		4249BA092E35C5FE003B1CB5 /* MarkdownUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4249BA082E35C5FE003B1CB5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;

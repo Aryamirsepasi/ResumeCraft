@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os
+
+private let languagesListLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "LanguagesList")
 
 struct LanguagesListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
@@ -60,7 +63,7 @@ struct LanguagesListView: View {
           do {
             try resumeModel.save()
           } catch {
-            print("Error saving: \(error.localizedDescription)")
+            languagesListLogger.error("Error saving languages list: \(error.localizedDescription, privacy: .public)")
           }
         }
       }
@@ -88,8 +91,6 @@ struct LanguagesListView: View {
               if language == .english {
                 newLang.name_en = newLang.name
                 newLang.proficiency_en = newLang.proficiency
-                newLang.name = ""
-                newLang.proficiency = ""
               }
               model.add(newLang)
             }

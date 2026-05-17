@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os
+
+private let projectsListLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "ProjectsList")
 
 struct ProjectsListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
@@ -60,7 +63,7 @@ struct ProjectsListView: View {
           do {
             try resumeModel.save()
           } catch {
-            print("Error saving: \(error.localizedDescription)")
+            projectsListLogger.error("Error saving projects list: \(error.localizedDescription, privacy: .public)")
           }
         }
       }
@@ -91,9 +94,6 @@ struct ProjectsListView: View {
                 newProj.name_en = newProj.name
                 newProj.details_en = newProj.details
                 newProj.technologies_en = newProj.technologies
-                newProj.name = ""
-                newProj.details = ""
-                newProj.technologies = ""
               }
               model.add(newProj)
             }

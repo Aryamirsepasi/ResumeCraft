@@ -6,12 +6,19 @@
 //
 
 import SwiftUI
+import Translation
 
 struct HomeView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
   let openPreview: () -> Void
   let importPDF: () -> Void
   let openSettings: () -> Void
+
+  @State private var translationConfig: TranslationSession.Configuration?
+  @State private var isTranslating = false
+  @State private var translationResultMessage: String?
+  @State private var showTranslationResult = false
+  @State private var translationDirection: ResumeTranslationService.Direction = .germanToEnglish
 
   var body: some View {
     NavigationStack {
@@ -34,7 +41,32 @@ struct HomeView: View {
                 .foregroundStyle(.blue)
             }
           }
-          .accessibilityHint("Importiere deinen Lebenslauf als PDF und fülle Abschnitte automatisch aus.")
+          .accessibilityHint(Text("Importiere deinen Lebenslauf als PDF und fülle Abschnitte automatisch aus."))
+          .listRowBackground(Color.clear)
+
+          Button(action: { triggerTranslation() }) {
+            Label {
+              VStack(alignment: .leading, spacing: 4) {
+                Text(translationTitle)
+                  .font(.headline)
+                Text("home.translate.subtitle")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+            } icon: {
+              if isTranslating {
+                ProgressView()
+                  .frame(width: 24, height: 24)
+              } else {
+                Image(systemName: "globe")
+                  .symbolRenderingMode(.hierarchical)
+                  .font(.title2)
+                  .foregroundStyle(.green)
+              }
+            }
+          }
+          .disabled(isTranslating)
+          .accessibilityHint(Text("home.translate.hint"))
           .listRowBackground(Color.clear)
         } header: {
           Text("Schnellaktionen")
@@ -58,14 +90,14 @@ struct HomeView: View {
             subtitle: Text("Name, Kontakt, Links"),
             systemImage: "person.circle.fill",
             iconColor: .blue,
-            destination: AnyView(PersonalInfoView(model: resumeModel.personalModel))
+            destination: { PersonalInfoView(model: resumeModel.personalModel) }
           )
           HomeRow(
             title: Text("Zusammenfassung"),
             subtitle: Text("Kurze Einführung unter persönlichen Daten"),
             systemImage: "text.justify",
             iconColor: .purple,
-            destination: AnyView(SummaryEditorView())
+            destination: { SummaryEditorView() }
           )
         } header: {
           Text("Grundinformationen")
@@ -79,21 +111,21 @@ struct HomeView: View {
             subtitle: Text("Positionen und Aufgaben"),
             systemImage: "briefcase.fill",
             iconColor: .orange,
-            destination: AnyView(ExperienceListView(model: resumeModel.experienceModel))
+            destination: { ExperienceListView(model: resumeModel.experienceModel) }
           )
           HomeRow(
             title: Text("Projekte"),
             subtitle: Text("Private und berufliche Projekte"),
             systemImage: "hammer.fill",
             iconColor: .green,
-            destination: AnyView(ProjectsListView(model: resumeModel.projectsModel))
+            destination: { ProjectsListView(model: resumeModel.projectsModel) }
           )
           HomeRow(
             title: Text("Fähigkeiten"),
             subtitle: Text("Technische und soziale Fähigkeiten"),
             systemImage: "star.circle.fill",
             iconColor: .yellow,
-            destination: AnyView(SkillsListView(model: resumeModel.skillsModel))
+            destination: { SkillsListView(model: resumeModel.skillsModel) }
           )
         } header: {
           Text("Beruflich")
@@ -107,28 +139,28 @@ struct HomeView: View {
             subtitle: Text("Abschlüsse, Daten, Details"),
             systemImage: "graduationcap.fill",
             iconColor: .indigo,
-            destination: AnyView(EducationListView(model: resumeModel.educationModel))
+            destination: { EducationListView(model: resumeModel.educationModel) }
           )
           HomeRow(
             title: Text("Aktivitäten"),
             subtitle: Text("Vereine, Ehrenamt, mehr"),
             systemImage: "figure.wave",
             iconColor: .pink,
-            destination: AnyView(ExtracurricularListView(model: resumeModel.extracurricularModel))
+            destination: { ExtracurricularListView(model: resumeModel.extracurricularModel) }
           )
           HomeRow(
             title: Text("Sprachen"),
             subtitle: Text("Sprachen und Kenntnisstand"),
             systemImage: "globe.americas.fill",
             iconColor: .teal,
-            destination: AnyView(LanguagesListView(model: resumeModel.languageModel))
+            destination: { LanguagesListView(model: resumeModel.languageModel) }
           )
           HomeRow(
             title: Text("Sonstiges"),
             subtitle: Text("Weitere Informationen und Hinweise"),
             systemImage: "ellipsis.circle.fill",
             iconColor: .gray,
-            destination: AnyView(MiscellaneousEditorView())
+            destination: { MiscellaneousEditorView() }
           )
         } header: {
           Text("Zusätzliches")
@@ -151,20 +183,96 @@ struct HomeView: View {
           }
         }
       }
+      .translationTask(translationConfig) { session in
+        await performTranslation(session: session)
+      }
+      .alert("home.translate.alertTitle", isPresented: $showTranslationResult) {
+        Button("OK", role: .cancel) {}
+      } message: {
+        Text(translationResultMessage ?? "")
+      }
+    }
+  }
+
+  /// Picks the translation direction based on the resume's content language.
+  /// If the user works in German, translate German -> English; otherwise the reverse.
+  private var preferredDirection: ResumeTranslationService.Direction {
+    switch resumeModel.resume.contentLanguage {
+    case .german: return .germanToEnglish
+    case .english: return .englishToGerman
+    }
+  }
+
+  /// Localized button title that reflects the direction.
+  private var translationTitle: LocalizedStringKey {
+    switch preferredDirection {
+    case .germanToEnglish: return "home.translate.toEnglish"
+    case .englishToGerman: return "home.translate.toGerman"
+    }
+  }
+
+  private func triggerTranslation() {
+    guard !isTranslating else { return }
+    let direction = preferredDirection
+    translationDirection = direction
+    let newConfig = TranslationSession.Configuration(
+      source: direction.sourceLanguage,
+      target: direction.targetLanguage
+    )
+    if translationConfig == nil {
+      translationConfig = newConfig
+    } else {
+      // Force a fresh session — invalidate completes any in-flight task, then
+      // we reassign to a new config so the Apple Translation framework picks
+      // up the (possibly new) direction.
+      translationConfig?.invalidate()
+      translationConfig = newConfig
+    }
+  }
+
+  @MainActor
+  private func performTranslation(session: TranslationSession) async {
+    isTranslating = true
+    defer { isTranslating = false }
+
+    let direction = translationDirection
+    let requests = ResumeTranslationService.buildRequests(
+      from: resumeModel.resume,
+      direction: direction,
+      mode: .refreshAll
+    )
+
+    guard !requests.isEmpty else {
+      translationResultMessage = String(localized: "home.translate.empty")
+      showTranslationResult = true
+      return
+    }
+
+    do {
+      let responses = try await session.translations(from: requests)
+      ResumeTranslationService.applyTranslations(responses, to: resumeModel.resume, direction: direction)
+      try resumeModel.save()
+      let template = String(localized: "home.translate.success")
+      translationResultMessage = String(format: template, responses.count)
+      showTranslationResult = true
+    } catch {
+      let template = String(localized: "home.translate.failed")
+      translationResultMessage = String(format: template, error.localizedDescription)
+      showTranslationResult = true
     }
   }
 }
 
-private struct HomeRow: View {
+private struct HomeRow<Destination: View>: View {
   let title: Text
   let subtitle: Text
   let systemImage: String
   let iconColor: Color
-  let destination: AnyView
+  @ViewBuilder let destination: () -> Destination
 
   var body: some View {
     NavigationLink {
-      destination
+      destination()
     } label: {
       HStack(spacing: 14) {
         ZStack {
@@ -200,28 +308,28 @@ private struct ResumeStatsRow: View {
       StatBadge(
         icon: "briefcase.fill",
         count: (resumeModel.resume.experiences ?? []).filter(\.isVisible).count,
-        label: "Positionen",
+        label: String(localized: "Positionen"),
         color: .orange
       )
       
       StatBadge(
         icon: "graduationcap.fill",
         count: (resumeModel.resume.educations ?? []).filter(\.isVisible).count,
-        label: "Ausbildung",
+        label: String(localized: "Ausbildung"),
         color: .indigo
       )
       
       StatBadge(
         icon: "star.fill",
         count: (resumeModel.resume.skills ?? []).filter(\.isVisible).count,
-        label: "Fähigkeiten",
+        label: String(localized: "Fähigkeiten"),
         color: .yellow
       )
       
       StatBadge(
         icon: "hammer.fill",
         count: (resumeModel.resume.projects ?? []).filter(\.isVisible).count,
-        label: "Projekte",
+        label: String(localized: "Projekte"),
         color: .green
       )
     }

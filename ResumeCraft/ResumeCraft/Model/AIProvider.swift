@@ -10,9 +10,9 @@ protocol AIProvider {
     systemPrompt: String?,
     userPrompt: String,
     images: [Data],
+    language: ResumeLanguage,
     streaming: Bool
   ) async throws -> String
 
   func cancel()
 }
-

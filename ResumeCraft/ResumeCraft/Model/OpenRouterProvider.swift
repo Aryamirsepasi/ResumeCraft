@@ -16,6 +16,7 @@ final class OpenRouterProvider: AIProvider {
   private var config: OpenRouterConfig
   private var aiProxyService: OpenRouterService?
   private var currentTask: Task<String, Error>?
+  private var currentTaskID: UUID?
 
   init(config: OpenRouterConfig) {
     self.config = config
@@ -39,24 +40,22 @@ final class OpenRouterProvider: AIProvider {
   }
 
   func processText(
-    systemPrompt: String? = "Du bist ein hilfreicher Schreibassistent. Antworte auf Deutsch.",
+    systemPrompt: String? = nil,
     userPrompt: String,
     images: [Data] = [],
+    language: ResumeLanguage = .defaultContent,
     streaming: Bool = false
   ) async throws -> String {
     // Cancel any previous in-flight task
     currentTask?.cancel()
     isProcessing = true
-    defer {
-      isProcessing = false
-      currentTask = nil
-    }
 
     guard !config.apiKey.isEmpty else {
+      isProcessing = false
       throw NSError(
         domain: "OpenRouterAPI",
         code: -1,
-        userInfo: [NSLocalizedDescriptionKey: "API-Schlüssel fehlt."]
+        userInfo: [NSLocalizedDescriptionKey: String(localized: "ai.error.missingAPIKey")]
       )
     }
 
@@ -65,11 +64,12 @@ final class OpenRouterProvider: AIProvider {
     }
 
     guard let service = aiProxyService else {
+      isProcessing = false
       throw NSError(
         domain: "OpenRouterAPI",
         code: -1,
         userInfo: [
-          NSLocalizedDescriptionKey: "AIProxy-Dienst konnte nicht initialisiert werden."
+          NSLocalizedDescriptionKey: String(localized: "ai.error.proxyInitFailed")
         ]
       )
     }
@@ -89,7 +89,8 @@ final class OpenRouterProvider: AIProvider {
       route: .fallback
     )
 
-    let task = Task.detached { () throws -> String in
+    let taskID = UUID()
+    let task = Task { () throws -> String in
       do {
         if streaming {
           var compiledResponse = ""
@@ -109,15 +110,24 @@ final class OpenRouterProvider: AIProvider {
           return response.choices.first?.message.content ?? ""
         }
       } catch AIProxyError.unsuccessfulRequest(let statusCode, let responseBody) {
+        let template = String(localized: "ai.error.apiError")
         throw NSError(
           domain: "OpenRouterAPI",
           code: statusCode,
-          userInfo: [NSLocalizedDescriptionKey: "API-Fehler: \(responseBody)"]
+          userInfo: [NSLocalizedDescriptionKey: String(format: template, responseBody)]
         )
       }
     }
 
+    currentTaskID = taskID
     currentTask = task
+    defer {
+      if currentTaskID == taskID {
+        isProcessing = false
+        currentTask = nil
+        currentTaskID = nil
+      }
+    }
 
     do {
       return try await task.value
@@ -132,6 +142,7 @@ final class OpenRouterProvider: AIProvider {
   func cancel() {
     currentTask?.cancel()
     currentTask = nil
+    currentTaskID = nil
     isProcessing = false
   }
 }

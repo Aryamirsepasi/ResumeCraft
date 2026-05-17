@@ -120,7 +120,8 @@ struct VersionHistoryView: View {
     
     @MainActor
     private func loadHistory() async {
-        let resumeIdString = String(describing: resumeModel.resume.id)
+        let resumeIdString = resumeModel.resume.stableID.uuidString
+        let legacyResumeIdString = String(describing: resumeModel.resume.id)
         
         let descriptor = FetchDescriptor<ResumeHistory>(
             predicate: #Predicate { $0.resumeIdString == resumeIdString }
@@ -129,17 +130,33 @@ struct VersionHistoryView: View {
         if let existing = try? context.fetch(descriptor).first {
             history = existing
         } else {
-            // Create new history
-            let newHistory = ResumeHistory(resumeIdString: resumeIdString)
-            context.insert(newHistory)
-            try? context.save()
-            history = newHistory
+            let legacyDescriptor = FetchDescriptor<ResumeHistory>(
+                predicate: #Predicate { $0.resumeIdString == legacyResumeIdString }
+            )
+            if let legacy = try? context.fetch(legacyDescriptor).first {
+                legacy.resumeIdString = resumeIdString
+                try? context.save()
+                history = legacy
+            } else {
+                let allHistories = (try? context.fetch(FetchDescriptor<ResumeHistory>())) ?? []
+                if allHistories.count == 1, let orphanedHistory = allHistories.first {
+                    orphanedHistory.resumeIdString = resumeIdString
+                    try? context.save()
+                    history = orphanedHistory
+                } else {
+                    // Create new history
+                    let newHistory = ResumeHistory(resumeIdString: resumeIdString)
+                    context.insert(newHistory)
+                    try? context.save()
+                    history = newHistory
+                }
+            }
         }
     }
     
     private func saveSnapshot() {
         let snapshot = ResumeSnapshot.capture(from: resumeModel.resume)
-        let resumeIdString = String(describing: resumeModel.resume.id)
+        let resumeIdString = resumeModel.resume.stableID.uuidString
         
         if history == nil {
             let newHistory = ResumeHistory(resumeIdString: resumeIdString)

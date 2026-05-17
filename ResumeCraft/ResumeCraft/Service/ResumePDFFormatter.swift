@@ -39,7 +39,6 @@ struct ResumePDFFormatter {
           string: name,
           attributes: [
             .font: headerFont,
-            .accessibilitySpeechLanguage: language.rawValue,
           ]
         )
       )
@@ -395,6 +394,7 @@ struct ResumePDFFormatter {
     language: ResumeLanguage
   ) -> String {
     let present = String(localized: "resume.label.today", locale: language.locale)
+    guard start != .distantPast else { return isCurrent ? present : "-" }
     if isCurrent {
       return
         "\(DateFormatter.resumeMonthYear(for: language).string(from: start)) – \(present)"

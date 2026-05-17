@@ -30,6 +30,11 @@ struct OnboardingFlow: View {
     }
     .tabViewStyle(.page)
     .animation(.easeInOut, value: page)
+    .onChange(of: page) { _, newPage in
+      if newPage >= 2 {
+        hasSeenOnboarding = true
+      }
+    }
     .indexViewStyle(.page(backgroundDisplayMode: .interactive))
     .background(
       LinearGradient(
@@ -140,21 +145,17 @@ struct OnboardingAIChoicePage: View {
           VStack(alignment: .leading, spacing: 6) {
             Text("On-Device-KI (Apple Intelligence)")
               .font(.headline)
-            Text(
-              "Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät."
-            )
-            .font(.caption)
-            .foregroundColor(.secondary)
+            Text("Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät.")
+              .font(.caption)
+              .foregroundColor(.secondary)
           }
         }
 
         Divider().padding(.vertical, 4)
 
-        Text(
-          "Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein."
-        )
-        .font(.footnote)
-        .foregroundColor(.secondary)
+        Text("Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein.")
+          .font(.footnote)
+          .foregroundColor(.secondary)
       }
       .padding()
       .background(

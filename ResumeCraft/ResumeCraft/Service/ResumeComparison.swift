@@ -59,7 +59,7 @@ extension ResumeSnapshot {
 @Model
 final class ResumeHistory {
     var resumeIdString: String = ""
-    private var snapshotsBlob: Data = Data()
+    var snapshotsBlob: Data = Data()
     
     init(resumeIdString: String) {
         self.resumeIdString = resumeIdString

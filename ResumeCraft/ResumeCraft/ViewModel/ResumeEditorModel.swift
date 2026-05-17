@@ -8,6 +8,9 @@
 import Foundation
 import Observation
 import SwiftData
+import os
+
+private let resumeEditorLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "ResumeEditor")
 
 @MainActor
 @Observable
@@ -118,7 +121,7 @@ final class ResumeEditorModel {
                     Array(updatedResume.languages ?? []).sorted { $0.orderIndex < $1.orderIndex }
             }
         } catch {
-            print("Error refreshing resume data: \(error.localizedDescription)")
+            resumeEditorLogger.error("Error refreshing resume data: \(error.localizedDescription, privacy: .public)")
         }
     }
 

@@ -15,15 +15,16 @@ enum PDFExportError: Error, LocalizedError {
     case resumeTooLong
     case exportFailed(String)
     case invalidFormat
-    
+
     var errorDescription: String? {
         switch self {
         case .resumeTooLong:
-            return "Lebensläufe sollten nicht länger als zwei Seiten sein."
+            return String(localized: "export.error.tooLong")
         case .exportFailed(let reason):
-            return "Export fehlgeschlagen: \(reason)"
+            let template = String(localized: "export.error.failed")
+            return String(format: template, reason)
         case .invalidFormat:
-            return "Ungültiges Exportformat ausgewählt."
+            return String(localized: "export.error.invalidFormat")
         }
     }
 }
@@ -40,12 +41,22 @@ struct ExportOptions {
     
     enum ExportFormat: String, CaseIterable, Identifiable {
         case pdf = "PDF"
-        case text = "Klartext"
+        case text = "TXT"
         case markdown = "Markdown"
         case html = "HTML"
-        
+
         var id: String { rawValue }
-        
+
+        /// User-facing format name; localized so e.g. .text reads as "Plain Text" / "Klartext".
+        var displayName: String {
+            switch self {
+            case .pdf: return "PDF"
+            case .text: return String(localized: "export.format.text.name")
+            case .markdown: return "Markdown"
+            case .html: return "HTML"
+            }
+        }
+
         var fileExtension: String {
             switch self {
             case .pdf: return "pdf"
@@ -54,7 +65,7 @@ struct ExportOptions {
             case .html: return "html"
             }
         }
-        
+
         var icon: String {
             switch self {
             case .pdf: return "doc.fill"
@@ -63,13 +74,13 @@ struct ExportOptions {
             case .html: return "globe"
             }
         }
-        
+
         var description: String {
             switch self {
-            case .pdf: return "Am besten zum Teilen und Drucken"
-            case .text: return "Klartext, ATS-freundliches Format"
-            case .markdown: return "Formatiert für Versionskontrolle"
-            case .html: return "Web-geeignetes Format"
+            case .pdf: return String(localized: "export.format.pdf.description")
+            case .text: return String(localized: "export.format.text.description")
+            case .markdown: return String(localized: "export.format.markdown.description")
+            case .html: return String(localized: "export.format.html.description")
             }
         }
     }
@@ -121,6 +132,7 @@ final class PDFExportService {
     // MARK: - Main Export Methods
     
     /// Export resume with specified options
+    @MainActor
     static func export(resume: Resume, options: ExportOptions = ExportOptions()) throws -> ExportResult {
         switch options.format {
         case .pdf:
@@ -135,6 +147,7 @@ final class PDFExportService {
     }
     
     /// Legacy export method for backward compatibility
+    @MainActor
     static func export(resume: Resume, fileName: String = "Lebenslauf.pdf") throws -> URL {
         var options = ExportOptions()
         options.fileName = fileName.replacingOccurrences(of: ".pdf", with: "")
@@ -145,11 +158,24 @@ final class PDFExportService {
     
     // MARK: - PDF Export
     
+    @MainActor
     private static func exportPDF(resume: Resume, options: ExportOptions) throws -> ExportResult {
-        let tempDir = FileManager.default.temporaryDirectory
-        let fileName = sanitizeFileName(options.fileName) + ".pdf"
-        let url = tempDir.appendingPathComponent(fileName)
-        
+        let attributedResume = ResumePDFFormatter.attributedString(
+            for: resume,
+            pageWidth: options.pageSize.size.width,
+            language: options.outputLanguage
+        )
+        return try exportPDFFromAttributedString(attributedResume, options: options)
+    }
+
+    /// Generates raw PDF `Data` from a pre-built attributed string.
+    /// Shared by both the in-app preview (PDFView) and the file export,
+    /// guaranteeing pixel-perfect parity between the two.
+    /// Safe to call from any thread — no SwiftData `@Model` access.
+    static func pdfData(
+        from attributedResume: NSAttributedString,
+        options: ExportOptions
+    ) throws -> Data {
         let pageSize = options.pageSize.size
         let pageRect = CGRect(origin: .zero, size: pageSize)
         let margins = options.margins
@@ -160,12 +186,6 @@ final class PDFExportService {
             height: pageSize.height - margins.top - margins.bottom
         )
         let maxPages = 2
-
-        let attributedResume = ResumePDFFormatter.attributedString(
-            for: resume,
-            pageWidth: pageSize.width,
-            language: options.outputLanguage
-        )
 
         // Use NSLayoutManager to paginate the attributed string
         let textStorage = NSTextStorage(attributedString: attributedResume)
@@ -196,39 +216,87 @@ final class PDFExportService {
             let subject = String(localized: "resume.export.subject", locale: options.outputLanguage.locale)
             documentInfo = [
                 kCGPDFContextTitle as String: options.fileName,
-                kCGPDFContextAuthor as String: "\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "")",
                 kCGPDFContextCreator as String: "ResumeCraft",
                 kCGPDFContextSubject as String: subject,
             ]
         }
-        
+
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = documentInfo
-        
+
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
-        let data = renderer.pdfData { ctx in
+        return renderer.pdfData { ctx in
             for range in pageRanges {
                 ctx.beginPage()
                 let pageText = attributedResume.attributedSubstring(from: range)
                 pageText.draw(with: textRect, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
             }
         }
-        
-        try data.write(to: url, options: Data.WritingOptions.atomic)
-        
+    }
+
+    /// Exports a PDF from a pre-built attributed string to a temporary file.
+    /// Safe to call from a background thread — no SwiftData `@Model` access.
+    static func exportPDFFromAttributedString(
+        _ attributedResume: NSAttributedString,
+        options: ExportOptions
+    ) throws -> ExportResult {
+        let data = try pdfData(from: attributedResume, options: options)
+
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileName = sanitizeFileName(options.fileName) + ".pdf"
+        let url = tempDir.appendingPathComponent(fileName)
+
+        try data.write(to: url, options: .atomic)
+
         let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
-        
+
         return ExportResult(
             url: url,
             format: .pdf,
             fileSize: fileSize,
-            pageCount: pageRanges.count,
+            pageCount: nil,
             exportDate: Date()
         )
+    }
+
+    /// Exports pre-built text content to a file. Safe to call off main actor.
+    static func exportPrebuiltText(
+        _ text: String,
+        options: ExportOptions
+    ) throws -> ExportResult {
+        let tempDir = FileManager.default.temporaryDirectory
+        let ext = options.format.fileExtension
+        let fileName = sanitizeFileName(options.fileName) + ".\(ext)"
+        let url = tempDir.appendingPathComponent(fileName)
+
+        try text.write(to: url, atomically: true, encoding: .utf8)
+
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
+
+        return ExportResult(
+            url: url,
+            format: options.format,
+            fileSize: fileSize,
+            pageCount: nil,
+            exportDate: Date()
+        )
+    }
+
+    /// Generate markdown on main actor (accesses @Model). Call before background export.
+    @MainActor
+    static func generateMarkdownOnMainActor(for resume: Resume, language: ResumeLanguage) -> String {
+        generateMarkdown(for: resume, language: language)
+    }
+
+    /// Generate HTML on main actor (accesses @Model). Call before background export.
+    @MainActor
+    static func generateHTMLOnMainActor(for resume: Resume, language: ResumeLanguage) -> String {
+        generateHTML(for: resume, language: language)
     }
     
     // MARK: - Plain Text Export
     
+    @MainActor
     private static func exportPlainText(resume: Resume, options: ExportOptions) throws -> ExportResult {
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = sanitizeFileName(options.fileName) + ".txt"
@@ -251,6 +319,7 @@ final class PDFExportService {
     
     // MARK: - Markdown Export
     
+    @MainActor
     private static func exportMarkdown(resume: Resume, options: ExportOptions) throws -> ExportResult {
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = sanitizeFileName(options.fileName) + ".md"
@@ -273,6 +342,7 @@ final class PDFExportService {
     
     // MARK: - HTML Export
     
+    @MainActor
     private static func exportHTML(resume: Resume, options: ExportOptions) throws -> ExportResult {
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = sanitizeFileName(options.fileName) + ".html"
@@ -441,17 +511,17 @@ final class PDFExportService {
     
     private static func generateHTML(for resume: Resume, language: ResumeLanguage) -> String {
         let fallback = language.fallback
-        let atWord = String(localized: "resume.label.at", locale: language.locale)
-        let technologiesLabel = String(localized: "resume.label.technologies", locale: language.locale)
-        let gradeLabel = String(localized: "resume.label.grade", locale: language.locale)
-        let titleLabel = String(localized: "resume.export.subject", locale: language.locale)
+        let atWord = escapeHTML(String(localized: "resume.label.at", locale: language.locale))
+        let technologiesLabel = escapeHTML(String(localized: "resume.label.technologies", locale: language.locale))
+        let gradeLabel = escapeHTML(String(localized: "resume.label.grade", locale: language.locale))
+        let titleLabel = escapeHTML(String(localized: "resume.export.subject", locale: language.locale))
         var html = """
         <!DOCTYPE html>
         <html lang="\(language.rawValue)">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>\(resume.personal?.firstName ?? "") \(resume.personal?.lastName ?? "") - \(titleLabel)</title>
+            <title>\(escapeHTML(resume.personal?.firstName ?? "")) \(escapeHTML(resume.personal?.lastName ?? "")) - \(titleLabel)</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
@@ -475,26 +545,31 @@ final class PDFExportService {
         
         // Header
         if let personal = resume.personal {
-            html += "<h1>\(personal.firstName) \(personal.lastName)</h1>\n"
+            let firstName = escapeHTML(personal.firstName)
+            let lastName = escapeHTML(personal.lastName)
+            html += "<h1>\(firstName) \(lastName)</h1>\n"
             html += "<div class=\"contact\">\n"
             
             var contact: [String] = []
-            if !personal.email.isEmpty { contact.append("<a href=\"mailto:\(personal.email)\">\(personal.email)</a>") }
-            if !personal.phone.isEmpty { contact.append(personal.phone) }
+            if !personal.email.isEmpty {
+                let email = escapeHTML(personal.email)
+                contact.append("<a href=\"mailto:\(email)\">\(email)</a>")
+            }
+            if !personal.phone.isEmpty { contact.append(escapeHTML(personal.phone)) }
             let address = personal.address(for: language, fallback: fallback)
-            if !address.isEmpty { contact.append(address) }
+            if !address.isEmpty { contact.append(escapeHTML(address)) }
             
             html += contact.joined(separator: " • ") + "\n"
             
             var links: [String] = []
             if let linkedIn = personal.linkedIn, !linkedIn.isEmpty {
-                links.append("<a href=\"\(linkedIn)\">LinkedIn</a>")
+                links.append("<a href=\"\(escapeHTML(linkedIn))\">LinkedIn</a>")
             }
             if let github = personal.github, !github.isEmpty {
-                links.append("<a href=\"\(github)\">GitHub</a>")
+                links.append("<a href=\"\(escapeHTML(github))\">GitHub</a>")
             }
             if let website = personal.website, !website.isEmpty {
-                links.append("<a href=\"\(website)\">Website</a>")
+                links.append("<a href=\"\(escapeHTML(website))\">Website</a>")
             }
             
             if !links.isEmpty {
@@ -507,17 +582,17 @@ final class PDFExportService {
         if let summary = resume.summary, summary.isVisible {
             let summaryText = summary.text(for: language, fallback: fallback)
             if !summaryText.isEmpty {
-                html += "<h2>\(ResumeSection.summary.title(for: language))</h2>\n"
-                html += "<p class=\"summary\">\(summaryText)</p>\n"
+                html += "<h2>\(escapeHTML(ResumeSection.summary.title(for: language)))</h2>\n"
+                html += "<p class=\"summary\">\(escapeHTML(summaryText))</p>\n"
             }
         }
         
         // Skills
         let skills = (resume.skills ?? []).filter(\.isVisible)
         if !skills.isEmpty {
-            html += "<h2>\(ResumeSection.skills.title(for: language))</h2>\n<div class=\"skills\">\n"
+            html += "<h2>\(escapeHTML(ResumeSection.skills.title(for: language)))</h2>\n<div class=\"skills\">\n"
             for skill in skills {
-                let name = skill.name(for: language, fallback: fallback)
+                let name = escapeHTML(skill.name(for: language, fallback: fallback))
                 html += "<span class=\"skill\">\(name)</span>\n"
             }
             html += "</div>\n"
@@ -526,12 +601,12 @@ final class PDFExportService {
         // Experience
         let experiences = (resume.experiences ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !experiences.isEmpty {
-            html += "<h2>\(ResumeSection.experience.title(for: language))</h2>\n"
+            html += "<h2>\(escapeHTML(ResumeSection.experience.title(for: language)))</h2>\n"
             for exp in experiences {
-                let title = exp.title(for: language, fallback: fallback)
-                let company = exp.company(for: language, fallback: fallback)
-                let location = exp.location(for: language, fallback: fallback)
-                let dateRange = formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, language: language)
+                let title = escapeHTML(exp.title(for: language, fallback: fallback))
+                let company = escapeHTML(exp.company(for: language, fallback: fallback))
+                let location = escapeHTML(exp.location(for: language, fallback: fallback))
+                let dateRange = escapeHTML(formatDateRange(exp.startDate, exp.endDate, exp.isCurrent, language: language))
                 let locationLine = location.isEmpty ? dateRange : "\(dateRange) • \(location)"
                 html += "<div class=\"experience-item\">\n"
                 html += "<h3>\(title) \(atWord) \(company)</h3>\n"
@@ -542,7 +617,7 @@ final class PDFExportService {
                 if !bullets.isEmpty {
                     html += "<ul>\n"
                     for bullet in bullets {
-                        html += "<li>\(bullet.trimmingCharacters(in: .whitespaces))</li>\n"
+                        html += "<li>\(escapeHTML(bullet.trimmingCharacters(in: .whitespaces)))</li>\n"
                     }
                     html += "</ul>\n"
                 }
@@ -553,11 +628,11 @@ final class PDFExportService {
         // Projects
         let projects = (resume.projects ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !projects.isEmpty {
-            html += "<h2>\(ResumeSection.projects.title(for: language))</h2>\n"
+            html += "<h2>\(escapeHTML(ResumeSection.projects.title(for: language)))</h2>\n"
             for proj in projects {
-                let name = proj.name(for: language, fallback: fallback)
-                let technologies = proj.technologies(for: language, fallback: fallback)
-                let details = proj.details(for: language, fallback: fallback)
+                let name = escapeHTML(proj.name(for: language, fallback: fallback))
+                let technologies = escapeHTML(proj.technologies(for: language, fallback: fallback))
+                let details = escapeHTML(proj.details(for: language, fallback: fallback))
                 html += "<div class=\"project-item\">\n"
                 html += "<h3>\(name)</h3>\n"
                 if !technologies.isEmpty {
@@ -565,7 +640,8 @@ final class PDFExportService {
                 }
                 html += "<p>\(details)</p>\n"
                 if let link = proj.link, !link.isEmpty {
-                    html += "<p><a href=\"\(link)\">\(link)</a></p>\n"
+                    let escapedLink = escapeHTML(link)
+                    html += "<p><a href=\"\(escapedLink)\">\(escapedLink)</a></p>\n"
                 }
                 html += "</div>\n"
             }
@@ -574,13 +650,13 @@ final class PDFExportService {
         // Education
         let educations = (resume.educations ?? []).filter(\.isVisible).sorted { $0.orderIndex < $1.orderIndex }
         if !educations.isEmpty {
-            html += "<h2>\(ResumeSection.education.title(for: language))</h2>\n"
+            html += "<h2>\(escapeHTML(ResumeSection.education.title(for: language)))</h2>\n"
             for edu in educations {
-                let degree = edu.degree(for: language, fallback: fallback)
-                let field = edu.field(for: language, fallback: fallback)
-                let school = edu.school(for: language, fallback: fallback)
-                let grade = edu.grade(for: language, fallback: fallback)
-                let dateRange = formatDateRange(edu.startDate, edu.endDate, false, language: language)
+                let degree = escapeHTML(edu.degree(for: language, fallback: fallback))
+                let field = escapeHTML(edu.field(for: language, fallback: fallback))
+                let school = escapeHTML(edu.school(for: language, fallback: fallback))
+                let grade = escapeHTML(edu.grade(for: language, fallback: fallback))
+                let dateRange = escapeHTML(formatDateRange(edu.startDate, edu.endDate, false, language: language))
                 let titleLine = field.isEmpty ? degree : "\(degree) in \(field)"
                 html += "<div class=\"education-item\">\n"
                 html += "<h3>\(titleLine)</h3>\n"
@@ -596,10 +672,10 @@ final class PDFExportService {
         // Languages
         let languages = (resume.languages ?? []).filter(\.isVisible)
         if !languages.isEmpty {
-            html += "<h2>\(ResumeSection.languages.title(for: language))</h2>\n<p>"
+            html += "<h2>\(escapeHTML(ResumeSection.languages.title(for: language)))</h2>\n<p>"
             html += languages.map {
-                let name = $0.name(for: language, fallback: fallback)
-                let proficiency = $0.proficiency(for: language, fallback: fallback)
+                let name = escapeHTML($0.name(for: language, fallback: fallback))
+                let proficiency = escapeHTML($0.proficiency(for: language, fallback: fallback))
                 return "\(name) (\(proficiency))"
             }.joined(separator: " • ")
             html += "</p>\n"
@@ -608,8 +684,8 @@ final class PDFExportService {
         let miscText = resume.miscellaneous(for: language, fallback: fallback)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if !miscText.isEmpty {
-            html += "<h2>\(ResumeSection.miscellaneous.title(for: language))</h2>\n"
-            html += "<p>\(miscText)</p>\n"
+            html += "<h2>\(escapeHTML(ResumeSection.miscellaneous.title(for: language)))</h2>\n"
+            html += "<p>\(escapeHTML(miscText))</p>\n"
         }
         
         html += "</body>\n</html>"
@@ -618,7 +694,18 @@ final class PDFExportService {
     }
     
     // MARK: - Helpers
-    
+
+    /// Escapes special HTML characters in user-provided content
+    /// to prevent broken output or injection.
+    private static func escapeHTML(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
     private static func sanitizeFileName(_ name: String) -> String {
         let invalidChars = CharacterSet(charactersIn: ":/\\?%*|\"<>")
         return name.components(separatedBy: invalidChars).joined(separator: "_")
@@ -631,6 +718,7 @@ final class PDFExportService {
         language: ResumeLanguage
     ) -> String {
         let formatter = DateFormatter.resumeMonthYear(for: language)
+        guard start != .distantPast else { return isCurrent ? String(localized: "resume.label.today", locale: language.locale) : "-" }
         let startStr = formatter.string(from: start)
         let present = String(localized: "resume.label.today", locale: language.locale)
         

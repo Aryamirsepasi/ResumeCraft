@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os
+
+private let educationListLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "EducationList")
 
 struct EducationListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
@@ -60,7 +63,7 @@ struct EducationListView: View {
           do {
             try resumeModel.save()
           } catch {
-            print("Error saving: \(error.localizedDescription)")
+            educationListLogger.error("Error saving education list: \(error.localizedDescription, privacy: .public)")
           }
         }
       }
@@ -96,11 +99,6 @@ struct EducationListView: View {
                 newEdu.field_en = newEdu.field
                 newEdu.grade_en = newEdu.grade
                 newEdu.details_en = newEdu.details
-                newEdu.school = ""
-                newEdu.degree = ""
-                newEdu.field = ""
-                newEdu.grade = ""
-                newEdu.details = ""
               }
               model.add(newEdu)
             }
@@ -156,6 +154,7 @@ struct EducationRowView: View {
 
   private func formattedDate(_ date: Date?) -> String {
     guard let date else { return "-" }
+    guard date != .distantPast else { return "-" }
     return DateFormatter.resumeMonthYear(for: language).string(from: date)
   }
 }

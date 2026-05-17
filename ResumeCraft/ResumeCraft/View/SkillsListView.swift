@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os
+
+private let skillsListLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "SkillsList")
 
 struct SkillsListView: View {
   @Bindable var model: SkillsModel
@@ -61,7 +64,7 @@ struct SkillsListView: View {
           do {
             try resumeModel.save()
           } catch {
-            print("Error saving: \(error.localizedDescription)")
+            skillsListLogger.error("Error saving skills list: \(error.localizedDescription, privacy: .public)")
           }
         }
       }
@@ -89,8 +92,6 @@ struct SkillsListView: View {
               if language == .english {
                 newSkill.name_en = newSkill.name
                 newSkill.category_en = newSkill.category
-                newSkill.name = ""
-                newSkill.category = ""
               }
               model.add(newSkill)
             }

@@ -15,81 +15,76 @@ import FoundationModels   // iOS 26+; add to target’s frameworks
 @Observable
 final class FoundationModelProvider: AIProvider {
   var isProcessing = false
-  private var session: LanguageModelSession?
-  private var sessionInstructions: String?
   private var currentTask: Task<String, Error>?
+  private var currentTaskID: UUID?
 
   init() {}
 
-  private func makeSession(instructions: String?) -> LanguageModelSession {
+  private func makeSession(instructions: String?, language: ResumeLanguage) -> LanguageModelSession {
+    let locale = language.locale
+    let localeHint = "The person's locale is \(locale.identifier)."
+
     let normalizedInstructions = instructions?
       .trimmingCharacters(in: .whitespacesAndNewlines)
 
-    if let existing = session, normalizedInstructions == sessionInstructions {
-      return existing
-    }
-
-    let newSession: LanguageModelSession
+    let fullInstructions: String
     if let normalizedInstructions, !normalizedInstructions.isEmpty {
-      newSession = LanguageModelSession(instructions: normalizedInstructions)
+      fullInstructions = "\(localeHint)\n\n\(normalizedInstructions)"
     } else {
-      newSession = LanguageModelSession()
+      fullInstructions = localeHint
     }
 
-    session = newSession
-    sessionInstructions = normalizedInstructions
-    return newSession
+    return LanguageModelSession(instructions: fullInstructions)
   }
 
   func processText(
     systemPrompt: String?,
     userPrompt: String,
     images: [Data] = [],
+    language: ResumeLanguage = .defaultContent,
     streaming: Bool = false
   ) async throws -> String {
     // Cancel any in-flight work
     currentTask?.cancel()
     isProcessing = true
-    defer { isProcessing = false; currentTask = nil }
 
-    // Ensure availability (user may have Apple Intelligence disabled)
     switch SystemLanguageModel.default.availability {
     case .available: break
     case .unavailable(let reason):
+      let template = String(localized: "ai.error.appleIntelligenceUnavailable")
+      isProcessing = false
       throw NSError(
         domain: "FoundationModels",
         code: -2,
         userInfo: [NSLocalizedDescriptionKey:
-          "Apple Intelligence ist nicht verfügbar: \(String(describing: reason)). " +
-          "Aktiviere Apple Intelligence in den Einstellungen, um die On-Device-Prüfung zu nutzen."]
+          String(format: template, String(describing: reason))]
       )
     }
 
-    let germanLocale = Locale(identifier: "de_DE")
-    if !SystemLanguageModel.default.supportsLocale(germanLocale) {
-      throw NSError(
-        domain: "FoundationModels",
-        code: -3,
-        userInfo: [NSLocalizedDescriptionKey:
-          "Das installierte Sprachmodell unterstützt Deutsch nicht. " +
-          "Bitte installiere eine deutsche Systemsprachunterstützung oder wähle ein anderes Modell."]
-      )
-    }
+    let session = makeSession(instructions: systemPrompt, language: language)
 
-    let session = makeSession(instructions: systemPrompt)
-
+    let taskID = UUID()
     let task = Task { () async throws -> String in
       let response = try await session.respond(to: userPrompt)
       try Task.checkCancellation()
       return response.content
     }
+    currentTaskID = taskID
     currentTask = task
+    defer {
+      if currentTaskID == taskID {
+        isProcessing = false
+        currentTask = nil
+        currentTaskID = nil
+      }
+    }
     return try await task.value
   }
 
   func cancel() {
     currentTask?.cancel()
     currentTask = nil
+    currentTaskID = nil
     isProcessing = false
   }
 }

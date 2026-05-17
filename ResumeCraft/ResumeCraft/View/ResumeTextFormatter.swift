@@ -223,6 +223,7 @@ struct ResumeTextFormatter {
     private static func dateRange(_ start: Date, _ end: Date?, _ isCurrent: Bool, language: ResumeLanguage) -> String {
         let formatter = DateFormatter.resumeMonthYear(for: language)
         let present = String(localized: "resume.label.today", locale: language.locale)
+        guard start != .distantPast else { return isCurrent ? present : "-" }
         if isCurrent {
             return "\(formatter.string(from: start)) – \(present)"
         } else if let end = end {

@@ -67,16 +67,20 @@ final class ResumeParsingService {
     ]
 
     // Main entry point for parsing a resume PDF
-    nonisolated func parseResume(from url: URL, completion: @escaping (String) -> Void) {
+    nonisolated func parseResume(
+        from url: URL,
+        language: ResumeLanguage? = nil,
+        completion: @escaping (String) -> Void
+    ) {
         Task.detached {
-            let text = await Self.parseResume(from: url)
+            let text = await Self.parseResume(from: url, language: language)
             await MainActor.run {
                 completion(text)
             }
         }
     }
 
-    nonisolated static func parseResume(from url: URL) async -> String {
+    nonisolated static func parseResume(from url: URL, language: ResumeLanguage? = nil) async -> String {
         guard let pdf = PDFDocument(url: url) else {
             return ""
         }
@@ -84,7 +88,10 @@ final class ResumeParsingService {
         let text = extractTextFromPDF(pdf)
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             // Fallback to OCR if empty (e.g., scanned images)
-            return await extractTextUsingVision(pdf: pdf)
+            return await extractTextUsingVision(
+                pdf: pdf,
+                recognitionLanguages: recognitionLanguages(for: language)
+            )
         }
         return text
     }
@@ -101,8 +108,33 @@ final class ResumeParsingService {
         return fullText
     }
 
-    private nonisolated static func extractTextUsingVision(pdf: PDFDocument) async -> String {
-        await withTaskGroup(of: String.self) { group in
+    private nonisolated static func recognitionLanguages(for language: ResumeLanguage?) -> [String] {
+        var languages: [String] = []
+
+        if let language {
+            languages.append(language == .german ? "de-DE" : "en-US")
+        }
+
+        for preferred in Locale.preferredLanguages {
+            let normalized = preferred.lowercased()
+            if normalized.hasPrefix("de") {
+                languages.append("de-DE")
+            } else if normalized.hasPrefix("en") {
+                languages.append("en-US")
+            }
+        }
+
+        languages.append(contentsOf: ["de-DE", "en-US"])
+
+        var seen = Set<String>()
+        return languages.filter { seen.insert($0).inserted }
+    }
+
+    private nonisolated static func extractTextUsingVision(
+        pdf: PDFDocument,
+        recognitionLanguages: [String]
+    ) async -> String {
+        await withTaskGroup(of: (Int, String).self) { group in
             for pageIndex in 0 ..< pdf.pageCount {
                 guard let page = pdf.page(at: pageIndex),
                       let pageImage = page
@@ -110,30 +142,33 @@ final class ResumeParsingService {
                         .cgImage
                 else { continue }
 
-                group.addTask {
+                group.addTask { [pageIndex] in
                     let request = VNRecognizeTextRequest()
                     request.recognitionLevel = .accurate
                     request.usesLanguageCorrection = true
-                    request.recognitionLanguages = ["de-DE", "en-US"]
+                    request.recognitionLanguages = recognitionLanguages
                     let handler = VNImageRequestHandler(cgImage: pageImage, options: [:])
                     try? handler.perform([request])
-                    guard let results = request.results as? [VNRecognizedTextObservation] else {
-                        return ""
+                    guard let results = request.results else {
+                        return (pageIndex, "")
                     }
-                    return results
+                    let text = results
                         .compactMap { $0.topCandidates(1).first?.string }
                         .joined(separator: "\n")
+                    return (pageIndex, text)
                 }
             }
 
-            var fullText = ""
-            for await pageText in group {
-                if !pageText.isEmpty {
-                    fullText.append(pageText)
-                    fullText.append("\n")
+            var pages: [(Int, String)] = []
+            for await result in group {
+                if !result.1.isEmpty {
+                    pages.append(result)
                 }
             }
-            return fullText
+            return pages
+                .sorted { $0.0 < $1.0 }
+                .map(\.1)
+                .joined(separator: "\n")
         }
     }
 
@@ -637,7 +672,7 @@ final class ResumeParsingService {
         return entries
     }
 
-    nonisolated func canonicalize(text: String, ai: any AIProvider) async throws -> String {
+    func canonicalize(text: String, ai: any AIProvider) async throws -> String {
       let systemPrompt = """
       You are a résumé parser. Reorganize résumé text into this EXACT format with these EXACT headers:
       
@@ -709,6 +744,7 @@ final class ResumeParsingService {
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
         images: [],
+        language: .defaultContent,
         streaming: false
       )
 
@@ -767,9 +803,6 @@ final class ResumeParsingService {
             with: "\n\n",
             options: .regularExpression
         )
-
-        // Fix email extraction (remove 'coderary@' if it appears)
-        cleaned = cleaned.replacingOccurrences(of: "coderary@", with: "")
 
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }

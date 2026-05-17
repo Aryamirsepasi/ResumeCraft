@@ -6,68 +6,66 @@
 //
 
 import SwiftUI
-import UIKit
+import PDFKit
 
+/// Displays the resume as a real PDF using PDFKit so the preview
+/// matches the exported PDF exactly (WYSIWYG).
 struct ResumePreviewView: View {
     let resume: Resume
     let language: ResumeLanguage
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView([.vertical, .horizontal]) {
-                // Center the scaled paper in the scroll view
-                HStack {
-                    Spacer(minLength: 0)
-                    A4PaperView {
-                        ResumeA4PreviewView(resume: resume, language: language)
-                            .frame(width: 595, height: 842)
-                    }
-                    .scaleEffect(0.85)
-                    .frame(
-                        width: 595 * 0.85,
-                        height: 842 * 0.85,
-                        alignment: .center
-                    )
-                    Spacer(minLength: 0)
-                }
-                .frame(
-                    minWidth: geometry.size.width,
-                    minHeight: geometry.size.height,
-                    alignment: .center
-                )
-            }
+        ResumePDFPreview(resume: resume, language: language)
             .background(Color(.systemGray6))
-        }
-        .navigationTitle("Lebenslauf-Vorschau")
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Lebenslauf-Vorschau (Papier)")
+            .navigationTitle("Lebenslauf-Vorschau")
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(Text("Lebenslauf-Vorschau (Papier)"))
     }
 }
 
-struct ResumeA4PreviewView: UIViewRepresentable {
+/// UIViewRepresentable wrapping PDFKit's PDFView.
+/// Generates an in-memory PDF using the same pipeline as export,
+/// then displays it — ensuring pixel-perfect preview-export parity.
+struct ResumePDFPreview: UIViewRepresentable {
     let resume: Resume
     let language: ResumeLanguage
 
-    func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
-        textView.isEditable = false
-        textView.isScrollEnabled = true
-        textView.backgroundColor = .clear
-        textView.textContainerInset = UIEdgeInsets(top: 32, left: 32, bottom: 32, right: 32) // Add padding
-        textView.textContainer.lineFragmentPadding = 0
-        textView.setContentCompressionResistancePriority(.required, for: .vertical)
-        textView.setContentCompressionResistancePriority(.required, for: .horizontal)
-        textView.accessibilityLabel = "Lebenslauf-Vorschau"
-        textView.adjustsFontForContentSizeCategory = true
-        return textView
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
     }
 
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        let pageWidth: CGFloat = 595
-        uiView.attributedText = ResumePDFFormatter.attributedString(
+    func makeUIView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.autoScales = true
+        pdfView.backgroundColor = .systemGray6
+        pdfView.pageShadowsEnabled = true
+        pdfView.accessibilityLabel = String(localized: "Lebenslauf-Vorschau (Papier)")
+        return pdfView
+    }
+
+    func updateUIView(_ pdfView: PDFView, context: Context) {
+        let signature = PreviewSignature(updated: resume.updated, language: language)
+        guard context.coordinator.lastSignature != signature else { return }
+        context.coordinator.lastSignature = signature
+
+        let options = ExportOptions(pageSize: .a4, margins: .standard, outputLanguage: language)
+        let attributedString = ResumePDFFormatter.attributedString(
             for: resume,
-            pageWidth: pageWidth,
+            pageWidth: options.pageSize.size.width,
             language: language
         )
+        if let data = try? PDFExportService.pdfData(from: attributedString, options: options),
+           let document = PDFDocument(data: data) {
+            pdfView.document = document
+        }
+    }
+
+    final class Coordinator {
+        var lastSignature: PreviewSignature?
+    }
+
+    struct PreviewSignature: Equatable {
+        let updated: Date
+        let language: ResumeLanguage
     }
 }

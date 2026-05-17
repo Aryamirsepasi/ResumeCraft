@@ -53,7 +53,7 @@ struct SettingsView: View {
                             titleKey: "Bearbeitungssprache",
                             selection: contentLanguageBinding
                         )
-                        .accessibilityLabel("Bearbeitungssprache")
+                        .accessibilityLabel(Text("Bearbeitungssprache"))
                     }
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Ausgabesprache")
@@ -63,7 +63,7 @@ struct SettingsView: View {
                             titleKey: "Ausgabesprache",
                             selection: outputLanguageBinding
                         )
-                        .accessibilityLabel("Ausgabesprache")
+                        .accessibilityLabel(Text("Ausgabesprache"))
                     }
                     Text("Diese Auswahl steuert, in welcher Sprache du Inhalte bearbeitest und exportierst.")
                         .font(.caption)
@@ -123,41 +123,36 @@ struct SettingsView: View {
                 
                 // On-device AI (Foundation Models) status
                 Section("KI auf dem Gerät") {
-                    if #available(iOS 26, *) {
-                        let availability = SystemLanguageModel.default.availability
+                    let availability = SystemLanguageModel.default.availability
 
-                        HStack {
-                            switch availability {
-                            case .available:
-                                Label("Apple Intelligence: Aktiviert", systemImage: "checkmark.seal.fill")
-                                    .foregroundStyle(.green)
-                            case .unavailable(let reason):
-                                Label("Apple Intelligence: Nicht verfügbar", systemImage: "xmark.octagon.fill")
-                                    .foregroundStyle(.red)
-                                Spacer()
-                                Button("Einstellungen öffnen") {
-                                    openAppSettings()
-                                }
-                                .font(.caption)
-                                .buttonStyle(.bordered)
-                                .accessibilityLabel("Einstellungen öffnen, um Apple Intelligence zu aktivieren")
-                                .help("Grund: \(String(describing: reason))")
+                    HStack {
+                        switch availability {
+                        case .available:
+                            Label("Apple Intelligence: Aktiviert", systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                        case .unavailable(let reason):
+                            Label("Apple Intelligence: Nicht verfügbar", systemImage: "xmark.octagon.fill")
+                                .foregroundStyle(.red)
+                            Spacer()
+                            Button("Einstellungen öffnen") {
+                                openAppSettings()
                             }
+                            .font(.caption)
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel("Einstellungen öffnen, um Apple Intelligence zu aktivieren")
+                            .help("Grund: \(String(describing: reason))")
                         }
-                        .padding(.vertical, 4)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Datenschutz & Verarbeitung")
-                                .font(.callout).bold()
-                            Text("ResumeCraft nutzt das On-Device-Sprachmodell, um deinen Lebenslauf zu prüfen. Deine Daten verlassen das Gerät nicht.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        .accessibilityElement(children: .combine)
-                    } else {
-                        Label("Erfordert iOS 26 oder neuer", systemImage: "clock.badge.exclamationmark")
-                            .foregroundStyle(.orange)
                     }
+                    .padding(.vertical, 4)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Datenschutz & Verarbeitung")
+                            .font(.callout).bold()
+                        Text("ResumeCraft nutzt das On-Device-Sprachmodell, um deinen Lebenslauf zu prüfen. Deine Daten verlassen das Gerät nicht.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
                 }
 
                 // iCloud Status
@@ -266,12 +261,14 @@ struct SettingsView: View {
                 // App info
                 Section {
                     HStack {
-                        Image("IconPreview")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(radius: 4)
-                            .accessibilityLabel("App-Symbol")
+                        if let iconImage = UIImage(named: "AppIcon") {
+                            Image(uiImage: iconImage)
+                                .resizable()
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .shadow(radius: 4)
+                                .accessibilityLabel("App-Symbol")
+                        }
                         VStack(alignment: .leading) {
                             Text("ResumeCraft").font(.title2).fontWeight(.bold)
                             Text("Version 1.0.0").font(.caption).foregroundStyle(.secondary)

@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os
+
+private let experienceListLogger = Logger(subsystem: "com.aryamirsepasi.ResumeCraft", category: "ExperienceList")
 
 struct ExperienceListView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
@@ -60,7 +63,7 @@ struct ExperienceListView: View {
           do {
             try resumeModel.save()
           } catch {
-            print("Error saving: \(error.localizedDescription)")
+            experienceListLogger.error("Error saving experience list: \(error.localizedDescription, privacy: .public)")
           }
         }
       }
@@ -95,10 +98,6 @@ struct ExperienceListView: View {
                 newExp.company_en = newExp.company
                 newExp.location_en = newExp.location
                 newExp.details_en = newExp.details
-                newExp.title = ""
-                newExp.company = ""
-                newExp.location = ""
-                newExp.details = ""
               }
               model.add(newExp)
             }
@@ -148,6 +147,7 @@ struct ExperienceRowView: View {
 
   private func formattedDate(_ date: Date?) -> String {
     guard let date else { return "-" }
+    guard date != .distantPast else { return "-" }
     return DateFormatter.resumeMonthYear(for: language).string(from: date)
   }
 }

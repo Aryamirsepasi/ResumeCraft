@@ -29,9 +29,9 @@ struct ResumePreviewScreen: View {
                         } label: {
                             Label("Schließen", systemImage: "xmark")
                         }
-                        .accessibilityLabel("Vorschau schließen")
+                        .accessibilityLabel(Text("Vorschau schließen"))
                     }
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: .principal) {
                         ResumeLanguagePicker(
                             titleKey: "Ausgabesprache",
                             selection: $outputLanguage
@@ -45,7 +45,7 @@ struct ResumePreviewScreen: View {
                             } label: {
                                 Label("Schnell-Export PDF", systemImage: "doc.fill")
                             }
-                            
+
                             Button {
                                 showExportOptions = true
                             } label: {
@@ -58,7 +58,7 @@ struct ResumePreviewScreen: View {
                                 Label("Exportieren", systemImage: "square.and.arrow.up")
                             }
                         }
-                        .accessibilityLabel("Lebenslauf exportieren")
+                        .accessibilityLabel(Text("Lebenslauf exportieren"))
                     }
                 }
                 .sheet(isPresented: $showShareSheet, onDismiss: { pdfURL = nil }) {
@@ -72,7 +72,7 @@ struct ResumePreviewScreen: View {
                 .alert("Lebenslauf zu lang", isPresented: $showTooLongAlert) {
                     Button("OK", role: .cancel) { }
                 } message: {
-                    Text("Lebensläufe sollten nicht länger als zwei Seiten sein.")
+                    Text(PDFExportError.resumeTooLong.localizedDescription)
                 }
         }
         .onAppear {
@@ -86,17 +86,27 @@ struct ResumePreviewScreen: View {
 
     private func exportPDF() {
         isExporting = true
-        // Capture resume on the main actor before entering detached task
-        let resumeToExport = resume
         let language = outputLanguage
+
+        // Build export options and attributed string on the main actor
+        // (SwiftData @Model objects are not Sendable)
+        var options = ExportOptions()
+        options.outputLanguage = language
+        options.fileName = language == .english ? "Resume" : "Lebenslauf"
+        let attributedString = ResumePDFFormatter.attributedString(
+            for: resume,
+            pageWidth: options.pageSize.size.width,
+            language: language
+        )
+
         Task.detached(priority: .userInitiated) {
             do {
-                var options = ExportOptions()
-                options.outputLanguage = language
-                options.fileName = language == .english ? "Resume" : "Lebenslauf"
-                let pdf = try PDFExportService.export(resume: resumeToExport, options: options).url
+                let result = try PDFExportService.exportPDFFromAttributedString(
+                    attributedString,
+                    options: options
+                )
                 await MainActor.run {
-                    pdfURL = pdf
+                    pdfURL = result.url
                     showShareSheet = true
                     isExporting = false
                 }
