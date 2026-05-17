@@ -99,27 +99,19 @@ struct ResumePreviewScreen: View {
             language: language
         )
 
-        Task.detached(priority: .userInitiated) {
-            do {
-                let result = try PDFExportService.exportPDFFromAttributedString(
-                    attributedString,
-                    options: options
-                )
-                await MainActor.run {
-                    pdfURL = result.url
-                    showShareSheet = true
-                    isExporting = false
-                }
-            } catch PDFExportError.resumeTooLong {
-                await MainActor.run {
-                    showTooLongAlert = true
-                    isExporting = false
-                }
-            } catch {
-                await MainActor.run {
-                    isExporting = false
-                }
-            }
+        do {
+            let result = try PDFExportService.exportPDFFromAttributedString(
+                attributedString,
+                options: options
+            )
+            pdfURL = result.url
+            showShareSheet = true
+            isExporting = false
+        } catch PDFExportError.resumeTooLong {
+            showTooLongAlert = true
+            isExporting = false
+        } catch {
+            isExporting = false
         }
     }
 }

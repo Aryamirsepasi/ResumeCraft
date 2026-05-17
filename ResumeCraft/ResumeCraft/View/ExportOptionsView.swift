@@ -197,55 +197,49 @@ struct ExportOptionsView: View {
         let htmlText: String? = exportOptions.format == .html
             ? PDFExportService.generateHTMLOnMainActor(for: resume, language: exportOptions.outputLanguage) : nil
 
-        Task.detached(priority: .userInitiated) {
-            do {
-                let result: ExportResult
-                switch exportOptions.format {
-                case .pdf:
-                    guard let attrString = attributedString else {
-                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "PDF-Inhalt konnte nicht erstellt werden."])
-                    }
-                    result = try PDFExportService.exportPDFFromAttributedString(
-                        attrString,
-                        options: exportOptions
-                    )
-                case .text:
-                    guard let text = plainText else {
-                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "Textinhalt konnte nicht erstellt werden."])
-                    }
-                    result = try PDFExportService.exportPrebuiltText(
-                        text,
-                        options: exportOptions
-                    )
-                case .markdown:
-                    guard let md = markdownText else {
-                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "Markdown-Inhalt konnte nicht erstellt werden."])
-                    }
-                    result = try PDFExportService.exportPrebuiltText(
-                        md,
-                        options: exportOptions
-                    )
-                case .html:
-                    guard let html = htmlText else {
-                        throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "HTML-Inhalt konnte nicht erstellt werden."])
-                    }
-                    result = try PDFExportService.exportPrebuiltText(
-                        html,
-                        options: exportOptions
-                    )
+        do {
+            let result: ExportResult
+            switch exportOptions.format {
+            case .pdf:
+                guard let attrString = attributedString else {
+                    throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "PDF-Inhalt konnte nicht erstellt werden."])
                 }
-                await MainActor.run {
-                    exportResult = result
-                    showShareSheet = true
-                    isExporting = false
+                result = try PDFExportService.exportPDFFromAttributedString(
+                    attrString,
+                    options: exportOptions
+                )
+            case .text:
+                guard let text = plainText else {
+                    throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "Textinhalt konnte nicht erstellt werden."])
                 }
-            } catch {
-                await MainActor.run {
-                    exportError = error.localizedDescription
-                    showError = true
-                    isExporting = false
+                result = try PDFExportService.exportPrebuiltText(
+                    text,
+                    options: exportOptions
+                )
+            case .markdown:
+                guard let md = markdownText else {
+                    throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "Markdown-Inhalt konnte nicht erstellt werden."])
                 }
+                result = try PDFExportService.exportPrebuiltText(
+                    md,
+                    options: exportOptions
+                )
+            case .html:
+                guard let html = htmlText else {
+                    throw NSError(domain: "Export", code: -1, userInfo: [NSLocalizedDescriptionKey: "HTML-Inhalt konnte nicht erstellt werden."])
+                }
+                result = try PDFExportService.exportPrebuiltText(
+                    html,
+                    options: exportOptions
+                )
             }
+            exportResult = result
+            showShareSheet = true
+            isExporting = false
+        } catch {
+            exportError = error.localizedDescription
+            showError = true
+            isExporting = false
         }
     }
 

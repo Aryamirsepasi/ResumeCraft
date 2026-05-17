@@ -18,6 +18,15 @@ struct SettingsView: View {
         openURL(url)
     }
 
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        if let build, !build.isEmpty {
+            return "Version \(version) (\(build))"
+        }
+        return "Version \(version)"
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -271,7 +280,7 @@ struct SettingsView: View {
                         }
                         VStack(alignment: .leading) {
                             Text("ResumeCraft").font(.title2).fontWeight(.bold)
-                            Text("Version 1.0.0").font(.caption).foregroundStyle(.secondary)
+                            Text(appVersionText).font(.caption).foregroundStyle(.secondary)
                             Text("© 2025 Arya Mirsepasi").font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()

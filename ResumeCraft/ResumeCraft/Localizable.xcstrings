@@ -344,6 +344,40 @@
         }
       }
     },
+    "Aktiviere Apple Intelligence, um PDF-Import zu verwenden." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiviere Apple Intelligence, um PDF-Import zu verwenden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Apple Intelligence to use PDF import."
+          }
+        }
+      }
+    },
+    "Apple Intelligence für PDF-Import erforderlich" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence für PDF-Import erforderlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence required for PDF import"
+          }
+        }
+      }
+    },
     "Abschnittsübersicht" : {
       "localizations" : {
         "en" : {
@@ -435,23 +469,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No feedback was generated. Please try again."
-          }
-        }
-      }
-    },
-    "ai.error.proxyInitFailed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AIProxy-Dienst konnte nicht initialisiert werden."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not initialize the AIProxy service."
           }
         }
       }
@@ -4932,23 +4949,6 @@
         }
       }
     },
-    "Version 1.0.0" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version 1.0.0"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version 1.0.0"
-          }
-        }
-      }
-    },
     "Versionsvergleich" : {
       "localizations" : {
         "en" : {
@@ -5155,36 +5155,36 @@
         }
       }
     },
-    "Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein." : {
+    "Ohne Apple Intelligence kannst du Inhalte weiter bearbeiten und exportieren. PDF-Import und KI-Bewertung sind deaktiviert, bis Apple Intelligence verfügbar ist." : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein."
+            "value" : "Ohne Apple Intelligence kannst du Inhalte weiter bearbeiten und exportieren. PDF-Import und KI-Bewertung sind deaktiviert, bis Apple Intelligence verfügbar ist."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Even when on-device AI is unavailable, you can still edit, import, and export. To enable AI review, turn on Apple Intelligence in Settings."
+            "value" : "Without Apple Intelligence, you can still edit and export content. PDF import and AI review are disabled until Apple Intelligence is available."
           }
         }
       }
     },
-    "Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät." : {
+    "ResumeCraft nutzt Apple Intelligence für PDF-Import und KI-Prüfung. Deine Daten bleiben auf deinem Gerät." : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät."
+            "value" : "ResumeCraft nutzt Apple Intelligence für PDF-Import und KI-Prüfung. Deine Daten bleiben auf deinem Gerät."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When available, ResumeCraft uses Apple's on-device language model to review your résumé. Your data stays on your device."
+            "value" : "ResumeCraft uses Apple Intelligence for PDF import and AI review. Your data stays on your device."
           }
         }
       }

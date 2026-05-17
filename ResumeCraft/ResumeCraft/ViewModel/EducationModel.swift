@@ -39,8 +39,11 @@ final class EducationModel {
   }
 
   func remove(at offsets: IndexSet) {
-    var copy = items
+    let currentItems = items
+    let removedItems = offsets.map { currentItems[$0] }
+    var copy = currentItems
     copy.remove(atOffsets: offsets)
+    removedItems.forEach { context.delete($0) }
     for (idx, item) in copy.enumerated() { item.orderIndex = idx }
     items = copy
   }

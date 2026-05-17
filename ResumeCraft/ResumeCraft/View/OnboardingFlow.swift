@@ -145,7 +145,7 @@ struct OnboardingAIChoicePage: View {
           VStack(alignment: .leading, spacing: 6) {
             Text("On-Device-KI (Apple Intelligence)")
               .font(.headline)
-            Text("Wenn verfügbar, nutzt ResumeCraft das On-Device-Sprachmodell von Apple, um deinen Lebenslauf zu prüfen. Deine Daten bleiben auf deinem Gerät.")
+            Text("ResumeCraft nutzt Apple Intelligence für PDF-Import und KI-Prüfung. Deine Daten bleiben auf deinem Gerät.")
               .font(.caption)
               .foregroundColor(.secondary)
           }
@@ -153,7 +153,7 @@ struct OnboardingAIChoicePage: View {
 
         Divider().padding(.vertical, 4)
 
-        Text("Wenn On-Device-KI nicht verfügbar ist, kannst du trotzdem bearbeiten, importieren und exportieren. Um die KI-Bewertung zu aktivieren, schalte Apple Intelligence in den Einstellungen ein.")
+        Text("Ohne Apple Intelligence kannst du Inhalte weiter bearbeiten und exportieren. PDF-Import und KI-Bewertung sind deaktiviert, bis Apple Intelligence verfügbar ist.")
           .font(.footnote)
           .foregroundColor(.secondary)
       }

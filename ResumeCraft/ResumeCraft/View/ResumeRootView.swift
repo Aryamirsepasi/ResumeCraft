@@ -513,7 +513,8 @@ struct ResumeRootView: View {
 
         let structuredText = try await parsingService.canonicalize(
           text: rawText,
-          ai: fmProvider
+          ai: fmProvider,
+          language: importLanguage
         )
 
         if structuredText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -693,6 +694,9 @@ struct ResumeRootView: View {
       )
       experience.setTitle(job.title, for: language)
       experience.setCompany(job.company, for: language)
+      if let location = job.location {
+        experience.setLocation(location, for: language)
+      }
       experience.setDetails(job.details, for: language)
       experience.isVisible = true
       context.insert(experience)
@@ -723,6 +727,8 @@ struct ResumeRootView: View {
       )
       education.setSchool(educ.institution, for: language)
       education.setDegree(educ.degree, for: language)
+      education.setField(educ.field, for: language)
+      education.setDetails(educ.details, for: language)
       education.isVisible = true
       context.insert(education)
       education.resume = resume

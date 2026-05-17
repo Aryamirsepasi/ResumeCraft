@@ -1,15 +1,6 @@
 {
-  "originHash" : "762f67aa006e51a10e56efb3eb8da16baa1d409f5eaadce11301222a28ff21cf",
+  "originHash" : "0cec9fd96f1abe7ea91cf6c8beeb14dbd48b6bc5e06ad7a4528d2f7ac57986db",
   "pins" : [
-    {
-      "identity" : "aiproxyswift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lzell/aiproxyswift",
-      "state" : {
-        "revision" : "8f11c6583c234694d5e9319665242c01e15729cf",
-        "version" : "0.124.0"
-      }
-    },
     {
       "identity" : "networkimage",
       "kind" : "remoteSourceControl",

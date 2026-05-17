@@ -6,7 +6,8 @@
 //
 
 import SwiftUI
-import Translation
+import FoundationModels
+@preconcurrency import Translation
 
 struct HomeView: View {
   @Environment(ResumeEditorModel.self) private var resumeModel
@@ -30,7 +31,7 @@ struct HomeView: View {
               VStack(alignment: .leading, spacing: 4) {
                 Text("Aus PDF importieren")
                   .font(.headline)
-                Text("Abschnitte automatisch extrahieren und ausfüllen")
+                Text(importSubtitle)
                   .font(.caption)
                   .foregroundStyle(.secondary)
               }
@@ -41,7 +42,8 @@ struct HomeView: View {
                 .foregroundStyle(.blue)
             }
           }
-          .accessibilityHint(Text("Importiere deinen Lebenslauf als PDF und fülle Abschnitte automatisch aus."))
+          .disabled(!canUseAppleIntelligence)
+          .accessibilityHint(Text(importAccessibilityHint))
           .listRowBackground(Color.clear)
 
           Button(action: { triggerTranslation() }) {
@@ -203,6 +205,25 @@ struct HomeView: View {
     }
   }
 
+  private var canUseAppleIntelligence: Bool {
+    if case .available = SystemLanguageModel.default.availability {
+      return true
+    }
+    return false
+  }
+
+  private var importSubtitle: LocalizedStringKey {
+    canUseAppleIntelligence
+      ? "Abschnitte automatisch extrahieren und ausfüllen"
+      : "Apple Intelligence für PDF-Import erforderlich"
+  }
+
+  private var importAccessibilityHint: LocalizedStringKey {
+    canUseAppleIntelligence
+      ? "Importiere deinen Lebenslauf als PDF und fülle Abschnitte automatisch aus."
+      : "Aktiviere Apple Intelligence, um PDF-Import zu verwenden."
+  }
+
   /// Localized button title that reflects the direction.
   private var translationTitle: LocalizedStringKey {
     switch preferredDirection {
@@ -236,20 +257,22 @@ struct HomeView: View {
     defer { isTranslating = false }
 
     let direction = translationDirection
-    let requests = ResumeTranslationService.buildRequests(
-      from: resumeModel.resume,
-      direction: direction,
-      mode: .refreshAll
+    let requestBatch = TranslationRequestBatch(
+      requests: ResumeTranslationService.buildRequests(
+        from: resumeModel.resume,
+        direction: direction,
+        mode: .refreshAll
+      )
     )
 
-    guard !requests.isEmpty else {
+    guard !requestBatch.isEmpty else {
       translationResultMessage = String(localized: "home.translate.empty")
       showTranslationResult = true
       return
     }
 
     do {
-      let responses = try await session.translations(from: requests)
+      let responses = try await requestBatch.translations(using: session)
       ResumeTranslationService.applyTranslations(responses, to: resumeModel.resume, direction: direction)
       try resumeModel.save()
       let template = String(localized: "home.translate.success")
@@ -260,6 +283,18 @@ struct HomeView: View {
       translationResultMessage = String(format: template, error.localizedDescription)
       showTranslationResult = true
     }
+  }
+}
+
+private struct TranslationRequestBatch: @unchecked Sendable {
+  let requests: [TranslationSession.Request]
+
+  var isEmpty: Bool {
+    requests.isEmpty
+  }
+
+  func translations(using session: TranslationSession) async throws -> [TranslationSession.Response] {
+    try await session.translations(from: requests)
   }
 }
 

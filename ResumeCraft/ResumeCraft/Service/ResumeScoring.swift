@@ -123,13 +123,14 @@ final class ResumeScoringEngine {
     /// Calculate comprehensive resume score
     static func calculate(for resume: Resume) -> ResumeScore {
         var categoryScores: [ResumeScore.CategoryScore] = []
+        let language = resume.contentLanguage
         
         // Calculate each category
-        categoryScores.append(calculateCompleteness(resume))
-        categoryScores.append(calculateContentQuality(resume))
+        categoryScores.append(calculateCompleteness(resume, language: language))
+        categoryScores.append(calculateContentQuality(resume, language: language))
         categoryScores.append(calculateATSOptimization(resume))
-        categoryScores.append(calculateFormatting(resume))
-        categoryScores.append(calculateImpact(resume))
+        categoryScores.append(calculateFormatting(resume, language: language))
+        categoryScores.append(calculateImpact(resume, language: language))
         
         // Calculate weighted overall score
         let overallScore = Int(categoryScores.reduce(0.0) { $0 + $1.weightedScore })
@@ -145,7 +146,7 @@ final class ResumeScoringEngine {
     
     // MARK: - Completeness Score (25%)
     
-    private static func calculateCompleteness(_ resume: Resume) -> ResumeScore.CategoryScore {
+    private static func calculateCompleteness(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.CategoryScore {
         var details: [ResumeScore.ScoreDetail] = []
         var totalPoints = 0
         let maxTotal = 100
@@ -156,22 +157,22 @@ final class ResumeScoringEngine {
         details.append(personalScore)
         
         // Summary (15 points)
-        let summaryScore = scoreSummary(resume.summary)
+        let summaryScore = scoreSummary(resume.summary, language: language)
         totalPoints += summaryScore.points
         details.append(summaryScore)
         
         // Work Experience (25 points)
-        let expScore = scoreExperienceCompleteness(resume.experiences ?? [])
+        let expScore = scoreExperienceCompleteness(resume.experiences ?? [], language: language)
         totalPoints += expScore.points
         details.append(expScore)
         
         // Skills (15 points)
-        let skillsScore = scoreSkillsCompleteness(resume.skills ?? [])
+        let skillsScore = scoreSkillsCompleteness(resume.skills ?? [], language: language)
         totalPoints += skillsScore.points
         details.append(skillsScore)
         
         // Education (10 points)
-        let eduScore = scoreEducationCompleteness(resume.educations ?? [])
+        let eduScore = scoreEducationCompleteness(resume.educations ?? [], language: language)
         totalPoints += eduScore.points
         details.append(eduScore)
         
@@ -225,13 +226,14 @@ final class ResumeScoringEngine {
         return .init(criterion: "Persönliche Daten", points: points, maxPoints: 25, feedback: feedback)
     }
     
-    private static func scoreSummary(_ summary: Summary?) -> ResumeScore.ScoreDetail {
-        guard let summary = summary, summary.isVisible, !summary.text.isEmpty else {
+    private static func scoreSummary(_ summary: Summary?, language: ResumeLanguage) -> ResumeScore.ScoreDetail {
+        let text = summary?.text(for: language, fallback: language.fallback) ?? ""
+        guard let summary = summary, summary.isVisible, !text.isEmpty else {
             return .init(criterion: "Professionelle Zusammenfassung", points: 0, maxPoints: 15,
                         feedback: "Füge eine überzeugende professionelle Zusammenfassung hinzu")
         }
         
-        let wordCount = summary.text.split(separator: " ").count
+        let wordCount = text.split(separator: " ").count
         var points = 0
         var feedback: String? = nil
         
@@ -265,7 +267,7 @@ final class ResumeScoringEngine {
             "erreicht",
             "vorangetrieben",
             "aufgebaut",
-        ].contains(where: { summary.text.lowercased().contains($0) })
+        ].contains(where: { text.lowercased().contains($0) })
         
         if hasActionWords {
             points += 5
@@ -276,7 +278,7 @@ final class ResumeScoringEngine {
         return .init(criterion: "Professionelle Zusammenfassung", points: points, maxPoints: 15, feedback: feedback)
     }
     
-    private static func scoreExperienceCompleteness(_ experiences: [WorkExperience]) -> ResumeScore.ScoreDetail {
+    private static func scoreExperienceCompleteness(_ experiences: [WorkExperience], language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let visible = experiences.filter(\.isVisible)
         
         if visible.isEmpty {
@@ -298,7 +300,9 @@ final class ResumeScoringEngine {
         }
         
         // Details present (10 points)
-        let hasDetails = visible.allSatisfy { !$0.details.isEmpty }
+        let hasDetails = visible.allSatisfy {
+            !$0.details(for: language, fallback: language.fallback).isEmpty
+        }
         if hasDetails {
             points += 10
         } else {
@@ -308,7 +312,7 @@ final class ResumeScoringEngine {
         return .init(criterion: "Berufserfahrung", points: points, maxPoints: 25, feedback: feedback)
     }
     
-    private static func scoreSkillsCompleteness(_ skills: [Skill]) -> ResumeScore.ScoreDetail {
+    private static func scoreSkillsCompleteness(_ skills: [Skill], language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let visible = skills.filter(\.isVisible)
         
         if visible.isEmpty {
@@ -331,7 +335,9 @@ final class ResumeScoringEngine {
         }
         
         // Skills are categorized (5 points)
-        let categorized = visible.filter { !$0.category.isEmpty }
+        let categorized = visible.filter {
+            !$0.category(for: language, fallback: language.fallback).isEmpty
+        }
         if categorized.count >= visible.count / 2 {
             points += 5
         } else {
@@ -341,7 +347,7 @@ final class ResumeScoringEngine {
         return .init(criterion: "Fähigkeiten", points: points, maxPoints: 15, feedback: feedback)
     }
     
-    private static func scoreEducationCompleteness(_ educations: [Education]) -> ResumeScore.ScoreDetail {
+    private static func scoreEducationCompleteness(_ educations: [Education], language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let visible = educations.filter(\.isVisible)
         
         if visible.isEmpty {
@@ -352,7 +358,10 @@ final class ResumeScoringEngine {
         var points = 5 // Has education
         
         // Has details (5 points)
-        let hasDetails = visible.allSatisfy { !$0.degree.isEmpty && !$0.school.isEmpty }
+        let hasDetails = visible.allSatisfy {
+            !$0.degree(for: language, fallback: language.fallback).isEmpty
+                && !$0.school(for: language, fallback: language.fallback).isEmpty
+        }
         if hasDetails {
             points += 5
         }
@@ -380,22 +389,22 @@ final class ResumeScoringEngine {
     
     // MARK: - Content Quality Score (25%)
     
-    private static func calculateContentQuality(_ resume: Resume) -> ResumeScore.CategoryScore {
+    private static func calculateContentQuality(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.CategoryScore {
         var details: [ResumeScore.ScoreDetail] = []
         var totalPoints = 0
         
         // Summary quality (30 points)
-        let summaryQuality = scoreSummaryQuality(resume.summary)
+        let summaryQuality = scoreSummaryQuality(resume.summary, language: language)
         totalPoints += summaryQuality.points
         details.append(summaryQuality)
         
         // Experience descriptions (40 points)
-        let expQuality = scoreExperienceQuality(resume.experiences ?? [])
+        let expQuality = scoreExperienceQuality(resume.experiences ?? [], language: language)
         totalPoints += expQuality.points
         details.append(expQuality)
         
         // Project descriptions (30 points)
-        let projQuality = scoreProjectQuality(resume.projects ?? [])
+        let projQuality = scoreProjectQuality(resume.projects ?? [], language: language)
         totalPoints += projQuality.points
         details.append(projQuality)
         
@@ -407,14 +416,15 @@ final class ResumeScoringEngine {
         )
     }
     
-    private static func scoreSummaryQuality(_ summary: Summary?) -> ResumeScore.ScoreDetail {
-        guard let summary = summary, !summary.text.isEmpty else {
+    private static func scoreSummaryQuality(_ summary: Summary?, language: ResumeLanguage) -> ResumeScore.ScoreDetail {
+        let summaryText = summary?.text(for: language, fallback: language.fallback) ?? ""
+        guard !summaryText.isEmpty else {
             return .init(criterion: "Qualität der Zusammenfassung", points: 0, maxPoints: 30,
                         feedback: "Füge eine professionelle Zusammenfassung hinzu")
         }
         
         var points = 10 // Has summary
-        let text = summary.text.lowercased()
+        let text = summaryText.lowercased()
         
         // No first person (10 points)
         let hasFirstPerson = text.contains("i ") ||
@@ -454,7 +464,7 @@ final class ResumeScoringEngine {
         return .init(criterion: "Qualität der Zusammenfassung", points: points, maxPoints: 30, feedback: nil)
     }
     
-    private static func scoreExperienceQuality(_ experiences: [WorkExperience]) -> ResumeScore.ScoreDetail {
+    private static func scoreExperienceQuality(_ experiences: [WorkExperience], language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let visible = experiences.filter(\.isVisible)
         
         if visible.isEmpty {
@@ -500,7 +510,8 @@ final class ResumeScoringEngine {
         ]
         
         let hasActionVerbs = visible.contains { exp in
-            actionVerbs.contains(where: { exp.details.lowercased().contains($0) })
+            let details = exp.details(for: language, fallback: language.fallback).lowercased()
+            return actionVerbs.contains(where: { details.contains($0) })
         }
         
         if hasActionVerbs {
@@ -510,7 +521,9 @@ final class ResumeScoringEngine {
         }
         
         // Detailed descriptions (15 points)
-        let avgDetailLength = visible.map { $0.details.count }.reduce(0, +) / max(visible.count, 1)
+        let avgDetailLength = visible
+            .map { $0.details(for: language, fallback: language.fallback).count }
+            .reduce(0, +) / max(visible.count, 1)
         if avgDetailLength >= 150 {
             points += 15
         } else if avgDetailLength >= 50 {
@@ -521,7 +534,7 @@ final class ResumeScoringEngine {
         return .init(criterion: "Qualität der Berufserfahrung", points: points, maxPoints: 40, feedback: feedback)
     }
     
-    private static func scoreProjectQuality(_ projects: [Project]) -> ResumeScore.ScoreDetail {
+    private static func scoreProjectQuality(_ projects: [Project], language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let visible = projects.filter(\.isVisible)
         
         if visible.isEmpty {
@@ -532,11 +545,15 @@ final class ResumeScoringEngine {
         var points = 15 // Has projects
         
         // Has descriptions (10 points)
-        let hasDescriptions = visible.allSatisfy { !$0.details.isEmpty }
+        let hasDescriptions = visible.allSatisfy {
+            !$0.details(for: language, fallback: language.fallback).isEmpty
+        }
         if hasDescriptions { points += 10 }
         
         // Has technologies (5 points)
-        let hasTech = visible.allSatisfy { !$0.technologies.isEmpty }
+        let hasTech = visible.allSatisfy {
+            !$0.technologies(for: language, fallback: language.fallback).isEmpty
+        }
         if hasTech { points += 5 }
         
         return .init(criterion: "Qualität der Projekte", points: points, maxPoints: 30, feedback: nil)
@@ -700,7 +717,7 @@ final class ResumeScoringEngine {
     
     // MARK: - Formatting Score (15%)
     
-    private static func calculateFormatting(_ resume: Resume) -> ResumeScore.CategoryScore {
+    private static func calculateFormatting(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.CategoryScore {
         var details: [ResumeScore.ScoreDetail] = []
         var totalPoints = 0
         
@@ -710,7 +727,7 @@ final class ResumeScoringEngine {
         details.append(orgScore)
         
         // Bullet point usage (30 points)
-        let bulletScore = scoreBulletUsage(resume)
+        let bulletScore = scoreBulletUsage(resume, language: language)
         totalPoints += bulletScore.points
         details.append(bulletScore)
         
@@ -748,14 +765,15 @@ final class ResumeScoringEngine {
         return .init(criterion: "Abschnittsstruktur", points: points, maxPoints: 40, feedback: nil)
     }
     
-    private static func scoreBulletUsage(_ resume: Resume) -> ResumeScore.ScoreDetail {
+    private static func scoreBulletUsage(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let experiences = (resume.experiences ?? []).filter(\.isVisible)
         var points = 15 // Base points
         var feedback: String? = nil
         
         // Check if experiences use line breaks (pseudo-bullets)
         let usesBullets = experiences.contains { exp in
-            exp.details.contains("\n") || exp.details.contains("•")
+            let details = exp.details(for: language, fallback: language.fallback)
+            return details.contains("\n") || details.contains("•")
         }
         
         if usesBullets {
@@ -796,22 +814,22 @@ final class ResumeScoringEngine {
     
     // MARK: - Impact Score (15%)
     
-    private static func calculateImpact(_ resume: Resume) -> ResumeScore.CategoryScore {
+    private static func calculateImpact(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.CategoryScore {
         var details: [ResumeScore.ScoreDetail] = []
         var totalPoints = 0
         
         // Quantifiable achievements (50 points)
-        let metricsScore = scoreMetrics(resume)
+        let metricsScore = scoreMetrics(resume, language: language)
         totalPoints += metricsScore.points
         details.append(metricsScore)
         
         // Strong action verbs (30 points)
-        let verbScore = scoreActionVerbs(resume)
+        let verbScore = scoreActionVerbs(resume, language: language)
         totalPoints += verbScore.points
         details.append(verbScore)
         
         // Achievement focus (20 points)
-        let achievementScore = scoreAchievementFocus(resume)
+        let achievementScore = scoreAchievementFocus(resume, language: language)
         totalPoints += achievementScore.points
         details.append(achievementScore)
         
@@ -823,9 +841,11 @@ final class ResumeScoringEngine {
         )
     }
     
-    private static func scoreMetrics(_ resume: Resume) -> ResumeScore.ScoreDetail {
+    private static func scoreMetrics(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let experiences = (resume.experiences ?? []).filter(\.isVisible)
-        let fullText = experiences.map(\.details).joined(separator: " ")
+        let fullText = experiences
+            .map { $0.details(for: language, fallback: language.fallback) }
+            .joined(separator: " ")
         
         var points = 0
         var feedback: String? = nil
@@ -863,9 +883,12 @@ final class ResumeScoringEngine {
         return .init(criterion: "Messbare Kennzahlen", points: points, maxPoints: 50, feedback: feedback)
     }
     
-    private static func scoreActionVerbs(_ resume: Resume) -> ResumeScore.ScoreDetail {
+    private static func scoreActionVerbs(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let experiences = (resume.experiences ?? []).filter(\.isVisible)
-        let fullText = experiences.map(\.details).joined(separator: " ").lowercased()
+        let fullText = experiences
+            .map { $0.details(for: language, fallback: language.fallback) }
+            .joined(separator: " ")
+            .lowercased()
         
         let strongVerbs = [
             "led",
@@ -908,9 +931,12 @@ final class ResumeScoringEngine {
         return .init(criterion: "Starke Aktionsverben", points: points, maxPoints: 30, feedback: feedback)
     }
     
-    private static func scoreAchievementFocus(_ resume: Resume) -> ResumeScore.ScoreDetail {
+    private static func scoreAchievementFocus(_ resume: Resume, language: ResumeLanguage) -> ResumeScore.ScoreDetail {
         let experiences = (resume.experiences ?? []).filter(\.isVisible)
-        let fullText = experiences.map(\.details).joined(separator: " ").lowercased()
+        let fullText = experiences
+            .map { $0.details(for: language, fallback: language.fallback) }
+            .joined(separator: " ")
+            .lowercased()
         
         var points = 0
         

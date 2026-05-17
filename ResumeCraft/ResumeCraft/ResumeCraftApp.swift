@@ -16,9 +16,6 @@ import os
 struct ResumeCraftApp: App {
   @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
-  @State private var openRouterSettings: OpenRouterSettings
-  @State private var openRouterProvider: OpenRouterProvider
-
     // NEW: local on-device AI provider
     @State private var fmProvider = FoundationModelProvider()
     @State private var aiReviewViewModel: AIReviewViewModel
@@ -193,10 +190,6 @@ struct ResumeCraftApp: App {
     }
 
   init() {
-      let settings = OpenRouterSettings()
-      _openRouterSettings = State(initialValue: settings)
-      _openRouterProvider = State(initialValue: OpenRouterProvider(config: settings.config))
-
       let provider = FoundationModelProvider()
       _fmProvider = State(initialValue: provider)
       _aiReviewViewModel = State(initialValue: AIReviewViewModel(ai: provider))
@@ -217,10 +210,10 @@ struct ResumeCraftApp: App {
       }
       .environment(fmProvider)
       .environment(aiReviewViewModel)
-      .environment(openRouterSettings)
-      .environment(openRouterProvider)
       .environment(persistenceStatus)
-      .overlay(AppleIntelligenceGate())
+      .safeAreaInset(edge: .bottom) {
+        AppleIntelligenceGate()
+      }
     }
     .modelContainer(modelContainer)
   }
@@ -243,20 +236,18 @@ private struct AppleIntelligenceGate: View {
         format: String(localized: "ai.gate.message %@"),
         String(describing: reason)
       )
-      VStack {
-        Spacer()
-        HStack(spacing: 12) {
-          Image(systemName: "sparkles")
-          Text(message)
-          Button("ai.gate.openSettings") {
-            openAppSettings()
-          }
+      HStack(spacing: 12) {
+        Image(systemName: "sparkles")
+        Text(message)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Button("ai.gate.openSettings") {
+          openAppSettings()
         }
-        .font(.footnote)
-        .padding(12)
-        .background(.ultraThinMaterial, in: Capsule())
-        .padding()
       }
+      .font(.footnote)
+      .padding(.horizontal, 16)
+      .padding(.vertical, 10)
+      .background(.bar)
       .transition(.move(edge: .bottom))
     }
   }

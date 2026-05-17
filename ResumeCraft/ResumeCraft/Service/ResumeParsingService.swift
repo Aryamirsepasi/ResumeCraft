@@ -23,6 +23,7 @@ struct ContactInfo {
 struct JobExperience {
     var title: String
     var company: String
+    var location: String? = nil
     var startDate: String?
     var endDate: String?
     var details: String
@@ -31,8 +32,10 @@ struct JobExperience {
 struct EducationEntry {
     var degree: String
     var institution: String
+    var field: String = ""
     var startDate: String?
     var endDate: String?
+    var details: String = ""
 }
 
 struct ProjectEntry {
@@ -67,16 +70,14 @@ final class ResumeParsingService {
     ]
 
     // Main entry point for parsing a resume PDF
-    nonisolated func parseResume(
+    func parseResume(
         from url: URL,
         language: ResumeLanguage? = nil,
         completion: @escaping (String) -> Void
     ) {
-        Task.detached {
+        Task {
             let text = await Self.parseResume(from: url, language: language)
-            await MainActor.run {
-                completion(text)
-            }
+            completion(text)
         }
     }
 
@@ -393,33 +394,47 @@ final class ResumeParsingService {
             return rangeRegex.firstMatch(in: s, range: r)
         }
 
+        func capturedGroups(pattern: String, in value: String) -> [String]? {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+                return nil
+            }
+            let nsValue = value as NSString
+            let range = NSRange(location: 0, length: nsValue.length)
+            guard let match = regex.firstMatch(in: value, range: range), match.numberOfRanges > 1 else {
+                return nil
+            }
+            return (1..<match.numberOfRanges).map { index in
+                guard match.range(at: index).location != NSNotFound else { return "" }
+                return nsValue.substring(with: match.range(at: index))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+
         func parseHeader(_ s: String) -> (String, String) {
+            let header = s.trimmingCharacters(in: .whitespacesAndNewlines)
             // Prefer "Title at Company"
-            if let r = s.range(of: #"(?i)^(.*?)\s+at\s+(.*)$"#,
-                                options: .regularExpression)
-            {
-                let parts = String(s[r]).components(separatedBy: " at ")
-                if parts.count == 2 {
-                    return (parts[0].trimmingCharacters(in: .whitespaces),
-                            parts[1].trimmingCharacters(in: .whitespaces))
-                }
+            if let parts = capturedGroups(pattern: #"^\s*(.*?)\s+(?:at|@)\s+(.*?)\s*$"#, in: header),
+               parts.count == 2 {
+                return (parts[0], parts[1])
             }
             // Try "Company — Title" or "Company - Title"
-            if let r = s.range(of: #"(?i)^(.*?)\s*[–—-]\s*(.*)$"#,
-                                options: .regularExpression)
-            {
-                let prefix = String(s[s.startIndex..<r.lowerBound])
-                    .trimmingCharacters(in: .whitespaces)
-                let suffix = String(s[r.upperBound...])
-                    .trimmingCharacters(in: .whitespaces)
+            if let parts = capturedGroups(pattern: #"^\s*(.*?)\s*[–—-]\s*(.*?)\s*$"#, in: header),
+               parts.count == 2 {
                 // Assume suffix is title
-                return (suffix, prefix)
+                return (parts[1], parts[0])
             }
             // Fallback: comma/pipe split
-            let parts = s.components(separatedBy: CharacterSet(charactersIn: ",|"))
+            let parts = header.components(separatedBy: CharacterSet(charactersIn: ",|"))
                 .map { $0.trimmingCharacters(in: .whitespaces) }
             if parts.count >= 2 { return (parts[0], parts[1]) }
-            return (s, "")
+            return (header, "")
+        }
+
+        func cleanLocationPrefix(_ value: String) -> String? {
+            let trimmed = value
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "|,–—- "))
+            return trimmed.isEmpty ? nil : trimmed
         }
 
         var current: JobExperience?
@@ -442,7 +457,7 @@ final class ResumeParsingService {
                 // New job entry
                 // Header is text before the first date token
                 let nsLine = line as NSString
-                let header = nsLine.substring(to: m.range.location)
+                let prefix = nsLine.substring(to: m.range.location)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
 
                 var start: String?
@@ -457,13 +472,16 @@ final class ResumeParsingService {
                     end = split[1]
                 }
 
+                let bufferedHeader = headerBuffer?.trimmingCharacters(in: .whitespacesAndNewlines)
                 // Commit previous
                 flush()
 
-                let (title, company) = parseHeader(header.isEmpty ? (headerBuffer ?? "") : header)
+                let header = bufferedHeader?.isEmpty == false ? bufferedHeader! : prefix
+                let (title, company) = parseHeader(header)
                 current = JobExperience(
                     title: title,
                     company: company,
+                    location: bufferedHeader?.isEmpty == false ? cleanLocationPrefix(prefix) : nil,
                     startDate: start,
                     endDate: end,
                     details: ""
@@ -506,10 +524,82 @@ final class ResumeParsingService {
             .split(separator: "\n")
             .map { String($0).trimmingCharacters(in: .whitespaces) }
         let datePattern =
-            #"(?i)([A-Za-z]{3,}\.?\s?\d{2,4}|[0-9]{1,2}\/\d{2,4}|(19|20)\d{2})\s?[-–—]\s?([A-Za-z]{3,}\.?\s?\d{2,4}|Present|Current|[0-9]{1,2}\/\d{2,4}|(19|20)\d{2})"#
+            #"(?i)([A-Za-z]{3,}\.?\s?\d{2,4}|[0-9]{1,2}\/\d{2,4}|(?:19|20)\d{2})\s*[-–—]\s*([A-Za-z]{3,}\.?\s?\d{2,4}|Present|Current|[0-9]{1,2}\/\d{2,4}|(?:19|20)\d{2})"#
         let dateRegex = try? NSRegularExpression(pattern: datePattern)
 
         var currentEntry: EducationEntry?
+
+        func capturedGroups(pattern: String, in value: String) -> [String]? {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+                return nil
+            }
+            let nsValue = value as NSString
+            let range = NSRange(location: 0, length: nsValue.length)
+            guard let match = regex.firstMatch(in: value, range: range), match.numberOfRanges > 1 else {
+                return nil
+            }
+            return (1..<match.numberOfRanges).map { index in
+                guard match.range(at: index).location != NSNotFound else { return "" }
+                return nsValue.substring(with: match.range(at: index))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+
+        func parseEducationHeader(_ value: String) -> EducationEntry {
+            let header = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let parts = capturedGroups(pattern: #"^\s*(.*?)\s+(?:from|at)\s+(.*?)\s*$"#, in: header),
+               parts.count == 2 {
+                let degreeAndField = parts[0]
+                let institution = parts[1]
+                if let degreeParts = capturedGroups(pattern: #"^\s*(.*?)\s+in\s+(.*?)\s*$"#, in: degreeAndField),
+                   degreeParts.count == 2 {
+                    return EducationEntry(
+                        degree: degreeParts[0],
+                        institution: institution,
+                        field: degreeParts[1],
+                        startDate: nil,
+                        endDate: nil
+                    )
+                }
+                return EducationEntry(
+                    degree: degreeAndField,
+                    institution: institution,
+                    startDate: nil,
+                    endDate: nil
+                )
+            }
+
+            let parts = header
+                .components(separatedBy: CharacterSet(charactersIn: ",|"))
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            if parts.count >= 2 {
+                return EducationEntry(
+                    degree: parts[1],
+                    institution: parts[0],
+                    startDate: nil,
+                    endDate: nil
+                )
+            }
+            return EducationEntry(degree: header, institution: "", startDate: nil, endDate: nil)
+        }
+
+        func appendDetail(_ line: String) {
+            guard !line.isEmpty else { return }
+            if currentEntry?.details.isEmpty == false {
+                currentEntry?.details.append("\n" + line)
+            } else {
+                currentEntry?.details = line
+            }
+        }
+
+        func flushCurrent() {
+            guard let entry = currentEntry else { return }
+            if !entry.degree.isEmpty || !entry.institution.isEmpty {
+                entries.append(entry)
+            }
+            currentEntry = nil
+        }
 
         for line in lines {
             let nsLine = line as NSString
@@ -517,39 +607,34 @@ final class ResumeParsingService {
             let dateMatch = dateRegex?.firstMatch(in: line, range: range)
 
             if let dateMatch = dateMatch {
-                if let entry = currentEntry { entries.append(entry) }
-
                 let institutionAndDegree = nsLine
                     .substring(to: dateMatch.range.location)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                let parts = institutionAndDegree
-                    .components(separatedBy: CharacterSet(charactersIn: ",-–—|"))
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
 
-                currentEntry = EducationEntry(
-                    degree: parts.count > 1 ? parts[1] : "",
-                    institution: parts.first ?? "",
-                    startDate: nsLine.substring(with: dateMatch.range(at: 1)),
-                    endDate: nsLine.substring(with: dateMatch.range(at: 3))
-                )
-            } else if currentEntry != nil {
-                if currentEntry?.degree.isEmpty ?? false {
-                    currentEntry?.degree = line
+                if !institutionAndDegree.isEmpty {
+                    flushCurrent()
+                    currentEntry = parseEducationHeader(institutionAndDegree)
+                } else if currentEntry == nil {
+                    currentEntry = EducationEntry(degree: "", institution: "", startDate: nil, endDate: nil)
                 }
+
+                currentEntry?.startDate = nsLine.substring(with: dateMatch.range(at: 1))
+                currentEntry?.endDate = nsLine.substring(with: dateMatch.range(at: 2))
+
+                let trailingStart = dateMatch.range.upperBound
+                if trailingStart < nsLine.length {
+                    let trailing = nsLine.substring(from: trailingStart)
+                        .trimmingCharacters(in: CharacterSet(charactersIn: " |,–—-"))
+                    appendDetail(trailing)
+                }
+            } else if currentEntry != nil {
+                appendDetail(line)
             } else if !line.isEmpty {
-                let parts = line
-                    .components(separatedBy: CharacterSet(charactersIn: ",-–—|"))
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                currentEntry = EducationEntry(
-                    degree: parts.count > 1 ? parts[1] : "",
-                    institution: parts.first ?? "",
-                    startDate: nil,
-                    endDate: nil
-                )
+                currentEntry = parseEducationHeader(line)
             }
         }
 
-        if let entry = currentEntry { entries.append(entry) }
+        flushCurrent()
 
         return entries
     }
@@ -672,7 +757,11 @@ final class ResumeParsingService {
         return entries
     }
 
-    func canonicalize(text: String, ai: any AIProvider) async throws -> String {
+    func canonicalize(
+      text: String,
+      ai: any AIProvider,
+      language: ResumeLanguage = .defaultContent
+    ) async throws -> String {
       let systemPrompt = """
       You are a résumé parser. Reorganize résumé text into this EXACT format with these EXACT headers:
       
@@ -744,7 +833,7 @@ final class ResumeParsingService {
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
         images: [],
-        language: .defaultContent,
+        language: language,
         streaming: false
       )
 

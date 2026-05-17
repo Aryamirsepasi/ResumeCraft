@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-import Translation
+@preconcurrency import Translation
 
 @MainActor
 struct ResumeTranslationService {
